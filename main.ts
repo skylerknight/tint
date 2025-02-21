@@ -1,4 +1,4 @@
-import plugin from 'npm:tailwindcss/plugin';
+import plugin, { type PluginsConfig } from 'npm:tailwindcss@4.0.7/plugin';
 import { defaultOptions } from './utils/constants.ts';
 import type { TintOptions } from './utils/types.ts';
 import {
@@ -44,4 +44,4 @@ export default plugin.withOptions(
       },
     },
   })
-);
+) as PluginsConfig;
