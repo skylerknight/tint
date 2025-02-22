@@ -90,7 +90,7 @@ export function generateColorTokensFromTheme(theme: TintTheme) {
   const leoTheme = new Theme({
     lightness,
     contrast: 1,
-    output: 'OKLCH',
+    output: 'HSL',
     colors: leoColors,
     backgroundColor: leoColors[0] as BackgroundColor,
   });
