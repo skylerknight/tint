@@ -16,13 +16,19 @@
 Install **Tint** via npm:
 
 ```sh
-npm install tint-tailwind-plugin
+npx jsr add @skylerknight/tint
 ```
 
 Or via pnpm:
 
 ```sh
-pnpm add tint-tailwind-plugin
+pnpm dlx jsr add @skylerknight/tint
+```
+
+Or via deno:
+
+```sh
+deno add jsr:@skylerknight/tint
 ```
 
 ---
@@ -31,16 +37,6 @@ pnpm add tint-tailwind-plugin
 
 Add **Tint** as a plugin inside your Tailwind CSS configuration:
 
-```js
-// tailwind.config.js
-import tint from 'tint-tailwind-plugin';
-
-export default {
-  content: ['./src/**/*.{html,js,ts,jsx,tsx}'],
-  plugins: [tint()],
-};
-```
-
 ### **Defining a Theme**
 
 You can configure your theme inside **Tailwind CSS 4** using the `@plugin` directive:
@@ -48,13 +44,13 @@ You can configure your theme inside **Tailwind CSS 4** using the `@plugin` direc
 ```css
 @import 'tailwindcss';
 
-@plugin 'tint' {
+@plugin '@skylerknight/tint' {
   name: light, dark;
-  lightness: 87, 17;
+  lightness: 85, 15;
 
   color-base: #ffffff, #000000;
-  color-brand: darkolivegreen, darkolivegreen;
-  color-warning: #df8541, #df8541;
+  color-primary: #4483fe, #4483fe;
+  color-secondary: #fe7544, #fe7544;
 
   token-surface: -1.35, -1.35;
   token-surface: -1.3, -1.3;
@@ -74,7 +70,7 @@ You can configure your theme inside **Tailwind CSS 4** using the `@plugin` direc
 
 - The `name` property defines the theme modes (`light` and `dark`).
 - `lightness` sets the base lightness for each mode.
-- `color-base`, `color-brand`, and `color-warning` define the primary color palette.
+- `color-base`, `color-primary`, and `color-secondary` define the primary color palette.
 - `token-*` properties modify contrast ratios for surfaces, actions, and interactive elements.
 - `override-*` allows fine-tuning specific color tokens.
 
