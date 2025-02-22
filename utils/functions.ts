@@ -8,6 +8,17 @@ import {
 } from 'npm:@adobe/leonardo-contrast-colors@1.0.0';
 import type { TintOptions, TintTheme } from './types.ts';
 
+function groupByObject<T>(
+  obj: Record<string, T>,
+  callback: (key: string, value: T) => string
+): Record<string, Record<string, T>> {
+  return Object.entries(obj).reduce<Record<string, Record<string, T>>>((acc, [key, value]) => {
+    const groupKey = callback(key, value); // Determine the group key
+    (acc[groupKey] ||= {})[key] = value;
+    return acc;
+  }, {});
+}
+
 export function transformKeys<T>(input: Record<string, T>, word: string, position: 'prepend' | 'append') {
   return Object.fromEntries(
     Object.entries(input).map(([key, value]) => {
@@ -58,7 +69,7 @@ export function generateTintComponents(defaultTheme: TintTheme) {
 export function generateColorTokensFromTheme(theme: TintTheme) {
   // Extract theme data
   let { lightness, colors, tokens, overrides } = theme;
-  if (overrides) overrides = Object.groupBy(Object.entries(overrides), ([key]) => key.split('-').at(-1) ?? '');
+  if (overrides) overrides = groupByObject(overrides, ([key]) => key.split('-').at(-1) ?? '');
 
   // Create Leo Colors
   const leoColors = Object.entries(colors).map(([name, value], index) => {
