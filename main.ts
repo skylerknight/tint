@@ -28,7 +28,7 @@ export default plugin.withOptions(
 
     return ({ addBase, addComponents }) => {
       addBase({
-        ':root': { ...cssVariables, ...defaultCSSVariables },
+        ':root': { 'color-scheme': 'light dark', ...cssVariables, ...defaultCSSVariables },
       });
 
       addComponents(tintComponents);
