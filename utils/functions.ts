@@ -8,6 +8,12 @@ import {
 } from 'npm:@adobe/leonardo-contrast-colors@1.0.0';
 import type { TintOptions, TintTheme } from './types.ts';
 
+/**
+ *
+ * @param obj
+ * @param callback
+ * @returns an object grouped by the result of the callback function
+ */
 function groupByObject<T>(
   obj: Record<string, T>,
   callback: (key: string, value: T) => string
@@ -19,6 +25,13 @@ function groupByObject<T>(
   }, {});
 }
 
+/**
+ *
+ * @param input
+ * @param word
+ * @param position
+ * @returns A new object with keys transformed by appending or prepending a word
+ */
 export function transformKeys<T>(input: Record<string, T>, word: string, position: 'prepend' | 'append') {
   return Object.fromEntries(
     Object.entries(input).map(([key, value]) => {
@@ -28,6 +41,11 @@ export function transformKeys<T>(input: Record<string, T>, word: string, positio
   );
 }
 
+/**
+ *
+ * @param lightDarkTokens
+ * @returns An object with CSS variables generated from lightDarkTokens
+ */
 export function generateCSSVariables(lightDarkTokens: Record<string, string>) {
   return Object.entries(lightDarkTokens).reduce((acc: Record<string, string>, [key, value]) => {
     acc[`--color-${key}`] = value;
@@ -35,6 +53,12 @@ export function generateCSSVariables(lightDarkTokens: Record<string, string>) {
   }, {});
 }
 
+/**
+ *
+ * @param defaultTheme
+ * @param defaultColor
+ * @returns An object with CSS variables generated from defaultTheme
+ */
 export function generateDefaultCSSVariables(defaultTheme: TintTheme, defaultColor?: string) {
   const { colors, tokens } = defaultTheme;
   if (defaultColor === undefined) defaultColor = Object.keys(colors).at(0);
@@ -44,6 +68,11 @@ export function generateDefaultCSSVariables(defaultTheme: TintTheme, defaultColo
   }, {});
 }
 
+/**
+ * @param lightDarkTokens
+ * @returns An object with Tailwind utilities generated from lightDarkTokens
+ * e.g. { 'surface-raised': 'var(--color-surface-raised)' }
+ */
 export function generateTailwindUtilities(lightDarkTokens: Record<string, string>) {
   return Object.keys(lightDarkTokens).reduce((acc: Record<string, string>, key) => {
     acc[key] = `var(--color-${key})`;
@@ -51,6 +80,11 @@ export function generateTailwindUtilities(lightDarkTokens: Record<string, string
   }, {});
 }
 
+/**
+ * @param tokens
+ * @returns An object with Tailwind utilities generated from tokens
+ * e.g. { 'surface-raised': 'var(--color-surface-raised)' }
+ */
 export function generateDefaultTailwindUtilities(tokens: Record<string, number>) {
   return Object.keys(tokens).reduce((acc: Record<string, string>, token) => {
     acc[token] = `var(--color-${token})`;
@@ -58,6 +92,11 @@ export function generateDefaultTailwindUtilities(tokens: Record<string, number>)
   }, {});
 }
 
+/**
+ * @param defaultTheme
+ * @returns An object with Tailwind class components for tints
+ * e.g. { '.tint-primary': <CSSVariables> }
+ */
 export function generateTintComponents(defaultTheme: TintTheme) {
   const { colors } = defaultTheme;
   return Object.keys(colors).reduce((acc: { [tintClass: string]: Record<string, string> }, color) => {
@@ -66,6 +105,12 @@ export function generateTintComponents(defaultTheme: TintTheme) {
   }, {});
 }
 
+/**
+ *
+ * @param theme
+ * @returns An object containing color tokens
+ * e.g. { 'surface-raised': '#f5f5f5' }
+ */
 export function generateColorTokensFromTheme(theme: TintTheme) {
   // Extract theme data
   let { lightness, colors, tokens, overrides } = theme;
@@ -118,10 +163,9 @@ export function convertTintOptionsToTheme(themeOptions: TintOptions): TintTheme 
 
     // Add 's' to keys with multiple values (colors, tokens, overrides)
     if (rest.length) option += 's';
-    const type = option as keyof TintTheme;
 
     // @ts-expect-error - TS doesn't know that option is a key of Theme
-    acc[type] = rest.length ? { ...acc[type], [rest.join('-')]: value } : value;
+    acc[option] = rest.length ? { ...acc[option], [rest.join('-')]: value } : value;
 
     return acc;
   }, {} as TintTheme);
