@@ -1,197 +1,312 @@
-import {
-  BackgroundColor,
-  Color,
-  Theme,
-  type ColorBase,
-  type CssColor,
-  type RatiosObject,
-} from 'npm:@adobe/leonardo-contrast-colors@1.0.0';
-import type { TintOptions, TintTheme } from './types.ts';
+import chroma from 'npm:chroma-js';
+import plugin from 'npm:tailwindcss@4.0.7/plugin';
+import { BackgroundColor, Color, Theme, type CssColor, type RatiosObject } from 'npm:@adobe/leonardo-contrast-colors@1.0.0';
+import type { TintTheme, TintConfig, TintThemeResource } from './types.ts';
+
+import { DEFAULT_TINT_THEME } from './constants.ts';
 
 /**
+ * Modifies the keys of an input object by prepending or appending a specified word.
  *
- * @param obj
- * @param callback
- * @returns an object grouped by the result of the callback function
+ * @param input - The input object with string keys.
+ * @param word - The word to prepend or append to the keys.
+ * @param position - The position to place the word ('prepend' or 'append').
+ * @returns A new object with modified keys.
  */
-function groupByObject<T>(
-  obj: Record<string, T>,
-  callback: (key: string, value: T) => string
-): Record<string, Record<string, T>> {
-  return Object.entries(obj).reduce<Record<string, Record<string, T>>>((acc, [key, value]) => {
-    const groupKey = callback(key, value); // Determine the group key
-    (acc[groupKey] ||= {})[key] = value;
-    return acc;
-  }, {});
-}
-
-/**
- *
- * @param input
- * @param word
- * @param position
- * @returns A new object with keys transformed by appending or prepending a word
- */
-export function transformKeys<T>(input: Record<string, T>, word: string, position: 'prepend' | 'append') {
+export function modifyKeys<T>(input: Record<string, T>, word: string, position: 'prepend' | 'append') {
   return Object.fromEntries(
-    Object.entries(input).map(([key, value]) => {
-      const newKey = position === 'prepend' ? `${word}-${key}` : `${key}-${word}`;
-      return [newKey, value];
-    })
+    Object.entries(input).map(([key, value]) => [position === 'prepend' ? `${word}-${key}` : `${key}-${word}`, value])
   );
 }
 
 /**
+ * Flattens the keys of a nested object.
  *
- * @param lightDarkTokens
- * @returns An object with CSS variables generated from lightDarkTokens
+ * @param obj - The object to flatten.
+ * @param separator - The separator to use for the flattened keys.
+ * @returns A new object with flattened keys.
  */
-export function generateCSSVariables(lightDarkTokens: Record<string, string>) {
-  return Object.entries(lightDarkTokens).reduce((acc: Record<string, string>, [key, value]) => {
-    acc[`--color-${key}`] = value;
-    return acc;
-  }, {});
+export function flattenKeys<T>(obj: Record<string, T>, separator = '-'): Record<string, T> {
+  function recurse(currentObj: Record<string, T>, currentKey = ''): Record<string, T> {
+    return Object.entries(currentObj).reduce((acc: Record<string, T>, [key, value]) => {
+      let newKey = key === 'default' ? currentKey : `${currentKey}${separator}${key}`;
+      if (newKey.startsWith(separator)) newKey = newKey.slice(1);
+
+      if (typeof value === 'object' && value !== null) {
+        Object.assign(acc, recurse(value as Record<string, T>, newKey));
+      } else {
+        acc[newKey] = value as T;
+      }
+      return acc;
+    }, {});
+  }
+
+  return recurse(obj);
 }
 
 /**
+ * Determines the type of overrides present in the theme.
  *
- * @param defaultTheme
- * @param defaultColor
- * @returns An object with CSS variables generated from defaultTheme
+ * @param theme - The theme containing overrides.
+ * @returns The type of overrides ('token-centric', 'color-centric', or null).
  */
-export function generateDefaultCSSVariables(defaultTheme: TintTheme, defaultColor?: string) {
-  const { colors, tokens } = defaultTheme;
-  if (defaultColor === undefined) defaultColor = Object.keys(colors).at(0);
-  return Object.keys(tokens).reduce((acc: Record<string, string>, token) => {
-    acc[`--color-${token}`] = `var(--color-${token}-${defaultColor})`;
-    return acc;
-  }, {});
+export function overrideType(theme: TintTheme): 'token-centric' | 'color-centric' | null {
+  if (!theme.overrides || !Object.keys(theme.overrides).length) return null;
+
+  const firstKey = Object.keys(theme.overrides)[0];
+  return firstKey in theme.tokens ? 'token-centric' : firstKey in theme.colors ? 'color-centric' : null;
 }
 
 /**
- * @param lightDarkTokens
- * @returns An object with Tailwind utilities generated from lightDarkTokens
- * e.g. { 'surface-raised': 'var(--color-surface-raised)' }
- */
-export function generateTailwindUtilities(lightDarkTokens: Record<string, string>) {
-  return Object.keys(lightDarkTokens).reduce((acc: Record<string, string>, key) => {
-    acc[key] = `var(--color-${key})`;
-    return acc;
-  }, {});
-}
-
-/**
- * @param tokens
- * @returns An object with Tailwind utilities generated from tokens
- * e.g. { 'surface-raised': 'var(--color-surface-raised)' }
- */
-export function generateDefaultTailwindUtilities(tokens: Record<string, number>) {
-  return Object.keys(tokens).reduce((acc: Record<string, string>, token) => {
-    acc[token] = `var(--color-${token})`;
-    return acc;
-  }, {});
-}
-
-/**
- * @param defaultTheme
- * @returns An object with Tailwind class components for tints
- * e.g. { '.tint-primary': <CSSVariables> }
- */
-export function generateTintComponents(defaultTheme: TintTheme) {
-  const { colors } = defaultTheme;
-  return Object.keys(colors).reduce((acc: { [tintClass: string]: Record<string, string> }, color) => {
-    acc[`.tint-${color}`] = generateDefaultCSSVariables(defaultTheme, color);
-    return acc;
-  }, {});
-}
-
-/**
+ * Extracts color tokens from the theme and converts them to Leo colors.
  *
- * @param theme
- * @returns An object containing color tokens
- * e.g. { 'surface-raised': '#f5f5f5' }
+ * @param theme - The theme containing colors and lightness.
+ * @returns An object mapping color names to their corresponding CSS colors.
  */
-export function generateColorTokensFromTheme(theme: TintTheme) {
-  // Extract theme data
-  let { lightness, colors, tokens, overrides } = theme;
-  if (overrides) overrides = groupByObject(overrides, ([key]) => key.split('-').at(-1) ?? '');
+export function extractColorTokens(theme: TintTheme): Record<string, CssColor> {
+  const { lightness, colors } = theme;
+  const colorRatiosMap = colorRatios(theme);
 
-  // Create Leo Colors
   const leoColors = Object.entries(colors).map(([name, value], index) => {
-    let ratios: RatiosObject = transformKeys<number>(tokens, name, 'append');
-    if (overrides && overrides?.[name]) ratios = { ...ratios, ...overrides[name] };
-
-    const colorOptions: ColorBase = {
+    return new (index === 0 ? BackgroundColor : Color)({
       name,
-      ratios,
-      smooth: true,
-      colorspace: 'OKLCH',
-      colorKeys: [value as CssColor],
-    };
-
-    return index === 0 ? new BackgroundColor(colorOptions) : new Color(colorOptions);
+      ratios: colorRatiosMap[name] as RatiosObject,
+      colorKeys: [value],
+    });
   });
 
   const leoTheme = new Theme({
     lightness,
-    contrast: 1,
-    output: 'HSL',
+    saturation: 100,
     colors: leoColors,
     backgroundColor: leoColors[0] as BackgroundColor,
   });
 
   delete leoTheme.contrastColorPairs.background;
-  return leoTheme.contrastColorPairs;
+  return colorPairsToOKLCH(leoTheme.contrastColorPairs);
 }
 
-export function generateLightDarkTokens(themes: TintTheme[]): Record<string, string> {
-  const lightDarkTokens: Record<string, string> = {};
-  const [lightTokens, darkTokens] = themes.map((theme) => generateColorTokensFromTheme(theme));
+/**
+ * Computes color ratios for the theme.
+ *
+ * @param theme - The theme containing colors and tokens.
+ * @returns An object mapping color names to their corresponding ratios.
+ */
+export function colorRatios(theme: TintTheme) {
+  const overrides = colorOverrides(theme);
 
-  for (const token of Object.keys(lightTokens)) {
-    const light = lightTokens[token];
-    const dark = darkTokens[token];
-    // Generates light dark token e.g. suface-raised: light-dark(#f5f5f5, #1a1a1a)
-    lightDarkTokens[token] = `light-dark(${light}, ${dark})`;
-  }
-  return lightDarkTokens;
+  return Object.fromEntries(
+    Object.keys(theme.colors).map((color) => [color, { ...modifyKeys(theme.tokens, color, 'append'), ...overrides[color] }])
+  );
 }
 
-export function convertTintOptionsToTheme(themeOptions: TintOptions): TintTheme {
-  return Object.entries(themeOptions).reduce<TintTheme>((acc, [key, value]) => {
-    let [option, ...rest]: string[] = key.split('-');
+/**
+ * Retrieves color overrides from the theme.
+ *
+ * @param theme - The theme containing overrides.
+ * @returns An object mapping color names to their corresponding overrides.
+ */
+export function colorOverrides(theme: TintTheme): Record<string, Record<string, number>> {
+  if (!theme.overrides) return {};
 
-    // Add 's' to keys with multiple values (colors, tokens, overrides)
-    if (rest.length) option += 's';
+  const structure = overrideType(theme);
 
-    // @ts-expect-error - TS doesn't know that option is a key of Theme
-    acc[option] = rest.length ? { ...acc[option], [rest.join('-')]: value } : value;
+  return Object.entries(flattenKeys<number>(theme.overrides as unknown as Record<string, number>)).reduce(
+    (acc, [override, value]) => {
+      const parts = override.split('-');
+      const color = structure === 'color-centric' ? parts.shift() : parts.pop();
+      if (!color) return acc;
 
-    return acc;
-  }, {} as TintTheme);
+      acc[color] ||= {};
+      acc[color][structure === 'color-centric' ? `${parts.join('-')}-${color}` : override] = value;
+      return acc;
+    },
+    {} as Record<string, Record<string, number>>
+  );
 }
 
-export function createLightAndDarkThemes(options: TintOptions): TintTheme[] {
-  const lightThemeOptions: TintOptions = {};
-  const darkThemeOptions: TintOptions = {};
+/**
+ * Converts color contrast pairs to OKLCH format.
+ *
+ * @param colorContrastPairs - The color contrast pairs to convert.
+ * @returns An object mapping token names to their corresponding OKLCH colors.
+ */
+export function colorPairsToOKLCH(colorContrastPairs: Record<string, CssColor>): Record<string, CssColor> {
+  return Object.fromEntries(
+    Object.keys(colorContrastPairs).map((token) => {
+      const color = colorContrastPairs[token];
+      if (!color) throw new Error(`Invalid color for token: ${token}`);
 
-  Object.entries(options).forEach(([key, value]) => {
-    if (!value) return;
+      const [l, c, h] = chroma(color).oklch();
+      return [token, `oklch(${(l * 100).toFixed(2)}% ${c === 0 ? 0 : c.toFixed(2)} ${isNaN(h) ? 0 : h.toFixed(2)})`];
+    })
+  ) as Record<string, CssColor>;
+}
 
-    let lightValue = value;
-    let darkValue = value;
+/**
+ * Converts tokens into CSS variables.
+ *
+ * @param tokens - The tokens to convert.
+ * @returns An object mapping CSS variable names to their values.
+ */
+export function tokensToCSSVars(tokens: Record<string, string>) {
+  return Object.fromEntries(Object.entries(tokens).map(([key, value]) => [`--color-${key}`, value]));
+}
 
-    if (Array.isArray(value)) {
-      lightValue = value.at(0) ?? '';
-      darkValue = value.at(1) || value.at(0) || '';
+/**
+ * Generates default CSS variables for a given theme.
+ *
+ * @param theme - The theme containing color tokens.
+ * @param defaultColor - An optional default color to use.
+ * @returns An object mapping CSS variable names to their corresponding values.
+ */
+export function defaultCSSVars(theme: TintTheme, defaultColor?: string) {
+  const color = defaultColor ?? Object.keys(theme.colors)[0];
+
+  return Object.fromEntries(Object.keys(theme.tokens).map((token) => [`--color-${token}`, `var(--color-${token}-${color})`]));
+}
+
+/**
+ * Generates light and dark tokens for a set of themes.
+ *
+ * @param themes - An array of themes containing light and dark tokens.
+ * @returns An object mapping token names to their corresponding light-dark values.
+ */
+export function lightDarkTokens(themes: TintTheme[]): Record<string, string> {
+  const [lightTokens, darkTokens] = themes.map(extractColorTokens);
+
+  return Object.fromEntries(
+    Object.keys(lightTokens).map((token) => [token, `light-dark(${lightTokens[token]}, ${darkTokens[token]})`])
+  );
+}
+
+/**
+ * Creates default Tailwind utilities for the theme.
+ *
+ * @param theme - The theme containing tokens.
+ * @returns An object mapping utility names to their corresponding CSS variable values.
+ */
+export function defaultTailwindUtils(theme: TintTheme) {
+  return Object.fromEntries(Object.keys(theme.tokens).map((token) => [token, `var(--color-${token})`]));
+}
+
+/**
+ * Generates Tailwind utilities from tokens.
+ *
+ * @param tokens - The tokens to convert into Tailwind utilities.
+ * @returns An object mapping utility class names to their corresponding CSS variable values.
+ */
+export function tailwindUtilities(tokens: Record<string, string>) {
+  return Object.fromEntries(Object.keys(tokens).map((key) => [key, `var(--color-${key})`]));
+}
+
+/**
+ * Creates tint classes for each color in the theme.
+ *
+ * @param theme - The theme containing colors.
+ * @returns An object mapping tint class names to their corresponding CSS variables.
+ */
+export function createTintClasses(theme: TintTheme) {
+  return Object.fromEntries(Object.keys(theme.colors).map((color) => [`.tint-${color}`, defaultCSSVars(theme, color)]));
+}
+
+/**
+ * Merges multiple tint classes into a single object.
+ *
+ * @param baseTints - An object mapping tint class names to their properties.
+ * @returns A merged object of tint classes.
+ */
+export function mergeTintClasses(baseTints: Record<string, Record<string, string>>) {
+  return Object.fromEntries(
+    Object.entries(baseTints).map(([tintClass, props]) => [
+      tintClass,
+      Object.fromEntries(Object.entries(props).map(([prop, value]) => [prop, String(value)])),
+    ])
+  );
+}
+/**
+ * Processes a theme by flattening tokens and extracting color tokens.
+ */
+export function processTheme(theme: TintTheme): TintThemeResource {
+  const flattenedTokens = flattenKeys(theme.tokens);
+  const processedTheme = { ...theme, tokens: flattenedTokens };
+  const colorTokens = extractColorTokens(processedTheme);
+
+  return {
+    themeSelector: `[data-theme="${theme.name}"]`,
+    base: {
+      ...tokensToCSSVars(colorTokens),
+      ...defaultCSSVars(processedTheme),
+    },
+    colors: {
+      ...tailwindUtilities(colorTokens),
+      ...defaultTailwindUtils(processedTheme),
+    },
+    components: createTintClasses(processedTheme),
+  };
+}
+
+/**
+ * Merges an array of theme resources into Tailwind CSS base and component styles.
+ *
+ * @param resources - Array of processed theme resources.
+ * @returns An object containing merged base styles and component styles.
+ */
+export function mergeThemeResources(resources: TintThemeResource[]) {
+  return {
+    baseStyles: Object.fromEntries(resources.map(({ themeSelector, base }) => [themeSelector, base])),
+    componentStyles: mergeTintClasses(Object.assign({}, ...resources.map(({ components }) => components))),
+  };
+}
+
+/**
+ * Generates the Tailwind theme extension for colors.
+ *
+ * @param themes - Array of themes to process.
+ * @returns An object with the extended color tokens for Tailwind.
+ */
+export function generateThemeExtension(themes: TintTheme[]) {
+  return Object.assign(
+    {},
+    ...themes.map((theme) => {
+      const processedTheme = { ...theme, tokens: flattenKeys(theme.tokens) };
+      const colorTokens = extractColorTokens(processedTheme);
+      return Object.assign(tailwindUtilities(colorTokens), defaultTailwindUtils(processedTheme));
+    })
+  );
+}
+
+/**
+ * Initializes the Tint Tailwind plugin, extracting theme data and generating necessary styles.
+ *
+ * @returns A Tailwind CSS plugin configured with theme extension and styling utilities.
+ */
+export function initializePlugin() {
+  return plugin.withOptions(
+    (options: TintConfig | undefined) => {
+      return ({ addBase, addComponents }) => {
+        if (!options) return;
+
+        const { themes = [] } = options;
+        const allThemes = themes.length ? themes : [DEFAULT_TINT_THEME];
+
+        const tintThemeResources = allThemes.map(processTheme);
+        const { baseStyles, componentStyles } = mergeThemeResources(tintThemeResources);
+
+        addBase(baseStyles);
+        addComponents(componentStyles);
+      };
+    },
+    (options?: TintConfig) => {
+      const themes = options?.themes?.length ? options.themes : [DEFAULT_TINT_THEME];
+
+      return {
+        theme: {
+          extend: {
+            colors: generateThemeExtension(themes),
+          },
+        },
+      };
     }
-
-    lightThemeOptions[key] = lightValue;
-    darkThemeOptions[key] = darkValue || lightValue;
-  });
-
-  const lightTheme: TintTheme = convertTintOptionsToTheme(lightThemeOptions);
-  const darkTheme: TintTheme = convertTintOptionsToTheme(darkThemeOptions);
-
-  return [lightTheme, darkTheme];
+  );
 }

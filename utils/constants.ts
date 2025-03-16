@@ -1,13 +1,17 @@
-import type { TintOptions } from './types.ts';
+import type { TintTheme } from './types.ts';
 
-export const defaultOptions: TintOptions = {
+export const DEFAULT_TINT_THEME: TintTheme = {
   name: 'default',
-  lightness: 17,
-  'color-base': '#000000',
-  'color-brand': 'darkolivegreen',
-  'token-surface': -1.35,
-  'token-surface-raised': -1.2,
-  'token-action': 3.5,
-  'token-action-hover': 4,
-  'token-action-active': 3,
+  lightness: 85,
+  colors: {
+    base: 'oklch(100% 0 0deg)',
+    brand: 'oklch(67.53% 0.18 264.61deg)',
+  },
+  tokens: {
+    surface: -1.35,
+    'surface-raised': -1.2,
+    action: 4,
+    'action-hover': 5,
+    'action-active': 3,
+  },
 };
