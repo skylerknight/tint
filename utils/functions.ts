@@ -1,4 +1,4 @@
-import chroma from 'npm:chroma-js';
+import chroma from 'npm:chroma-js@3.1.2';
 import plugin from 'npm:tailwindcss@4.0.7/plugin';
 import { BackgroundColor, Color, Theme, type CssColor, type RatiosObject } from 'npm:@adobe/leonardo-contrast-colors@1.0.0';
 import type { TintTheme, TintConfig, TintThemeResource } from './types.ts';
