@@ -1,116 +1,185 @@
-# Tint 🌈 - Tailwind CSS 4 Theme Plugin
+# **Tint 🌈 - Tailwind CSS Theme Manager**
 
-**Tint** is a Tailwind CSS 4 plugin that generates **contrast-compliant** color theme palettes dynamically. It simplifies color theming by allowing you to define colors and tokens using a **declarative syntax** inside Tailwind CSS.
+**Tint** is a **theme management plugin** for **Tailwind CSS 4**, allowing you to define, organize, and apply themes dynamically. It provides a structured way to manage colors and tokens, ensuring **consistency** and **contrast compliance** across light and dark modes.
 
-## 🚀 Features
+## **🚀 Features**
 
-- 🌇 **Light & Dark Mode** support with customizable lightness values.
-- 🎨 **Contrast-compliant color tokens** for surfaces, actions, and highlights.
-- ⚡ **Automatic color generation** using theme tokens.
-- 📦 **Seamless Tailwind CSS 4 integration**.
-
----
-
-## 📌 Installation
-
-Install **Tint** via npm:
-
-```sh
-npx jsr add @skylerknight/tint
-```
-
-Or via pnpm:
-
-```sh
-pnpm dlx jsr add @skylerknight/tint
-```
-
-Or via deno:
-
-```sh
-deno add jsr:@skylerknight/tint
-```
+- 🎨 **Multiple Theme Support** – Easily define and switch between themes.
+- 🌗 **Light & Dark Modes** – Customize themes with fine-tuned lightness values.
+- ⚡ **Token-Based Styling** – Define reusable tokens for surfaces, actions, and interactive elements.
+- 📦 **Seamless Tailwind Integration** – Works with `@config` in Tailwind CSS.
 
 ---
 
-## 🧐 Usage
+## **📌 Installation**
 
-Add **Tint** as a plugin inside your Tailwind CSS configuration:
+### **Using npm:**
 
-### **Defining a Theme**
+```sh
+npx jsr add @skylerknight/tint@latest
+```
 
-You can configure your theme inside **Tailwind CSS 4** using the `@plugin` directive:
+### **Using pnpm:**
+
+```sh
+pnpm dlx jsr add @skylerknight/tint@latest
+```
+
+### **Using Deno:**
+
+```sh
+deno add jsr:@skylerknight/tint@latest
+```
+
+---
+
+## **🛠️ Setting Up Tint**
+
+### **1️⃣ Create a `tint.config.js` File**
+
+Define your themes inside `tint.config.js`:
+
+```js
+import tint from '@skylerknight/tint';
+
+export default tint({
+  defaults: {
+    theme: 'light',
+  },
+  themes: [
+    {
+      name: 'light',
+      lightness: 85,
+      colors: {
+        base: '#ffffff',
+        brand: '#f87c17',
+      },
+      tokens: {
+        surface: {
+          default: -1.15,
+          well: -1.1,
+          raised: -1.2,
+          lowlight: -1.3,
+          highlight: -1.35,
+        },
+        action: {
+          default: 4,
+          hover: 5,
+          active: 6,
+        },
+        on: {
+          surface: 12,
+          action: -2,
+        },
+      },
+    },
+    {
+      name: 'dark',
+      lightness: 20,
+      colors: {
+        base: '#000000',
+        brand: '#f87c17',
+      },
+      tokens: {
+        surface: {
+          default: -1.3,
+          well: -1.35,
+          raised: -1.2,
+          lowlight: -1.15,
+          highlight: -1.1,
+        },
+        action: {
+          default: 4,
+          hover: 5,
+          active: 6,
+        },
+        on: {
+          surface: 12,
+          action: -2,
+        },
+      },
+    },
+  ],
+});
+```
+
+---
+
+### **2️⃣ Load Tint in Tailwind CSS**
+
+Modify your **main Tailwind CSS file** (`app.css` or `global.css`):
 
 ```css
 @import 'tailwindcss';
-
-@plugin '@skylerknight/tint' {
-  name: light, dark;
-  lightness: 85, 15;
-
-  color-base: #ffffff, #000000;
-  color-primary: #4483fe, #4483fe;
-  color-secondary: #fe7544, #fe7544;
-
-  token-surface: -1.35, -1.35;
-  token-surface: -1.3, -1.3;
-  token-surface-raised: -1.2, -1.2;
-  token-surface-lowlight: -1.15, -1.15;
-  token-surface-highlight: -1.1, -1.1;
-
-  token-action: 3.5, 3.5;
-  token-action-hover: 4, 4;
-  token-action-active: 3, 3;
-
-  override-action-brand-active: 3.25;
-}
+@config './tint.config.js';
 ```
 
-### **How It Works**
-
-- The `name` property defines the theme modes (`light` and `dark`).
-- `lightness` sets the base lightness for each mode.
-- `color-base`, `color-primary`, and `color-secondary` define the primary color palette.
-- `token-*` properties modify contrast ratios for surfaces, actions, and interactive elements.
-- `override-*` allows fine-tuning specific color tokens.
+This ensures that Tailwind processes the themes defined in `tint.config.js`.
 
 ---
 
-## 🎨 Example Output
+## **🎨 How Tint Works**
 
-When using the above configuration, Tint will generate Tailwind CSS classes like:
+- **Themes** are defined as objects inside `tint.config.js`.
+- **Light & Dark Modes** are managed using `lightness` values.
+- **Tokens** allow structured styling with reusable values.
+- **Variants** define how themes switch dynamically.
+
+---
+
+## **📦 Example Output**
+
+Tint will generate tailwind utility classes based on your configuration tokens like:
 
 ```css
 .bg-surface {
   background-color: var(--color-surface);
 }
 
-.text-action {
+.bg-surface-raised {
+  background-color: var(--color-surface-raised);
+}
+
+.bg-action {
   color: var(--color-action);
 }
+
+.bg-action\:hover {
+  color: var(--color-action-hover);
+}
+
+.bg-action\:active {
+  color: var(--color-action-active);
+}
+
+.text-on-action {
+  color: var(--color-on-action);
+}
+```
+
+which can then be used like so:
+
+```html
+<article class="bg-surface-raised p-8 rounded-xl">
+  <button class="bg-action text-on-action hover:bg-action-hover active:bg-action-active">Save</button>
+</article>
 ```
 
 ---
 
-## 📚 Documentation
+## **🤝 Contributing**
 
-For detailed documentation and advanced usage, check the [official docs](#) (Coming soon).
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Feel free to **open issues** or **submit pull requests** if you have ideas for improvements.
+We welcome contributions! Feel free to open issues or submit pull requests.
 
 ---
 
-## 🛡️ License
+## **🛡️ License**
 
 This project is licensed under the **MIT License**.
 
 ---
 
-## ⭐ Support & Feedback
+## **⭐ Support & Feedback**
 
 If you find **Tint** useful, consider **starring** the repo! 🚀\
 For feedback and support, open an issue or reach out on [Twitter](https://twitter.com/yourhandle).
