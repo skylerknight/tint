@@ -118,6 +118,21 @@ This ensures that Tailwind processes the themes defined in `tint.config.js`.
 
 ---
 
+---
+
+### **3️⃣ Add your theme attribute**
+
+Finally, you'll need to add a data-theme attribute to the root (`html`) of your project.
+For example, if your theme name is `dark` you would add a `data-theme="dark"` attribute like so:
+
+```html
+<html lang="en" data-theme="dark">
+  ...
+</html>
+```
+
+---
+
 ## **🎨 How Tint Works**
 
 - **Themes** are defined as objects inside `tint.config.js`.
