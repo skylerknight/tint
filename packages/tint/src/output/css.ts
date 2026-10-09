@@ -43,6 +43,32 @@ export function wrapInMediaQuery(
   return [`${query} {`, ...lines.map((line) => (line ? indent + line : line)), "}"];
 }
 
+/**
+ * Scope a theme's declarations the way its config asks for:
+ *
+ * - no media preference: `<selector> { … }`
+ * - media preference and `:root` selector: `@media (…) { :root { … } }` (automatic only)
+ * - media preference and a custom selector (for example `.dark`): a manual block
+ *   `<selector> { … }` followed by an automatic `@media (…) { :root { … } }` block,
+ *   so the theme applies either when the class is present or when the OS prefers it.
+ *
+ * `body` lines are already indented one level.
+ */
+export function scopeBlock(
+  body: readonly string[],
+  result: GenerationResult,
+  selector: string,
+  indent: string,
+  autoSelector = ":root",
+): string[] {
+  const query = mediaQueryFor(result);
+  const block = (sel: string): string[] => [`${sel} {`, ...body, "}"];
+  if (!query) return block(selector);
+  const automatic = wrapInMediaQuery(block(autoSelector), result, indent);
+  if (selector === autoSelector) return automatic;
+  return [...block(selector), "", ...automatic];
+}
+
 /** Comment form of an OKLCH color, used when `includeOKLCH` is set. */
 function oklchComment(token: { oklch: { l: number; c: number; h: number } }): string {
   const { l, c, h } = token.oklch;
@@ -69,7 +95,7 @@ function paletteLines(
   return lines;
 }
 
-/** Format one result as a selector block, wrapped in its media query. */
+/** Format one result as a scoped declaration block (see `scopeBlock`). */
 export function resultToCSS(result: GenerationResult, options: CSSOptions = {}): string {
   const selector = options.selector ?? result.selector;
   const format = options.format ?? "hex";
@@ -84,12 +110,11 @@ export function resultToCSS(result: GenerationResult, options: CSSOptions = {}):
     body.push(...paletteLines(palette, format, includeOKLCH));
   });
 
-  const block = [
-    `${selector} {`,
-    ...body.map((line) => (line ? indent + line : line)),
-    "}",
-  ];
-  return wrapInMediaQuery(block, result, indent).join("\n");
+  const indented = body.map((line) => (line ? indent + line : line));
+  // An explicit selector override also scopes the automatic (media query) block.
+  return scopeBlock(indented, result, selector, indent, options.selector ?? ":root").join(
+    "\n",
+  );
 }
 
 /**

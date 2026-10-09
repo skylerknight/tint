@@ -403,9 +403,14 @@ export interface CSSOptions { selector?: string; format?: "hex" | "oklch"; inclu
 export function toCSS(result: GenerationResult | GenerationResult[], options?: CSSOptions): string
 ```
 
-Output per result (selector from `options.selector ?? result.selector`), wrapped in
-`@media (prefers-color-scheme: X)` / `(prefers-contrast: Y)` (joined with ` and `) when
-present. One `/* <palette> palette */` comment per palette when `comments !== false`.
+Output per result (selector from `options.selector ?? result.selector`). Theme scoping
+(`scopeBlock`): with no media preference, `<selector> { … }`; with `prefersColorScheme` /
+`prefersContrast` (joined with ` and `) and selector `:root`, only the automatic block
+`@media (…) { :root { … } }`; with a media preference and a custom selector such as
+`.dark`, a manual block `<selector> { … }` followed by the automatic `@media (…) { :root { … } }`
+block, so the theme applies when the class is present *or* when the OS prefers it. An
+explicit `options.selector` replaces `:root` in the automatic block too. The alias layer in
+`toCSSWithTailwindAndTint` is scoped the same way. One `/* <palette> palette */` comment per palette when `comments !== false`.
 Variables named by `tokenVarName`. `format: "oklch"` uses `formatOKLCH`. Multiple results are
 joined with a blank line.
 

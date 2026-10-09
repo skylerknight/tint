@@ -1,5 +1,5 @@
 import type { GenerationResult, GeneratedPalette } from "../engine/types.js";
-import { DEFAULT_INDENT, resultToCSS, wrapInMediaQuery } from "./css.js";
+import { DEFAULT_INDENT, resultToCSS, scopeBlock } from "./css.js";
 import {
   TAILWIND_UTILITY_PREFIXES,
   cssVar,
@@ -225,7 +225,7 @@ function themeBlockWithTint(result: GenerationResult, opts: ResolvedOptions): st
 
 /**
  * Alias layer: `<selector> { --text-heading: var(--base-text-heading); … }`,
- * wrapped in the result's media query. Returns `undefined` when the default
+ * scoped like the theme block (see `scopeBlock`). Returns `undefined` when the default
  * palette is absent.
  */
 function aliasLayer(result: GenerationResult, opts: ResolvedOptions): string | undefined {
@@ -240,8 +240,8 @@ function aliasLayer(result: GenerationResult, opts: ResolvedOptions): string | u
     }
   }
 
-  const block = [`${result.selector} {`, ...body.map((line) => opts.indent + line), "}"];
-  return wrapInMediaQuery(block, result, opts.indent).join("\n");
+  const indented = body.map((line) => opts.indent + line);
+  return scopeBlock(indented, result, result.selector, opts.indent).join("\n");
 }
 
 /** One `@utility tint-<palette> { … }` per non-default palette. */

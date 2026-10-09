@@ -51,13 +51,23 @@ describe("toCSS", () => {
     expect(css).toContain("  --brand-action: #7048e8;");
   });
 
-  it("uses result.selector and wraps in prefers-color-scheme", () => {
+  it("emits a manual selector block and an automatic :root media block", () => {
     const css = toCSS(dark);
-    expect(css.startsWith("@media (prefers-color-scheme: dark) {\n  .dark {\n")).toBe(
-      true,
-    );
+    expect(
+      css.startsWith(".dark {\n  /* base palette */\n  --base-surface: #1c1d20;"),
+    ).toBe(true);
+    expect(css).toContain("}\n\n@media (prefers-color-scheme: dark) {\n  :root {\n");
     expect(css).toContain("    /* base palette */\n    --base-surface: #1c1d20;");
     expect(css.endsWith("\n  }\n}")).toBe(true);
+    expect(css.match(/--base-surface: #1c1d20;/g)).toHaveLength(2);
+  });
+
+  it("emits only the automatic block when the selector is :root", () => {
+    const css = toCSS({ ...dark, selector: ":root" });
+    expect(css.startsWith("@media (prefers-color-scheme: dark) {\n  :root {\n")).toBe(
+      true,
+    );
+    expect(css.match(/--base-surface: #1c1d20;/g)).toHaveLength(1);
   });
 
   it("joins multiple media preferences with `and`", () => {

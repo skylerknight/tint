@@ -168,16 +168,23 @@ describe("toCSSWithTailwindAndTint", () => {
     expect(toCSSWithTailwindAndTint(withBg)).toBe(WITH_BG_TINT);
   });
 
-  it("wraps the alias layer in the same media query as the theme block", () => {
+  it("scopes the alias layer like the theme block", () => {
     const out = toCSSWithTailwindAndTint(dark);
     expect(out).toContain(
       [
+        ".dark {",
+        "  /* Unprefixed variables (default to base) */",
+        "  --surface: var(--base-surface);",
+        "  --surface-raised: var(--base-surface-raised);",
+        "  --text-heading: var(--base-text-heading);",
+      ].join("\n"),
+    );
+    expect(out).toContain(
+      [
         "@media (prefers-color-scheme: dark) {",
-        "  .dark {",
+        "  :root {",
         "    /* Unprefixed variables (default to base) */",
         "    --surface: var(--base-surface);",
-        "    --surface-raised: var(--base-surface-raised);",
-        "    --text-heading: var(--base-text-heading);",
       ].join("\n"),
     );
     expect(out.match(/@media \(prefers-color-scheme: dark\)/g)).toHaveLength(2);
@@ -186,8 +193,7 @@ describe("toCSSWithTailwindAndTint", () => {
   it("emits per-theme CSS and alias blocks but shared @theme/@utility sections", () => {
     const out = toCSSWithTailwindAndTint([light, dark]);
     const lightAlias = ":root {\n  /* Unprefixed variables (default to base) */";
-    const darkAlias =
-      "@media (prefers-color-scheme: dark) {\n  .dark {\n    /* Unprefixed variables";
+    const darkAlias = ".dark {\n  /* Unprefixed variables (default to base) */";
     const order = [
       out.indexOf(toCSS(light)),
       out.indexOf(toCSS(dark)),
@@ -201,7 +207,8 @@ describe("toCSSWithTailwindAndTint", () => {
     expect(order).toEqual([...order].sort((a, b) => a - b));
     expect(out.match(/@theme static/g)).toHaveLength(1);
     expect(out.match(/@utility tint-brand/g)).toHaveLength(1);
-    expect(out.match(/\/\* Unprefixed variables/g)).toHaveLength(2);
+    // light alias, dark manual alias, dark automatic alias
+    expect(out.match(/\/\* Unprefixed variables/g)).toHaveLength(3);
   });
 
   it("never simplifies names in the tint path, even when tokens would conflict", () => {
