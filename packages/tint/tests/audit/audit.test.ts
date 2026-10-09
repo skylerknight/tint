@@ -186,7 +186,7 @@ describe("formatAuditTable", () => {
         "base.text.edge       | #2e3237 | lc   |     75 |     74.6 | surface.DEFAULT | pass",
         "base.text.pure       | #000000 | lc   |      - |    100.3 | surface.DEFAULT | pass",
         "base.action.DEFAULT  | #3b5bdb | lc   |     70 |     70.0 | surface.DEFAULT | pass",
-        "base.border.DEFAULT  | #d0d4da | ls   |      - |     16.6 | surface.DEFAULT | n/a",
+        "base.border.DEFAULT  | #d0d4da | ls   |      - |     11.5 | surface.DEFAULT | n/a",
         "",
         "8 tokens: 4 pass, 1 warn, 1 fail, 2 n/a",
       ].join("\n"),
