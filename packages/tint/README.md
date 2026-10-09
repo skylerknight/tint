@@ -322,12 +322,13 @@ surface.raised  (foundation, ls 2 from the mode baseline)
 `$on: "surface"` means "against surface's **reference variant**". The reference is:
 
 1. the variant with `$reference: true`, else
-2. the variant with the highest non-`pure` `lc`/`ls` value (first wins on ties), else
-3. the first variant.
+2. the variant named `DEFAULT`, else
+3. the variant with the highest non-`pure` `lc`/`ls` value (first wins on ties), else
+4. the first variant.
 
-Rule 2 bites: in a group like `action: { DEFAULT: { lc: 60 }, strong: { lc: 75 } }` the
-reference is `strong`, so `on.action` would contrast against `action.strong`. Mark the
-intended variant `$reference: true` whenever a group has more than one variant.
+Rule 3 can surprise: in `action: { resting: { lc: 60 }, strong: { lc: 75 } }` the
+reference is `strong`, so `on.action` contrasts against `action.strong`. Name the resting
+variant `DEFAULT` or mark it `$reference: true`.
 `$on: "group.variant"` bypasses the reference and targets a specific variant.
 
 ### `lc` versus `ls`
@@ -437,9 +438,9 @@ so literal token names flow to callers. It also accepts an array of configs.
 | -------------------- | ----------------------------------- | ------------------------------- | ------------------------------------------------------------------ |
 | `name`               | `string`                            | required                        | Theme name; output folder for `tint build`, shown in diagnostics.  |
 | `mode`               | `"light" \| "dark"`                 | required                        | Sets the baseline and contrast direction.                          |
-| `selector`           | `string`                            | `":root"`                       | Selector the variables are scoped to.                              |
-| `prefersColorScheme` | `"light" \| "dark"`                 | none                            | Wraps output in `@media (prefers-color-scheme: …)`.               |
-| `prefersContrast`    | `"more" \| "less" \| "custom"`      | none                            | Wraps output in `@media (prefers-contrast: …)`.                   |
+| `selector`           | `string`                            | `":root"`                       | Selector the variables are scoped to (the manual block).           |
+| `prefersColorScheme` | `"light" \| "dark"`                 | none                            | Adds an automatic `@media (prefers-color-scheme: …) { :root { … } }` block. |
+| `prefersContrast`    | `"more" \| "less" \| "custom"`      | none                            | Adds an automatic `@media (prefers-contrast: …) { :root { … } }` block (joined with `and` when both are set). |
 | `scale`              | `number` 0.001..0.1                 | `0.02`                          | Default `ls` step size.                                            |
 | `offset`             | `number` 0..0.5                     | `0.015` light, `0.15` dark      | Distance of the foundation surface from pure white/black.         |
 | `colors`             | `Record<string, string \| {value}>` | required, at least one          | Seed colors. `base` is always generated first.                     |
@@ -516,31 +517,52 @@ Options: `selector` (overrides the result's), `format: "hex" | "oklch"` (default
 `includeOKLCH` (an `oklch()` comment above each hex), `indent` (default two spaces),
 `comments` (the `/* <palette> palette */` lines, default true).
 
-Variables are named `--<palette>-<group>-<variant>`; `DEFAULT` is dropped. A result with
-`prefersColorScheme` or `prefersContrast` is wrapped in the matching media query:
+Variables are named `--<palette>-<group>-<variant>`; `DEFAULT` is dropped. How a result
+is scoped depends on `selector` and the media preferences:
+
+| `selector`       | `prefersColorScheme` / `prefersContrast` | Emitted                                                 |
+| ---------------- | ---------------------------------------- | ------------------------------------------------------- |
+| any              | none                                     | `<selector> { … }`                                      |
+| `:root`          | set                                      | `@media (…) { :root { … } }` only                       |
+| custom (`.dark`) | set                                      | `.dark { … }` **and then** `@media (…) { :root { … } }` |
+
+The two-block form means a dark theme applies when the class is present *or* when the OS
+prefers dark, with no extra CSS. The dark theme from the quick start
+(`selector: ".dark"`, `prefersColorScheme: "dark"`) produces:
 
 ```css
+.dark {
+  /* base palette */
+  --base-surface: #0b0b0e;
+  --base-surface-raised: #131316;
+  --base-text-heading: #e4e5e9;
+  --base-text-body: #ccccd1;
+  --base-action: #b2b2b6;
+  --base-on-action: #1d1d20;
+
+  /* brand palette */
+  --brand-surface: #0b0a13;
+  --brand-surface-raised: #150e28;
+  --brand-text-heading: #e7e1ff;
+  --brand-text-body: #d0c5ff;
+  --brand-action: #baa5ff;
+  --brand-on-action: #22004e;
+  /* … */
+}
+
 @media (prefers-color-scheme: dark) {
-  .dark {
+  :root {
     /* base palette */
     --base-surface: #0b0b0e;
     --base-surface-raised: #131316;
-    --base-text-heading: #e4e5e9;
-    --base-text-body: #ccccd1;
-    --base-action: #b2b2b6;
-    --base-on-action: #1d1d20;
-
-    /* brand palette */
-    --brand-surface: #0b0a13;
-    --brand-surface-raised: #150e28;
-    --brand-text-heading: #e7e1ff;
-    --brand-text-body: #d0c5ff;
-    --brand-action: #baa5ff;
-    --brand-on-action: #22004e;
-    /* … */
+    /* … identical declarations … */
   }
 }
 ```
+
+An explicit `toCSS(result, { selector })` replaces the result's selector in the manual
+block and `:root` in the automatic block. The alias layer of `toCSSWithTailwindAndTint`
+is scoped the same way.
 
 With `format: "oklch"`:
 
@@ -881,8 +903,12 @@ Example:
 `formatAuditTable` renders it (`{ color: true }` adds ANSI colors to the status column).
 `pass` means achieved is within 0.5 of the target; `warn` means it reached the target but
 a diagnostic was emitted for that path; `fail` means it did not reach the target; `n/a`
-is for foundation and `ls` tokens, whose "Achieved" column is the measured APCA against
-the mode baseline.
+is for foundation and `ls` tokens. For `ls` tokens the "Achieved" column is informational
+only: the raw, un-clipped APCA distance (`calcAPCAraw`) between the token and its
+reference, or the mode baseline when it has none. It tells you how far apart two surfaces
+are (`surface.raised` is 8.2 from white, `border.subtle` is 9.2 from `surface.raised`); it
+is not a pass/fail value. Foundation `lc` tokens report the engine's measured Lc against
+the baseline.
 
 ```
 Token                 | Hex     | Kind | Target | Achieved | On              | Status
@@ -1055,6 +1081,11 @@ location. Accepts a `default` export or a named `config` export, single or array
 - `virtual:tint` exposes results to app code under Vite.
 - DTCG output carries `$extensions["dev.tint"]` metadata (`metadata: false` to omit).
 - Zero runtime dependencies; `esbuild`, `vite` and `postcss` are optional peers.
+- CSS scoping: v2 wrapped the custom selector *inside* the media query
+  (`@media (prefers-color-scheme: dark) { .dark { … } }`), so the theme only applied when
+  both the class and the OS preference matched. v3 emits a manual `.dark { … }` block
+  followed by an automatic `@media (…) { :root { … } }` block, so either one is enough.
+  If you relied on the old "both" semantics, drop `prefersColorScheme` and keep the class.
 
 ## FAQ
 
@@ -1112,8 +1143,10 @@ and the step count, so `base: "#1c1c1f"` in dark mode gives `surface { ls: 0 }` 
 
 ### Why did `on.action` contrast against `action.hover` instead of `action.DEFAULT`?
 
-Without `$reference`, the reference is the variant with the highest value, and `hover`
-is usually higher than `DEFAULT`. Add `$reference: true` to `DEFAULT`.
+That happens when the group has neither a `DEFAULT` variant nor a `$reference`: the
+reference then falls back to the variant with the highest value, and `hover` is usually
+higher than the resting state. Name the resting variant `DEFAULT` or mark it
+`$reference: true`.
 
 ## License
 

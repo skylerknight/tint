@@ -1,12 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
-import type { OKLCH } from "../../src/color/types.js";
+import { describe, it, expect } from "vitest";
 import { toCSS } from "../../src/output/css.js";
 import { light, dark, highContrast, withBg } from "./_fixtures.js";
-
-vi.mock("../../src/color/oklch.js", () => ({
-  formatOKLCH: (c: OKLCH) =>
-    `oklch(${(c.l * 100).toFixed(2)}% ${c.c.toFixed(4)} ${c.h.toFixed(2)})`,
-}));
 
 describe("toCSS", () => {
   it("emits one block per palette, separated by a blank line", () => {

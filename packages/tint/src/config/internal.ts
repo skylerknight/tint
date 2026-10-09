@@ -51,12 +51,16 @@ export function variantValue(variant: Variant): number {
 }
 
 /**
- * Reference variant of a group: explicit `$reference`, else the highest non-pure
- * value (first wins on ties), else the first variant.
+ * Reference variant of a group: explicit `$reference`, else a variant named
+ * `DEFAULT`, else the highest non-pure value (first wins on ties), else the first
+ * variant.
  */
 export function pickReferenceVariant(entries: ReadonlyArray<[string, Variant]>): string {
   const explicit = entries.find(([, variant]) => variant.$reference === true);
   if (explicit) return explicit[0];
+
+  const byDefault = entries.find(([name]) => name === "DEFAULT");
+  if (byDefault) return byDefault[0];
 
   let best: { name: string; value: number } | null = null;
   for (const [name, variant] of entries) {

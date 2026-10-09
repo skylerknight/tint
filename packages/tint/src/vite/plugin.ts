@@ -18,6 +18,9 @@ const TINT_DIRECTIVE_REGEX = /@tint\s+["']([^"']+)["']\s*;?/g;
 const VIRTUAL_ID = "virtual:tint";
 const RESOLVED_VIRTUAL_ID = `\0${VIRTUAL_ID}`;
 const INTELLISENSE_FILE = "intellisense.css";
+const INTELLISENSE_IMPORT = "@import 'tailwindcss';";
+/** How many times a load is retried when its inputs change while it is in flight. */
+const MAX_LOAD_ATTEMPTS = 3;
 
 const UTILITY_OPTION_KEYS = [
   "indent",
@@ -34,6 +37,14 @@ interface CacheEntry {
   results: GenerationResult[];
   /** Absolute paths of every file bundled into the config (including itself). */
   dependencies: string[];
+}
+
+/** A config whose last load threw; tracked so fixing it triggers a reload. */
+interface FailedEntry {
+  /** Module ids (CSS files or virtual modules) that tried to load the config. */
+  importers: Set<string>;
+  /** Last known dependencies, or just the config path when it never loaded. */
+  dependencies: Set<string>;
 }
 
 /** Minimal slice of the Rollup plugin context the hooks rely on. */
@@ -86,6 +97,12 @@ export function tint(options: TintVitePluginOptions = {}): Plugin {
   const cache = new Map<string, CacheEntry>();
   /** In-flight loads, so concurrent transforms share one load per config. */
   const pending = new Map<string, Promise<CacheEntry>>();
+  /** Configs whose last load failed, so a fix can invalidate their importers. */
+  const failed = new Map<string, FailedEntry>();
+  /** Absolute config path -> dependencies from its most recent successful load. */
+  const lastDependencies = new Map<string, string[]>();
+  /** Absolute config path -> bumped on every change event, to detect stale in-flight loads. */
+  const generations = new Map<string, number>();
   /** CSS module id -> absolute config paths it inlined. */
   const importers = new Map<string, Set<string>>();
   /** Absolute config path -> resolved virtual module ids that exported it. */
@@ -118,6 +135,32 @@ export function tint(options: TintVitePluginOptions = {}): Plugin {
     return entry;
   }
 
+  function generationOf(configPath: string): number {
+    return generations.get(configPath) ?? 0;
+  }
+
+  /**
+   * Load until the result is current: if a change event for the config (or one of
+   * its dependencies) arrives mid-load, the result is discarded and the load re-run.
+   */
+  async function loadUntilStable(configPath: string): Promise<CacheEntry> {
+    let entry: CacheEntry | undefined;
+    for (let attempt = 0; attempt < MAX_LOAD_ATTEMPTS; attempt++) {
+      const generation = generationOf(configPath);
+      entry = await loadAndGenerate(configPath);
+      if (generationOf(configPath) === generation) {
+        cache.set(configPath, entry);
+        break;
+      }
+    }
+    // After MAX_LOAD_ATTEMPTS the latest entry is served without caching, so the
+    // next request loads again.
+    if (!entry) throw new Error(`[tint] Failed to load ${configPath}`);
+    failed.delete(configPath);
+    lastDependencies.set(configPath, entry.dependencies);
+    return entry;
+  }
+
   /** Cached load; concurrent callers for the same path share one promise. */
   function getEntry(configPath: string): Promise<CacheEntry> {
     const cached = cache.get(configPath);
@@ -125,14 +168,22 @@ export function tint(options: TintVitePluginOptions = {}): Plugin {
     const inFlight = pending.get(configPath);
     if (inFlight) return inFlight;
 
-    const promise = loadAndGenerate(configPath)
-      .then((entry) => {
-        cache.set(configPath, entry);
-        return entry;
-      })
-      .finally(() => pending.delete(configPath));
+    const promise = loadUntilStable(configPath).finally(() => pending.delete(configPath));
     pending.set(configPath, promise);
     return promise;
+  }
+
+  /** Remember a failed load so a change to the config (or its deps) reloads `importer`. */
+  function recordFailure(configPath: string, importer: string): void {
+    let entry = failed.get(configPath);
+    if (!entry) {
+      entry = {
+        importers: new Set(),
+        dependencies: new Set(lastDependencies.get(configPath) ?? [configPath]),
+      };
+      failed.set(configPath, entry);
+    }
+    entry.importers.add(importer);
   }
 
   function writeIntelliSenseFile(): void {
@@ -140,7 +191,11 @@ export function tint(options: TintVitePluginOptions = {}): Plugin {
     try {
       const dir = tintCacheDir(root);
       mkdirSync(dir, { recursive: true });
-      const content = [...cache.values()].map((entry) => entry.intellisense).join("\n");
+      // Each entry starts with the Tailwind import; emit it once at the top.
+      const blocks = [...cache.values()].map((entry) =>
+        entry.intellisense.replace(INTELLISENSE_IMPORT, "").trim(),
+      );
+      const content = [INTELLISENSE_IMPORT, "", ...blocks].join("\n");
       writeFileSync(join(dir, INTELLISENSE_FILE), content);
     } catch {
       // IntelliSense output is best-effort; never fail the build over it.
@@ -152,11 +207,20 @@ export function tint(options: TintVitePluginOptions = {}): Plugin {
   }
 
   function configsDependingOn(file: string): string[] {
-    const affected: string[] = [];
+    const affected = new Set<string>();
     for (const [configPath, entry] of cache) {
-      if (entry.dependencies.includes(file)) affected.push(configPath);
+      if (entry.dependencies.includes(file)) affected.add(configPath);
     }
-    return affected;
+    for (const [configPath, entry] of failed) {
+      if (entry.dependencies.has(file)) affected.add(configPath);
+    }
+    // An in-flight load has no dependency list yet; fall back to the last known one.
+    for (const configPath of pending.keys()) {
+      if (configPath === file || lastDependencies.get(configPath)?.includes(file)) {
+        affected.add(configPath);
+      }
+    }
+    return [...affected];
   }
 
   function handleFileChange(filePath: string): void {
@@ -172,8 +236,17 @@ export function tint(options: TintVitePluginOptions = {}): Plugin {
       logger.info(
         `[tint] ${relative(root, configPath) || configPath} changed, regenerating`,
       );
+      generations.set(configPath, generationOf(configPath) + 1);
       cache.delete(configPath);
       for (const id of virtualImporters.get(configPath) ?? []) virtualIds.add(id);
+      const failedEntry = failed.get(configPath);
+      if (failedEntry) {
+        failed.delete(configPath);
+        for (const id of failedEntry.importers) {
+          if (isCSSRequest(id)) cssImporters.add(id);
+          else virtualIds.add(id);
+        }
+      }
     }
     for (const [id, configPaths] of importers) {
       for (const configPath of configPaths) {
@@ -256,10 +329,13 @@ export function tint(options: TintVitePluginOptions = {}): Plugin {
         );
       }
 
+      // Watch before loading so a broken config still triggers a reload once fixed.
+      this.addWatchFile(configPath);
       let entry: CacheEntry;
       try {
         entry = await getEntry(configPath);
       } catch (error) {
+        recordFailure(configPath, id);
         return this.error(`[tint] Failed to load ${configPath}: ${errorMessage(error)}`);
       }
 
@@ -289,9 +365,12 @@ export function tint(options: TintVitePluginOptions = {}): Plugin {
 
       const entries = new Map<string, CacheEntry>();
       for (const configPath of used) {
+        // Watch before loading so a broken config still triggers a reload once fixed.
+        this.addWatchFile(configPath);
         try {
           entries.set(configPath, await getEntry(configPath));
         } catch (error) {
+          recordFailure(configPath, id);
           return this.error(
             `[tint] Failed to load ${configPath}: ${errorMessage(error)}`,
           );

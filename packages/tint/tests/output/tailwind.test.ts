@@ -394,3 +394,22 @@ describe("detectTailwindConflicts", () => {
     );
   });
 });
+
+describe("shortcut collisions", () => {
+  it("throws when DEFAULT and default both map to the same utility", async () => {
+    const { generate } = await import("../../src/engine/generate.js");
+    const result = generate({
+      name: "t",
+      mode: "light",
+      colors: { base: "#fff" },
+      tokens: {
+        surface: { DEFAULT: { ls: 1 } },
+        text: { $on: "surface", DEFAULT: { lc: 75 }, default: { lc: 60 } },
+      },
+    });
+    expect(() => toCSSWithTailwindAndTint(result)).toThrow(/text-default.*defined twice/);
+    expect(() =>
+      toCSSWithTailwindAndTint(result, { generateShortcuts: false }),
+    ).not.toThrow();
+  });
+});

@@ -302,8 +302,8 @@ export function parseOn(on: string): { group: string; variant?: string }
 
 Semantics:
 
-- **Reference variant** of a group: the one with `$reference: true`; else the highest
-  non-pure `lc`/`ls` value; else the first variant.
+- **Reference variant** of a group: the one with `$reference: true`; else the variant
+  named `DEFAULT`; else the highest non-pure `lc`/`ls` value; else the first variant.
 - **Scale precedence** for ls variants: `variant.$scale` → `group.$scale` → `$scale` of the
   group named by the group's `$on` → `config.scale` → `0.02`.
 - **Chroma precedence**: `variant.$chroma` → `group.$chroma` → `1`.
@@ -337,7 +337,7 @@ status 30, border 15, surface none.
 
 ```ts
 export interface GeneratedColor { hex: string; rgb: RGB; oklch: OKLCH }
-export interface GeneratedVariantBase extends GeneratedColor { reference?: true; on?: string /* "group.variant" */ }
+export interface GeneratedVariantBase extends GeneratedColor { reference?: true; on?: string /* "group.variant" */; decorative?: true }
 export interface GeneratedLcVariant extends GeneratedVariantBase { kind: "lc"; lc: number /* achieved |Lc| */; target: number /* requested */ }
 export interface GeneratedLsVariant extends GeneratedVariantBase { kind: "ls"; ls: number /* steps, -1 for pure */ }
 export type GeneratedVariant = GeneratedLcVariant | GeneratedLsVariant;
@@ -374,7 +374,7 @@ Per-variant algorithm (palette seed `S` as OKLCH, mode `M`):
 6. **lc variant**:
    - polarity: with `on`, `preferredPolarity(R.rgb)` (whichever of black/white yields higher APCA vs R), flipped if `invert`. Without `on`: `"darker"` in light mode, `"lighter"` in dark mode.
    - `value === PURE` → white if polarity lighter else black; `lc` = measured `calcAPCAabs`.
-   - otherwise `solveContrast(W, R.rgb, value, { polarity })`. If `!reached`, try the opposite polarity **only when `invert` is false**; keep whichever has higher lc; emit `contrast-unreachable` (with `reference-midtone` hint when `0.35 < R.l < 0.75` and max achievable < 70). The emitted color is the best achievable.
+   - otherwise `solveContrast(W, R.rgb, value, { polarity })`. If `!reached`, try the opposite polarity **only when `invert` is false**; keep whichever has higher lc; emit `contrast-unreachable` (with `reference-midtone` hint when `0.35 < R.l < 0.75` and max achievable < 70). When `invert` is true the reported "achievable" value is the maximum on the locked polarity only and no `reference-midtone` is emitted. The emitted color is the best achievable.
    - diagnostics: `contrast-below-minimum` when `on` && !decorative && 0 < value < 8; `role-contrast-low` when `on` && !decorative && role minimum defined && value < minimum.
 7. Result fields: `hex`, `rgb`, `oklch` (gamut-mapped), `kind`, `lc`+`target` or `ls`, `reference: true` when it is the group's reference variant, `on: "group.variant"` when applicable.
 
@@ -473,7 +473,8 @@ export function formatAuditTable(report: AuditReport, options?: { color?: boolea
 
 Status: lc variants with `on`: `pass` if achieved ≥ target − 0.5; `warn` if a diagnostic
 with that path exists and it still reached; `fail` if achieved < target − 0.5. Foundation
-and ls variants are `n/a` (achieved is the measured APCA against the mode baseline).
+and ls variants are `n/a`; for ls variants `achieved` is the raw (un-clipped) APCA distance
+from their reference, or from the mode baseline when they have none.
 
 ## 9. Loader (`src/loader`)
 

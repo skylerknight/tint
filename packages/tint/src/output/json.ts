@@ -26,6 +26,7 @@ export interface TintTokenExtension {
   target?: number;
   on?: string;
   reference?: true;
+  decorative?: true;
 }
 
 export interface DTCGToken {
@@ -41,6 +42,7 @@ function tokenExtension(token: GeneratedVariant): TintTokenExtension {
       : { kind: "ls", ls: token.ls };
   if (token.on !== undefined) ext.on = token.on;
   if (token.reference) ext.reference = true;
+  if (token.decorative) ext.decorative = true;
   return ext;
 }
 

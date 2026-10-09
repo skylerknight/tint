@@ -125,3 +125,87 @@ describe("findDefaultConfig", () => {
     expect(findDefaultConfig(dir)).toBe(join(dir, DEFAULT_CONFIG_FILES[0]));
   });
 });
+
+describe("loadConfig — bundling details", () => {
+  const base = `{ mode: "light", colors: { base: "#fff" }, tokens: { surface: { DEFAULT: { ls: 1 } } } }`;
+
+  it("pins import.meta.url and __dirname to the real config location", async () => {
+    mkdirSync(join(dir, "data"));
+    writeFileSync(join(dir, "data", "name.json"), JSON.stringify({ name: "fromjson" }));
+    writeFileSync(
+      join(dir, "tint.config.ts"),
+      `import { readFileSync } from "node:fs";\nimport { join } from "node:path";\n` +
+        `const a = JSON.parse(readFileSync(new URL("./data/name.json", import.meta.url), "utf8"));\n` +
+        `const b = JSON.parse(readFileSync(join(__dirname, "data", "name.json"), "utf8"));\n` +
+        `if (a.name !== b.name) throw new Error("mismatch");\n` +
+        `export default { name: a.name, ...${base} };`,
+    );
+    const loaded = await loadConfig({ root: dir, configPath: "tint.config.ts" });
+    expect(loaded.configs[0]!.name).toBe("fromjson");
+    expect(loaded.dependencies.every((d) => d.startsWith("/"))).toBe(true);
+    expect(loaded.dependencies.some((d) => d.includes("tint-stub"))).toBe(false);
+  });
+
+  it("rejects duplicate theme names", async () => {
+    writeFileSync(
+      join(dir, "tint.config.mjs"),
+      `export default [{ name: "same", ...${base} }, { name: "same", ...${base} }];`,
+    );
+    await expect(
+      loadConfig({ root: dir, configPath: "tint.config.mjs" }),
+    ).rejects.toThrow(/two themes named "same"/);
+  });
+
+  it("accepts a relative root", async () => {
+    writeFileSync(
+      join(dir, "tint.config.ts"),
+      `export default { name: "rel", ...${base} };`,
+    );
+    const previous = process.cwd();
+    process.chdir(dir);
+    try {
+      const loaded = await loadConfig({ root: ".", configPath: "tint.config.ts" });
+      expect(loaded.configs[0]!.name).toBe("rel");
+    } finally {
+      process.chdir(previous);
+    }
+  });
+
+  it("unwraps CommonJS named and default exports", async () => {
+    writeFileSync(
+      join(dir, "named.cjs"),
+      `exports.config = { name: "named", ...${base} };`,
+    );
+    writeFileSync(
+      join(dir, "def.cjs"),
+      `module.exports = { default: { name: "def", ...${base} } };`,
+    );
+    writeFileSync(
+      join(dir, "plain.cjs"),
+      `module.exports = { name: "plain", ...${base} };`,
+    );
+    expect(
+      (await loadConfig({ root: dir, configPath: "named.cjs" })).configs[0]!.name,
+    ).toBe("named");
+    expect(
+      (await loadConfig({ root: dir, configPath: "def.cjs" })).configs[0]!.name,
+    ).toBe("def");
+    expect(
+      (await loadConfig({ root: dir, configPath: "plain.cjs" })).configs[0]!.name,
+    ).toBe("plain");
+  });
+
+  it("stubs @skylerknight/tint when it is not resolvable, and otherwise uses the real package", async () => {
+    writeFileSync(
+      join(dir, "tint.config.ts"),
+      `import { defineConfig } from "@skylerknight/tint";\nexport default defineConfig({ name: "stubbed", ...${base} });`,
+    );
+    const stubbed = await loadConfig({ root: dir, configPath: "tint.config.ts" });
+    expect(stubbed.configs[0]!.name).toBe("stubbed");
+
+    // The playground resolves the real (built) package, which is kept external.
+    const playground = join(import.meta.dirname, "../../../../examples/vite-playground");
+    const real = await loadConfig({ root: playground, configPath: "tint.config.ts" });
+    expect(real.configs.map((c) => c.name)).toEqual(["light", "dark"]);
+  });
+});

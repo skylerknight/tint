@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync } from "node:fs";
-import { extname, isAbsolute, join, resolve } from "node:path";
+import { dirname, extname, isAbsolute, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Config } from "../config/types.js";
 import { assertConfig, ConfigError } from "../config/validate.js";
@@ -46,7 +46,7 @@ export function findDefaultConfig(root = process.cwd()): string | null {
  * validate every theme it exports.
  */
 export async function loadConfig(options: LoadOptions): Promise<LoadedConfig> {
-  const root = options.root ?? process.cwd();
+  const root = resolve(options.root ?? process.cwd());
   const path = isAbsolute(options.configPath)
     ? options.configPath
     : resolve(root, options.configPath);
@@ -86,8 +86,7 @@ export async function loadConfig(options: LoadOptions): Promise<LoadedConfig> {
 function unwrapExport(exported: unknown, path: string, isModule: boolean): Config[] {
   let value = exported;
   if (isModule) {
-    const mod = (value ?? {}) as { default?: unknown; config?: unknown };
-    value = mod.default ?? mod.config;
+    value = unwrapModule(value);
   }
   if (value === undefined || value === null) {
     throw new Error(
@@ -98,6 +97,17 @@ function unwrapExport(exported: unknown, path: string, isModule: boolean): Confi
   const list = Array.isArray(value) ? value : [value];
   if (list.length === 0) {
     throw new Error(`${path} exports an empty array; at least one theme is required.`);
+  }
+  const names = new Set<string>();
+  for (const item of list) {
+    const name = (item as { name?: unknown } | null)?.name;
+    if (typeof name !== "string") continue;
+    if (names.has(name)) {
+      throw new Error(
+        `${path} defines two themes named "${name}"; theme names must be unique because they become output directories and selectors.`,
+      );
+    }
+    names.add(name);
   }
   return list.map((item, index) => {
     try {
@@ -115,6 +125,28 @@ function unwrapExport(exported: unknown, path: string, isModule: boolean): Confi
       throw error;
     }
   });
+}
+
+/**
+ * Pick the config out of a module namespace. Handles ESM (`default` / `config`) and
+ * CommonJS, where `import()` yields `{ default: module.exports }` so the real export
+ * may sit one level deeper.
+ */
+function unwrapModule(value: unknown): unknown {
+  const mod = (value ?? {}) as { default?: unknown; config?: unknown };
+  let candidate = mod.default ?? mod.config;
+  if (looksLikeModuleWrapper(candidate)) {
+    const inner = candidate as { default?: unknown; config?: unknown };
+    candidate = inner.default ?? inner.config;
+  }
+  return candidate;
+}
+
+function looksLikeModuleWrapper(value: unknown): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const obj = value as Record<string, unknown>;
+  const isConfigShaped = "colors" in obj || "tokens" in obj;
+  return !isConfigShaped && ("default" in obj || "config" in obj);
 }
 
 async function importFresh(path: string): Promise<unknown> {
@@ -169,6 +201,18 @@ async function loadWithEsbuild(
       target: "node18",
       absWorkingDir: root,
       plugins: [tintStubPlugin()],
+      // The bundle runs from node_modules/.tint, so pin location-dependent globals to
+      // the real config file and shim `require` for bundled CommonJS dependencies.
+      define: {
+        "import.meta.url": JSON.stringify(pathToFileURL(path).href),
+        "import.meta.filename": JSON.stringify(path),
+        "import.meta.dirname": JSON.stringify(dirname(path)),
+        __filename: JSON.stringify(path),
+        __dirname: JSON.stringify(dirname(path)),
+      },
+      banner: {
+        js: 'import { createRequire as __tintCreateRequire } from "node:module";\nconst require = __tintCreateRequire(import.meta.url);',
+      },
       metafile: true,
       write: true,
       logLevel: "silent",
@@ -176,7 +220,8 @@ async function loadWithEsbuild(
 
     const dependencies = new Set<string>([path]);
     for (const input of Object.keys(result.metafile.inputs)) {
-      if (input.includes("node_modules")) continue;
+      // Skip plugin namespaces (e.g. "tint-stub:@skylerknight/tint") and packages.
+      if (/^[a-z][a-z0-9-]*:/i.test(input) || input.includes("node_modules")) continue;
       dependencies.add(isAbsolute(input) ? input : resolve(root, input));
     }
 
@@ -202,10 +247,21 @@ function tintStubPlugin(): import("esbuild").Plugin {
   return {
     name: "tint-config-stub",
     setup(build) {
-      build.onResolve({ filter: /^@skylerknight\/tint$/ }, (args) => ({
-        path: args.path,
-        namespace: "tint-stub",
-      }));
+      build.onResolve({ filter: /^@skylerknight\/tint$/ }, async (args) => {
+        if (args.pluginData === "tint-stub-probe") return null;
+        // Prefer the real package when it resolves; keep it external so the config
+        // shares the host's copy. Fall back to the stub otherwise.
+        const probe = await build.resolve(args.path, {
+          kind: args.kind,
+          resolveDir: args.resolveDir,
+          importer: args.importer,
+          pluginData: "tint-stub-probe",
+        });
+        if (probe.errors.length === 0 && probe.path) {
+          return { path: args.path, external: true };
+        }
+        return { path: args.path, namespace: "tint-stub" };
+      });
       build.onLoad({ filter: /.*/, namespace: "tint-stub" }, () => ({
         contents:
           "export const defineConfig = (config) => config;\n" +

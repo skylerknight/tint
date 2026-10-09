@@ -36,7 +36,7 @@ export function simplifyTailwindParts(
   variant: string,
 ): string[] {
   const segment = variantSegment(variant);
-  const redundant = group.toLowerCase() in TAILWIND_UTILITY_PREFIXES;
+  const redundant = Object.hasOwn(TAILWIND_UTILITY_PREFIXES, group.toLowerCase());
   if (redundant && segment) return [palette, segment];
   if (redundant && !segment) return [palette, group];
   return [palette, group, segment].filter(Boolean);

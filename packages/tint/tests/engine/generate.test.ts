@@ -425,3 +425,47 @@ describe("generate — diagnostics", () => {
     expect(r.flatMap((x) => x.diagnostics)).toEqual([]);
   });
 });
+
+describe("generate — reference selection and $invert reporting", () => {
+  it("prefers a DEFAULT variant as the automatic reference", () => {
+    const config: Config = {
+      name: "t",
+      mode: "light",
+      colors: { base: "#fff" },
+      tokens: {
+        surface: { DEFAULT: { ls: 1 } },
+        action: { $on: "surface", DEFAULT: { lc: 60 }, strong: { lc: 75 } },
+        on: { action: { lc: 60, $on: "action" } },
+      },
+    };
+    const r = generate(config);
+    expect(lc(r, "base", "action", "DEFAULT").reference).toBe(true);
+    expect(lc(r, "base", "on", "action").on).toBe("action.DEFAULT");
+  });
+
+  it("reports the locked polarity's ceiling when $invert makes a target unreachable", () => {
+    const config: Config = {
+      name: "t",
+      mode: "light",
+      colors: { base: "#fff" },
+      tokens: {
+        surface: { DEFAULT: { ls: 1 } },
+        action: { $on: "surface", DEFAULT: { lc: 60 } },
+        label: { $on: "action", DEFAULT: { lc: 100, $invert: true } },
+      },
+    };
+    const r = generate(config);
+    const diag = r.diagnostics.find((d) => d.code === "contrast-unreachable")!;
+    const label = lc(r, "base", "label", "DEFAULT");
+    expect(diag.data?.achievable).toBeCloseTo(label.lc, 3);
+    expect(diag.hint).toMatch(/\$invert/);
+    expect(r.diagnostics.map((d) => d.code)).not.toContain("reference-midtone");
+  });
+
+  it("flags decorative tokens on the generated variant", () => {
+    const r = generate(light);
+    expect(lc(r, "base", "text", "muted").decorative).toBe(true);
+    expect(lc(r, "base", "text", "body").decorative).toBeUndefined();
+    expect(lc(r, "base", "border", "DEFAULT").decorative).toBe(true);
+  });
+});

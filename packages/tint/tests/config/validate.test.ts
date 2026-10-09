@@ -772,3 +772,18 @@ describe("assertConfig / ConfigError", () => {
     expect(error.message).toBe("Nope:\n  - boom");
   });
 });
+
+describe("theme name", () => {
+  it("rejects names that are not safe identifiers", () => {
+    for (const name of ["../etc", "a/b", "light mode", "1st"]) {
+      const result = validateConfig({
+        name,
+        mode: "light",
+        colors: { base: "#ffffff" },
+        tokens: { surface: { DEFAULT: { ls: 1 } } },
+      });
+      expect(result.ok, name).toBe(false);
+      if (!result.ok) expect(result.issues.map((i) => i.path)).toContain("name");
+    }
+  });
+});

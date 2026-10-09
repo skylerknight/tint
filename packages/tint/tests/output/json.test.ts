@@ -1,12 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
-import type { OKLCH } from "../../src/color/types.js";
+import { describe, it, expect } from "vitest";
 import { toDTCG, toJSON, toFlatMap, DTCG_SCHEMA } from "../../src/output/json.js";
 import { light, dark, withBg, highContrast } from "./_fixtures.js";
-
-vi.mock("../../src/color/oklch.js", () => ({
-  formatOKLCH: (c: OKLCH) =>
-    `oklch(${(c.l * 100).toFixed(2)}% ${c.c.toFixed(4)} ${c.h.toFixed(2)})`,
-}));
 
 describe("toDTCG", () => {
   it("builds palette -> group -> variant tokens with dev.tint metadata", () => {
@@ -197,5 +191,23 @@ describe("toFlatMap", () => {
       "base.on.action",
     ]);
     expect(toFlatMap(light)["brand.on.action"]).toBe("#ffffff");
+  });
+});
+
+describe("toDTCG — decorative metadata", () => {
+  it("records decorative tokens in $extensions", async () => {
+    const { generate } = await import("../../src/engine/generate.js");
+    const result = generate({
+      name: "t",
+      mode: "light",
+      colors: { base: "#fff" },
+      tokens: {
+        surface: { DEFAULT: { ls: 1 } },
+        text: { $on: "surface", body: { lc: 75 }, hint: { lc: 30, $decorative: true } },
+      },
+    });
+    const dtcg = toDTCG(result) as Record<string, any>;
+    expect(dtcg.base.text.hint.$extensions["dev.tint"].decorative).toBe(true);
+    expect(dtcg.base.text.body.$extensions["dev.tint"].decorative).toBeUndefined();
   });
 });

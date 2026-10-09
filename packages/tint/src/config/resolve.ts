@@ -242,7 +242,9 @@ function resolveOverrides(
   const resolved: ResolvedConfig["overrides"] = {};
   for (const [colorKey, groups] of Object.entries(overrides)) {
     for (const color of colorKey.split(",").map((c) => c.trim())) {
-      const perColor = (resolved[color] ??= {});
+      const perColor = Object.hasOwn(resolved, color)
+        ? resolved[color]!
+        : (resolved[color] = {});
       for (const [groupName, variants] of Object.entries(groups)) {
         for (const [variantName, override] of Object.entries(variants)) {
           const key = nodeId(groupName, variantName);

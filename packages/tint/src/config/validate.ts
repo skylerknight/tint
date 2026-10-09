@@ -205,6 +205,9 @@ function checkTopLevel(config: Record<string, unknown>, issues: Issue[]): void {
 
   if (typeof config.name !== "string" || config.name.length === 0) {
     issues.push(issue("name", "Expected a non-empty string"));
+  } else {
+    // Theme names become output directories and appear in selectors/diagnostics.
+    checkName(config.name, "name", issues);
   }
   checkEnum(config.mode, MODES, "mode", issues);
   if (config.selector !== undefined) checkString(config.selector, "selector", issues);

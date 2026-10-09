@@ -275,14 +275,24 @@ function shortcutUtilities(result: GenerationResult, opts: ResolvedOptions): str
   const blocks: string[] = [];
   for (const [group, variants] of Object.entries(defaultPalette.tokens)) {
     const prefix = group.toLowerCase();
-    if (!(prefix in TAILWIND_UTILITY_PREFIXES)) continue;
+    if (!Object.hasOwn(TAILWIND_UTILITY_PREFIXES, prefix)) continue;
     const property = SHORTCUT_PROPERTIES[prefix];
     if (!property) continue;
 
+    const seen = new Map<string, string>();
     for (const variant of Object.keys(variants)) {
       const segment = variantSegment(variant);
+      const utilityName = `${prefix}-${segment || "default"}`;
+      const previous = seen.get(utilityName);
+      if (previous !== undefined) {
+        throw new Error(
+          `Shortcut utility "${utilityName}" would be defined twice: variants "${previous}" and "${variant}" ` +
+            `in group "${group}" both map to it. Rename one of them, or set generateShortcuts: false.`,
+        );
+      }
+      seen.set(utilityName, variant);
       const value = `var(${cssVar("color", group, segment)})`;
-      const lines = [`@utility ${prefix}-${segment || "default"} {`];
+      const lines = [`@utility ${utilityName} {`];
       if (typeof property === "string") {
         lines.push(`${opts.indent}${property}: ${value};`);
       } else {

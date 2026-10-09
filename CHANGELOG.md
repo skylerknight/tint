@@ -33,11 +33,25 @@ in shape; the engine, outputs and tooling are new.
 
 ### Changed
 
+- Automatic reference selection now prefers a variant named `DEFAULT` before falling back
+  to the highest-value variant, so `$on: "action"` targets the resting fill by default.
+- Theme names must be safe identifiers (`/^[a-zA-Z][a-zA-Z0-9_-]*$/`) and unique within a
+  multi-theme config; they become output directories.
+- `contrast-unreachable` reports the ceiling of the locked polarity when `$invert` is set.
+
 - `lc: "pure"` on a foundation token is the mode baseline (white in light mode, black in
   dark); with a reference it is the extreme on the chosen polarity side.
 - Loading a config bundles it with esbuild and stubs the `@skylerknight/tint` import, so
   configs load in monorepos, strict pnpm layouts and before the package is built. Bundled
   dependencies are reported and watched by the plugins.
+- CSS scoping: a theme with a media preference and a custom selector (`.dark` +
+  `prefersColorScheme: "dark"`) now emits a manual `.dark { … }` block followed by an
+  automatic `@media (prefers-color-scheme: dark) { :root { … } }` block, so the theme
+  applies on class *or* OS preference. v2 nested the selector inside the media query and
+  required both. With `selector: ":root"` only the media block is emitted; with no media
+  preference only the plain selector block. The alias layer is scoped the same way.
+- Audit: for `ls` tokens the `achieved` value is the raw, un-clipped APCA distance from
+  the token's reference (or the mode baseline), informational only.
 - `toCSSWithTailwindAndTint` output is fixed in five sections: variables, alias layer,
   `@theme static`, `tint-*` utilities, shortcut utilities. Multi-theme results must share
   one token structure (`assertConsistentStructure`).
@@ -51,4 +65,6 @@ in shape; the engine, outputs and tooling are new.
 
 ### Removed
 
-- The hand-rolled v2 schema layer and its dependencies.
+- Runtime dependencies `valibot`, `commander` and `@inquirer/prompts`. Validation is a
+  hand-written zero-dependency schema; the CLI uses `node:util` `parseArgs` and
+  `node:readline/promises`.

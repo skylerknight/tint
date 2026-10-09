@@ -17,6 +17,12 @@ import { generate } from "../../src/engine/generate.js";
 import { loadConfig } from "../../src/loader/index.js";
 import { tint } from "../../src/vite/index.js";
 
+// Wrap `loadConfig` so individual tests can slow a load down (see "in-flight" test).
+vi.mock("../../src/loader/index.js", async (importOriginal) => {
+  const original = await importOriginal<typeof import("../../src/loader/index.js")>();
+  return { ...original, loadConfig: vi.fn(original.loadConfig) };
+});
+
 // ─────────────────────────────────────────────────────────────
 // Fixtures
 // ─────────────────────────────────────────────────────────────
@@ -90,6 +96,7 @@ beforeEach(() => {
   dir = realpathSync(mkdtempSync(join(tmpdir(), "tint-vite-")));
 });
 afterEach(() => {
+  vi.mocked(loadConfig).mockClear();
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -299,6 +306,9 @@ describe("intellisense", () => {
 
     const content = readFileSync(intellisensePath(), "utf8");
     expect(content.match(/@theme \{/g)).toHaveLength(2);
+    // The Tailwind import is emitted once, at the top.
+    expect(content.match(/@import 'tailwindcss';/g)).toHaveLength(1);
+    expect(content.startsWith("@import 'tailwindcss';\n")).toBe(true);
   });
 
   it("skips the file when intellisense is false", async () => {
@@ -498,6 +508,75 @@ export default { name: "light", mode: "light", colors: { base: "#fff", text: "#3
     await expect(
       transform.call(createContext(), `@tint "./tint.config.ts";`, cssId),
     ).rejects.toThrow(/Config not found/);
+  });
+
+  it("reloads a config that failed to load once it is fixed", async () => {
+    const configPath = join(dir, "tint.config.ts");
+    writeFileSync(
+      configPath,
+      `export default { name: "x", mode: "sideways", colors: { base: "#fff" }, tokens: ${TOKENS} };`,
+    );
+    const { transform, configureServer } = createPlugin(dir);
+    const fake = createFakeServer();
+    configureServer(fake.server);
+
+    const cssId = join(dir, "app.css");
+    writeFileSync(cssId, "");
+    fake.modules.set(cssId, { id: cssId });
+    const css = `@tint "./tint.config.ts";`;
+    const context = createContext();
+    await expect(transform.call(context, css, cssId)).rejects.toThrow(configPath);
+    // The config is watched even though it failed to load.
+    expect(context.addWatchFile).toHaveBeenCalledWith(configPath);
+
+    writeFileSync(configPath, configSource("#ff0000"));
+    fake.watcher.emit("change", configPath);
+
+    expect(fake.moduleGraph.invalidateModule).toHaveBeenCalledWith({ id: cssId });
+    expect(fake.ws.send).toHaveBeenCalledWith({ type: "full-reload" });
+
+    const result = await transform.call(createContext(), css, cssId);
+    expect(result!.code).toContain("--brand-surface:");
+  });
+
+  it("does not cache a load whose config changed while it was in flight", async () => {
+    const configPath = join(dir, "tint.config.ts");
+    writeFileSync(configPath, configSource("#3366ff"));
+    const { transform, configureServer } = createPlugin(dir);
+    const fake = createFakeServer();
+    configureServer(fake.server);
+
+    // Slow down the first load: it reads the file now but resolves later.
+    const original = vi.mocked(loadConfig).getMockImplementation()!;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    vi.mocked(loadConfig).mockImplementationOnce(async (options) => {
+      const loaded = await original(options);
+      await gate;
+      return loaded;
+    });
+
+    const cssId = join(dir, "app.css");
+    const css = `@tint "./tint.config.ts";`;
+    const inFlight = transform.call(createContext(), css, cssId);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(vi.mocked(loadConfig)).toHaveBeenCalledTimes(1);
+
+    writeFileSync(configPath, configSource("#ff0000"));
+    fake.watcher.emit("change", configPath);
+    release();
+
+    const result = await inFlight;
+    // The stale result was discarded and the load re-run against the new content.
+    expect(vi.mocked(loadConfig)).toHaveBeenCalledTimes(2);
+    const cached = await transform.call(createContext(), css, join(dir, "other.css"));
+    expect(cached!.code).toBe(result!.code);
+    expect(vi.mocked(loadConfig)).toHaveBeenCalledTimes(2);
+
+    // The output matches a fresh load of the file as it is now (#ff0000), not as it was.
+    const fresh = createPlugin(dir, { intellisense: false });
+    const expected = await fresh.transform.call(createContext(), css, cssId);
+    expect(result!.code).toBe(expected!.code);
   });
 });
 

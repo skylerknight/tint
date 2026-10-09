@@ -80,7 +80,7 @@ function generateOne(input: unknown): GenerationResult {
 
   for (const color of resolved.colors) {
     const prefix = color.name.toLowerCase();
-    if (prefix in TAILWIND_UTILITY_PREFIXES) {
+    if (Object.hasOwn(TAILWIND_UTILITY_PREFIXES, prefix)) {
       diagnostics.push({
         severity: "warning",
         code: "palette-name-conflict",
@@ -396,7 +396,15 @@ function generateLc(
   }
 
   if (!solved.reached) {
-    reportUnreachable(spec, target, working, reference, path, diagnostics);
+    reportUnreachable(
+      spec,
+      target,
+      working,
+      reference,
+      path,
+      effective.invert ? polarity : null,
+      diagnostics,
+    );
   }
 
   const color = toGenerated(solved.color);
@@ -413,18 +421,29 @@ function reportUnreachable(
   working: OKLCH,
   reference: GeneratedColor,
   path: string,
+  lockedPolarity: Polarity | null,
   diagnostics: Diagnostic[],
 ): void {
+  // `$invert` locks the polarity, so only that side counts as "achievable".
   const lighter = maxContrast(working, reference.rgb, "lighter");
   const darker = maxContrast(working, reference.rgb, "darker");
-  const best = lighter.lc >= darker.lc ? lighter : darker;
-  const bestPolarity: Polarity = lighter.lc >= darker.lc ? "lighter" : "darker";
+  let best = lighter.lc >= darker.lc ? lighter : darker;
+  let bestPolarity: Polarity = lighter.lc >= darker.lc ? "lighter" : "darker";
+  if (lockedPolarity) {
+    best = lockedPolarity === "lighter" ? lighter : darker;
+    bestPolarity = lockedPolarity;
+  }
   const refLabel = spec.on ? `${spec.on.group}.${spec.on.variant}` : "the mode baseline";
   const refL = reference.oklch.l;
-  const midtone = spec.on !== null && refL > 0.35 && refL < 0.75 && best.lc < 70;
+  const midtone =
+    spec.on !== null && !lockedPolarity && refL > 0.35 && refL < 0.75 && best.lc < 70;
 
   let hint: string;
-  if (midtone) {
+  if (lockedPolarity) {
+    hint =
+      `$invert forces a ${bestPolarity} foreground, which reaches at most Lc ${best.lc.toFixed(0)} against "${refLabel}". ` +
+      `Lower the target, drop $invert, or move "${refLabel}" ${bestPolarity === "lighter" ? "darker" : "lighter"}.`;
+  } else if (midtone) {
     hint =
       `"${refLabel}" is a mid-tone (L=${refL.toFixed(2)}), so neither light nor dark foregrounds reach high contrast. ` +
       `Make "${refLabel}" darker (so light text works) or lighter (so dark text works), or accept Lc ${best.lc.toFixed(0)} for large/bold text.`;
