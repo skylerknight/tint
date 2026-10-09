@@ -13,6 +13,8 @@ export interface GeneratedVariantBase extends GeneratedColor {
   reference?: true;
   /** `"group.variant"` this token contrasts against, when it has one. */
   on?: string;
+  /** Present (true) when the token is exempt from contrast diagnostics. */
+  decorative?: true;
 }
 
 export interface GeneratedLcVariant extends GeneratedVariantBase {

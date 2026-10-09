@@ -1,4 +1,9 @@
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync } from "node:fs";
+import { extname, isAbsolute, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import type { Config } from "../config/types.js";
+import { assertConfig, ConfigError } from "../config/validate.js";
 
 export interface LoadOptions {
   /** Directory config paths resolve against (default `process.cwd()`). */
@@ -14,7 +19,227 @@ export interface LoadedConfig {
   dependencies: string[];
 }
 
+/** File names probed, in order, when no explicit config path is given. */
+export const DEFAULT_CONFIG_FILES = [
+  "tint.config.ts",
+  "tint.config.mts",
+  "tint.config.js",
+  "tint.config.mjs",
+  "tint.config.json",
+] as const;
+
+const TINT_DIR = "node_modules/.tint";
+const TS_EXTENSIONS = new Set([".ts", ".mts", ".cts"]);
+
+/** Return the first default config file that exists in `root`, or null. */
+export function findDefaultConfig(root = process.cwd()): string | null {
+  for (const name of DEFAULT_CONFIG_FILES) {
+    const full = resolve(root, name);
+    if (existsSync(full)) return full;
+  }
+  return null;
+}
+
+/**
+ * Load a tint config file (`.ts`, `.mts`, `.js`, `.mjs`, `.cjs`, or `.json`) and
+ * validate every theme it exports.
+ */
 export async function loadConfig(options: LoadOptions): Promise<LoadedConfig> {
-  void options;
-  throw new Error("not implemented");
+  const root = options.root ?? process.cwd();
+  const path = isAbsolute(options.configPath)
+    ? options.configPath
+    : resolve(root, options.configPath);
+
+  if (!existsSync(path)) {
+    throw new Error(`Config not found: ${path}`);
+  }
+
+  const ext = extname(path).toLowerCase();
+  let exported: unknown;
+  let dependencies: string[] = [path];
+  let isModule = true;
+
+  if (ext === ".json") {
+    exported = JSON.parse(readFileSync(path, "utf8"));
+    isModule = false;
+  } else if (TS_EXTENSIONS.has(ext)) {
+    ({ exported, dependencies } = await loadWithEsbuild(path, root));
+  } else {
+    try {
+      exported = await importFresh(path);
+    } catch (error) {
+      // Plain JS that still needs bundling (e.g. imports a .ts file) — fall back to esbuild.
+      if (!isEsbuildWorthRetrying(error)) throw error;
+      ({ exported, dependencies } = await loadWithEsbuild(path, root));
+    }
+  }
+
+  const configs = unwrapExport(exported, path, isModule);
+  return { configs, path, dependencies };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────
+
+function unwrapExport(exported: unknown, path: string, isModule: boolean): Config[] {
+  let value = exported;
+  if (isModule) {
+    const mod = (value ?? {}) as { default?: unknown; config?: unknown };
+    value = mod.default ?? mod.config;
+  }
+  if (value === undefined || value === null) {
+    throw new Error(
+      `${path} must export a tint config as its default export (or a named "config" export).\n` +
+        `Example: export default defineConfig({ ... })`,
+    );
+  }
+  const list = Array.isArray(value) ? value : [value];
+  if (list.length === 0) {
+    throw new Error(`${path} exports an empty array; at least one theme is required.`);
+  }
+  return list.map((item, index) => {
+    try {
+      return assertConfig(item);
+    } catch (error) {
+      if (error instanceof ConfigError && list.length > 1) {
+        throw new ConfigError(
+          error.issues,
+          `Invalid tint config in ${path} (theme ${index + 1})`,
+        );
+      }
+      if (error instanceof ConfigError) {
+        throw new ConfigError(error.issues, `Invalid tint config in ${path}`);
+      }
+      throw error;
+    }
+  });
+}
+
+async function importFresh(path: string): Promise<unknown> {
+  const mtime = statSync(path).mtimeMs;
+  const url = `${pathToFileURL(path).href}?t=${mtime}`;
+  return import(url);
+}
+
+function isEsbuildWorthRetrying(error: unknown): boolean {
+  const code = (error as { code?: string } | null)?.code;
+  return (
+    code === "ERR_UNKNOWN_FILE_EXTENSION" ||
+    code === "ERR_MODULE_NOT_FOUND" ||
+    code === "ERR_REQUIRE_ESM" ||
+    error instanceof SyntaxError
+  );
+}
+
+async function loadEsbuild(): Promise<typeof import("esbuild")> {
+  try {
+    return await import("esbuild");
+  } catch (error) {
+    const detail = error instanceof Error ? ` (${error.message})` : "";
+    throw new Error(
+      "Loading a TypeScript tint config requires esbuild, an optional peer dependency of " +
+        `@skylerknight/tint. Install it with: npm install -D esbuild${detail}`,
+    );
+  }
+}
+
+async function loadWithEsbuild(
+  path: string,
+  root: string,
+): Promise<{ exported: unknown; dependencies: string[] }> {
+  const { build } = await loadEsbuild();
+  const dir = resolve(root, TINT_DIR);
+  mkdirSync(dir, { recursive: true });
+
+  const hash = createHash("md5").update(path).digest("hex").slice(0, 12);
+  const mtime = Math.round(statSync(path).mtimeMs);
+  const outfile = join(dir, `config.${hash}.${mtime}.${process.pid}.mjs`);
+
+  try {
+    const result = await build({
+      entryPoints: [path],
+      outfile,
+      bundle: true,
+      platform: "node",
+      format: "esm",
+      target: "node18",
+      absWorkingDir: root,
+      plugins: [tintStubPlugin()],
+      metafile: true,
+      write: true,
+      logLevel: "silent",
+    });
+
+    const dependencies = new Set<string>([path]);
+    for (const input of Object.keys(result.metafile.inputs)) {
+      if (input.includes("node_modules")) continue;
+      dependencies.add(isAbsolute(input) ? input : resolve(root, input));
+    }
+
+    const exported = await import(`${pathToFileURL(outfile).href}?t=${Date.now()}`);
+    return { exported, dependencies: [...dependencies] };
+  } catch (error) {
+    throw decorateEsbuildError(error, path);
+  } finally {
+    try {
+      unlinkSync(outfile);
+    } catch {
+      // Ignore cleanup failures.
+    }
+  }
+}
+
+/**
+ * Replace `@skylerknight/tint` imports inside config files with a tiny stub so the
+ * config bundles even when the package is not resolvable from the config's location
+ * (monorepos, pnpm strictness, unbuilt dist). Validation happens in the loader.
+ */
+function tintStubPlugin(): import("esbuild").Plugin {
+  return {
+    name: "tint-config-stub",
+    setup(build) {
+      build.onResolve({ filter: /^@skylerknight\/tint$/ }, (args) => ({
+        path: args.path,
+        namespace: "tint-stub",
+      }));
+      build.onLoad({ filter: /.*/, namespace: "tint-stub" }, () => ({
+        contents:
+          "export const defineConfig = (config) => config;\n" +
+          "export default { defineConfig };\n",
+        loader: "js",
+      }));
+    },
+  };
+}
+
+function decorateEsbuildError(error: unknown, path: string): Error {
+  if (error instanceof ConfigError) return error;
+  const errors = (
+    error as {
+      errors?: Array<{
+        text: string;
+        location?: { file: string; line: number; column: number } | null;
+      }>;
+    } | null
+  )?.errors;
+  if (Array.isArray(errors) && errors.length > 0) {
+    const lines = errors.map((e) => {
+      const loc = e.location
+        ? `${e.location.file}:${e.location.line}:${e.location.column}: `
+        : "";
+      return `  - ${loc}${e.text}`;
+    });
+    return new Error(`Failed to compile ${path}:\n${lines.join("\n")}`);
+  }
+  if (error instanceof Error) {
+    error.message = `Failed to load ${path}: ${error.message}`;
+    return error;
+  }
+  return new Error(`Failed to load ${path}: ${String(error)}`);
+}
+
+/** Directory used for temp bundles, caches and the IntelliSense file. */
+export function tintCacheDir(root = process.cwd()): string {
+  return resolve(root, TINT_DIR);
 }
