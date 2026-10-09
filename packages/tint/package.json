@@ -1,0 +1,50 @@
+{
+  "name": "@skylerknight/tint",
+  "version": "3.0.0",
+  "description": "APCA-driven design token generator: accessible, interchangeable color palettes from a single config",
+  "type": "module",
+  "license": "MIT",
+  "author": "Skyler Knight",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": { "tint": "./dist/cli/index.js" },
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" },
+    "./vite": { "types": "./dist/vite/index.d.ts", "import": "./dist/vite/index.js", "require": "./dist/vite/index.cjs" },
+    "./postcss": { "types": "./dist/postcss/index.d.ts", "import": "./dist/postcss/index.js", "require": "./dist/postcss/index.cjs" },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit && prettier --check src tests"
+  },
+  "keywords": ["color", "palette", "contrast", "accessibility", "apca", "oklch", "design-system", "design-tokens", "tailwind"],
+  "engines": { "node": ">=18.17" },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "esbuild": "^0.24.0",
+    "postcss": "^8.4.47",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.2"
+  },
+  "peerDependencies": {
+    "esbuild": ">=0.17.0",
+    "postcss": "^8.0.0",
+    "vite": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "esbuild": { "optional": true },
+    "postcss": { "optional": true },
+    "vite": { "optional": true }
+  }
+}

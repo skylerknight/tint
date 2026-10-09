@@ -1,0 +1,6 @@
+node_modules
+dist
+coverage
+.tint
+*.log
+.DS_Store
