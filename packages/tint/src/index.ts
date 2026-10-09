@@ -35,6 +35,7 @@ export type {
 
 // Engine
 export { generate, ROLE_MIN_LC, APCA_MINIMUM_LC } from "./engine/index.js";
+export { maxChromaForLs, MODE_BASELINE } from "./engine/generate.js";
 export type {
   GeneratedColor,
   GeneratedVariantBase,
@@ -101,5 +102,10 @@ export {
 export type { Polarity, SolveOptions, SolveResult } from "./contrast/index.js";
 
 // Loader
-export { loadConfig } from "./loader/index.js";
+export {
+  loadConfig,
+  findDefaultConfig,
+  DEFAULT_CONFIG_FILES,
+  tintCacheDir,
+} from "./loader/index.js";
 export type { LoadOptions, LoadedConfig } from "./loader/index.js";

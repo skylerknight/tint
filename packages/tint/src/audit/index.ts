@@ -1,6 +1,10 @@
 import type { RGB } from "../color/types.js";
-import { calcAPCAabs } from "../contrast/apca.js";
-import type { GenerationResult, GeneratedVariant } from "../engine/types.js";
+import { calcAPCAraw } from "../contrast/apca.js";
+import type {
+  GeneratedPalette,
+  GenerationResult,
+  GeneratedVariant,
+} from "../engine/types.js";
 import type { Diagnostic } from "../engine/diagnostics.js";
 
 export interface AuditRow {
@@ -28,13 +32,8 @@ const PASS_TOLERANCE = 0.5;
 const WHITE: RGB = { r: 255, g: 255, b: 255 };
 const BLACK: RGB = { r: 0, g: 0, b: 0 };
 
-/**
- * Whether the engine flagged this token as decorative. The generated token
- * does not carry the flag today, so this reads it defensively and defaults
- * to `false`.
- */
 function isDecorative(token: GeneratedVariant): boolean {
-  return (token as { decorative?: boolean }).decorative === true;
+  return token.decorative === true;
 }
 
 function auditToken(
@@ -43,6 +42,7 @@ function auditToken(
   variant: string,
   token: GeneratedVariant,
   baseline: RGB,
+  tokens: GeneratedPalette["tokens"],
   flaggedPaths: ReadonlySet<string>,
 ): AuditRow {
   const base = {
@@ -55,11 +55,15 @@ function auditToken(
     decorative: isDecorative(token),
   };
 
+  // ls variants have no Lc goal. Report the raw (un-clipped) APCA distance from
+  // whatever they step away from: their reference when they have one, else the
+  // mode baseline. Raw APCA keeps subtle surface differences visible.
   if (token.kind === "ls") {
+    const reference = token.on ? lookupReference(tokens, token.on) : baseline;
     return {
       ...base,
       target: null,
-      achieved: calcAPCAabs(token.rgb, baseline),
+      achieved: calcAPCAraw(token.rgb, reference ?? baseline),
       status: "n/a",
     };
   }
@@ -84,14 +88,20 @@ function auditToken(
   };
 }
 
+function lookupReference(tokens: GeneratedPalette["tokens"], on: string): RGB | null {
+  const dot = on.indexOf(".");
+  if (dot < 0) return null;
+  return tokens[on.slice(0, dot)]?.[on.slice(dot + 1)]?.rgb ?? null;
+}
+
 /**
  * Contrast report for every token of a result.
  *
  * Status is only meaningful for lc variants with a reference (`on`): `pass`
  * when the achieved Lc is within 0.5 of the target, `warn` when it reached
  * the target but the engine emitted a diagnostic for it, `fail` otherwise.
- * Foundation and ls variants are `n/a`; their `achieved` is the measured
- * APCA against the mode baseline (white in light mode, black in dark).
+ * Foundation and ls variants are `n/a`; for ls variants `achieved` is the raw
+ * APCA distance from their reference (or the mode baseline when they have none).
  */
 export function audit(result: GenerationResult): AuditReport {
   const baseline = result.mode === "dark" ? BLACK : WHITE;
@@ -102,7 +112,15 @@ export function audit(result: GenerationResult): AuditReport {
     for (const [group, variants] of Object.entries(palette.tokens)) {
       for (const [variant, token] of Object.entries(variants)) {
         rows.push(
-          auditToken(palette.name, group, variant, token, baseline, flaggedPaths),
+          auditToken(
+            palette.name,
+            group,
+            variant,
+            token,
+            baseline,
+            palette.tokens,
+            flaggedPaths,
+          ),
         );
       }
     }

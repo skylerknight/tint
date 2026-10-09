@@ -9,14 +9,32 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": { "tint": "./dist/cli/index.js" },
+  "bin": {
+    "tint": "./dist/cli/index.js"
+  },
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" },
-    "./vite": { "types": "./dist/vite/index.d.ts", "import": "./dist/vite/index.js", "require": "./dist/vite/index.cjs" },
-    "./postcss": { "types": "./dist/postcss/index.d.ts", "import": "./dist/postcss/index.js", "require": "./dist/postcss/index.cjs" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./vite": {
+      "types": "./dist/vite/index.d.ts",
+      "import": "./dist/vite/index.js",
+      "require": "./dist/vite/index.cjs"
+    },
+    "./postcss": {
+      "types": "./dist/postcss/index.d.ts",
+      "import": "./dist/postcss/index.js",
+      "require": "./dist/postcss/index.cjs"
+    },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -25,8 +43,20 @@
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit && prettier --check src tests"
   },
-  "keywords": ["color", "palette", "contrast", "accessibility", "apca", "oklch", "design-system", "design-tokens", "tailwind"],
-  "engines": { "node": ">=18.17" },
+  "keywords": [
+    "color",
+    "palette",
+    "contrast",
+    "accessibility",
+    "apca",
+    "oklch",
+    "design-system",
+    "design-tokens",
+    "tailwind"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.7.4",
@@ -43,8 +73,14 @@
     "vite": ">=5.0.0"
   },
   "peerDependenciesMeta": {
-    "esbuild": { "optional": true },
-    "postcss": { "optional": true },
-    "vite": { "optional": true }
+    "esbuild": {
+      "optional": true
+    },
+    "postcss": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
   }
 }

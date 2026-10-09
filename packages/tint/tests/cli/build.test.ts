@@ -1,0 +1,137 @@
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  capture,
+  CLEAN_JSON_WITH_OUTPUT,
+  CLEAN_TS,
+  WARNING_JSON,
+  type Capture,
+} from "./_helpers.js";
+
+let c: Capture;
+beforeEach(() => {
+  c = capture();
+});
+afterEach(() => {
+  c.cleanup();
+});
+
+describe("tint build", () => {
+  it("writes tokens.css per theme by default and reports each file", async () => {
+    c.write("tint.config.ts", CLEAN_TS);
+    expect(await c.run(["build"])).toBe(0);
+
+    expect(readdirSync(join(c.dir, "tint", "light"))).toEqual(["tokens.css"]);
+    expect(readdirSync(join(c.dir, "tint", "dark"))).toEqual(["tokens.css"]);
+    const light = readFileSync(join(c.dir, "tint", "light", "tokens.css"), "utf8");
+    expect(light).toContain(":root {");
+    expect(light).toContain("--brand-text-heading:");
+    const dark = readFileSync(join(c.dir, "tint", "dark", "tokens.css"), "utf8");
+    expect(dark).toContain("@media (prefers-color-scheme: dark)");
+    expect(dark).toContain(".dark {");
+
+    expect(c.out()).toContain("write tint/light/tokens.css");
+    expect(c.out()).toContain("write tint/dark/tokens.css");
+    expect(c.out()).toMatch(/Wrote 2 files to tint \(2 themes, \d+ tokens\)/);
+    expect(c.err()).toBe("");
+  });
+
+  it("honours --formats and --out", async () => {
+    c.write("tint.config.ts", CLEAN_TS);
+    expect(
+      await c.run(["build", "--formats", "css,json,tailwind,flat", "-o", "out/tokens"]),
+    ).toBe(0);
+
+    const files = readdirSync(join(c.dir, "out", "tokens", "light")).sort();
+    expect(files).toEqual([
+      "tailwind.css",
+      "tokens.css",
+      "tokens.flat.json",
+      "tokens.json",
+    ]);
+
+    const json = JSON.parse(
+      readFileSync(join(c.dir, "out/tokens/light/tokens.json"), "utf8"),
+    );
+    expect(json.brand.text.heading.$type).toBe("color");
+    const flat = JSON.parse(
+      readFileSync(join(c.dir, "out/tokens/light/tokens.flat.json"), "utf8"),
+    );
+    expect(flat["brand.text.heading"]).toMatch(/^#[0-9a-f]{6}$/);
+    const tw = readFileSync(join(c.dir, "out/tokens/light/tailwind.css"), "utf8");
+    expect(tw).toContain("@theme {");
+    expect(c.out()).toContain("Wrote 8 files to out/tokens");
+  });
+
+  it("falls back to config.output path and formats", async () => {
+    c.write("tint.config.json", CLEAN_JSON_WITH_OUTPUT);
+    expect(await c.run(["build"])).toBe(0);
+    expect(readdirSync(join(c.dir, "generated", "light")).sort()).toEqual([
+      "tokens.flat.json",
+      "tokens.json",
+    ]);
+    expect(existsSync(join(c.dir, "tint"))).toBe(false);
+  });
+
+  it("--tailwind-tint writes a single <out>/tailwind.css across themes", async () => {
+    c.write("tint.config.ts", CLEAN_TS);
+    expect(await c.run(["build", "--tailwind-tint"])).toBe(0);
+
+    const tw = readFileSync(join(c.dir, "tint", "tailwind.css"), "utf8");
+    expect(tw).toContain("@theme static {");
+    expect(tw).toContain("@utility tint-brand");
+    expect(tw).toContain(".dark {");
+    expect(existsSync(join(c.dir, "tint", "light", "tailwind.css"))).toBe(false);
+    // The default css format is still written per theme.
+    expect(existsSync(join(c.dir, "tint", "light", "tokens.css"))).toBe(true);
+    expect(c.out()).toContain("write tint/tailwind.css");
+  });
+
+  it("rejects an invalid format", async () => {
+    c.write("tint.config.ts", CLEAN_TS);
+    expect(await c.run(["build", "-f", "css,scss"])).toBe(1);
+    expect(c.err()).toContain('Unknown format "scss"');
+    expect(c.err()).toContain("css, json, tailwind, flat");
+    expect(existsSync(join(c.dir, "tint"))).toBe(false);
+  });
+
+  it("fails with a hint to run tint init when no config exists", async () => {
+    expect(await c.run(["build"])).toBe(1);
+    expect(c.err()).toContain("No tint config found");
+    expect(c.err()).toContain("tint init");
+    expect(c.err()).not.toContain("    at ");
+  });
+
+  it("fails when --config points at a missing file", async () => {
+    expect(await c.run(["build", "-c", "nope.ts"])).toBe(1);
+    expect(c.err()).toContain("Config not found");
+  });
+
+  it("prints diagnostics as warn lines and still exits 0", async () => {
+    c.write("tint.config.json", WARNING_JSON);
+    expect(await c.run(["build"])).toBe(0);
+    expect(c.err()).toMatch(/^warn base\.text\.body: /m);
+    expect(c.out()).toContain("1 warning");
+  });
+
+  it("--quiet suppresses everything but errors", async () => {
+    c.write("tint.config.json", WARNING_JSON);
+    expect(await c.run(["build", "--quiet"])).toBe(0);
+    expect(c.out()).toBe("");
+    expect(c.err()).toBe("");
+    expect(existsSync(join(c.dir, "tint", "light", "tokens.css"))).toBe(true);
+  });
+
+  it("prints a ConfigError without a stack trace", async () => {
+    c.write(
+      "tint.config.json",
+      JSON.stringify({ name: "x", mode: "sideways", colors: {}, tokens: {} }),
+    );
+    expect(await c.run(["build"])).toBe(1);
+    expect(c.err()).toContain("Invalid tint config");
+    expect(c.err()).toContain("mode");
+    expect(c.err()).not.toContain("    at ");
+    expect(c.err()).not.toContain("ConfigError:");
+  });
+});

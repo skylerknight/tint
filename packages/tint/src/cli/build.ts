@@ -1,0 +1,120 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { OUTPUT_FORMATS, type OutputFormat } from "../config/types.js";
+import type { GenerationResult } from "../engine/types.js";
+import { toCSS } from "../output/css.js";
+import { toFlatMap, toJSON } from "../output/json.js";
+import { toCSSWithTailwindAndTint, toTailwind } from "../output/tailwind.js";
+import {
+  CLIError,
+  countTokens,
+  displayPath,
+  loadAndGenerate,
+  printDiagnostics,
+  toCLIError,
+} from "./shared.js";
+import { paint, plural, type IO } from "./ui.js";
+
+export interface BuildFlags {
+  config?: string | undefined;
+  out?: string | undefined;
+  formats?: string | undefined;
+  tailwindTint?: boolean | undefined;
+  quiet?: boolean | undefined;
+}
+
+export const DEFAULT_OUT_DIR = "./tint";
+export const DEFAULT_FORMATS: readonly OutputFormat[] = ["css"];
+
+export function parseFormats(input: string): OutputFormat[] {
+  const names = input
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (names.length === 0) {
+    throw new CLIError(`--formats needs at least one of: ${OUTPUT_FORMATS.join(", ")}`);
+  }
+  const formats: OutputFormat[] = [];
+  for (const name of names) {
+    if (!(OUTPUT_FORMATS as readonly string[]).includes(name)) {
+      throw new CLIError(
+        `Unknown format "${name}". Expected one of: ${OUTPUT_FORMATS.join(", ")}`,
+      );
+    }
+    if (!formats.includes(name as OutputFormat)) formats.push(name as OutputFormat);
+  }
+  return formats;
+}
+
+const FILE_NAMES: Record<OutputFormat, string> = {
+  css: "tokens.css",
+  json: "tokens.json",
+  tailwind: "tailwind.css",
+  flat: "tokens.flat.json",
+};
+
+function render(format: OutputFormat, result: GenerationResult): string {
+  switch (format) {
+    case "css":
+      return toCSS(result);
+    case "json":
+      return toJSON(result);
+    case "tailwind":
+      return toTailwind(result);
+    case "flat":
+      return JSON.stringify(toFlatMap(result), null, 2) + "\n";
+  }
+}
+
+export async function build(io: IO, flags: BuildFlags): Promise<number> {
+  const { configs, results } = await loadAndGenerate(io, flags.config);
+
+  // Precedence: CLI flag → first theme that configures it → default.
+  const configured = configs.find((c) => c.output !== undefined)?.output;
+  const outDir = resolve(io.cwd, flags.out ?? configured?.path ?? DEFAULT_OUT_DIR);
+  const formats = flags.formats
+    ? parseFormats(flags.formats)
+    : configured?.formats && configured.formats.length > 0
+      ? [...new Set(configured.formats)]
+      : [...DEFAULT_FORMATS];
+
+  const tailwindTint = flags.tailwindTint === true;
+  if (tailwindTint && !formats.includes("tailwind")) formats.push("tailwind");
+
+  const written: string[] = [];
+  const write = (path: string, content: string) => {
+    mkdirSync(join(path, ".."), { recursive: true });
+    writeFileSync(path, content.endsWith("\n") ? content : content + "\n");
+    written.push(path);
+    if (!flags.quiet)
+      io.out(`${paint.green(io.color)("write")} ${displayPath(io.cwd, path)}`);
+  };
+
+  try {
+    for (const result of results) {
+      const themeDir = join(outDir, result.name);
+      for (const format of formats) {
+        if (format === "tailwind" && tailwindTint) continue;
+        write(join(themeDir, FILE_NAMES[format]), render(format, result));
+      }
+    }
+    if (tailwindTint) {
+      write(join(outDir, FILE_NAMES.tailwind), toCSSWithTailwindAndTint(results));
+    }
+  } catch (error) {
+    throw toCLIError(error);
+  }
+
+  const warnings = flags.quiet ? 0 : printDiagnostics(io, results);
+  if (!flags.quiet) {
+    const summary =
+      `Wrote ${plural(written.length, "file")} to ${displayPath(io.cwd, outDir)} ` +
+      `(${plural(results.length, "theme")}, ${plural(countTokens(results), "token")})`;
+    io.out(
+      warnings > 0
+        ? `${paint.yellow(io.color)("⚠")} ${summary}, ${plural(warnings, "warning")}`
+        : `${paint.green(io.color)("✓")} ${summary}`,
+    );
+  }
+  return 0;
+}

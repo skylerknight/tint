@@ -100,6 +100,23 @@ describe("loadConfig", () => {
   });
 });
 
+describe("loadConfig — dependency edits", () => {
+  it("reflects changes to an imported file even when the config itself is untouched", async () => {
+    mkdirSync(join(dir, "theme"));
+    const dep = join(dir, "theme", "name.ts");
+    writeFileSync(dep, `export const name = "first";`);
+    writeFileSync(
+      join(dir, "tint.config.ts"),
+      `import { name } from "./theme/name";\nexport default { name, mode: "light", colors: { base: "#fff" }, tokens: { surface: { DEFAULT: { ls: 1 } } } };`,
+    );
+    const first = await loadConfig({ root: dir, configPath: "tint.config.ts" });
+    writeFileSync(dep, `export const name = "second";`);
+    const second = await loadConfig({ root: dir, configPath: "tint.config.ts" });
+    expect(first.configs[0]!.name).toBe("first");
+    expect(second.configs[0]!.name).toBe("second");
+  });
+});
+
 describe("findDefaultConfig", () => {
   it("returns null when nothing exists and the first match otherwise", () => {
     expect(findDefaultConfig(dir)).toBeNull();

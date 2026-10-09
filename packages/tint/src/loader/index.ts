@@ -30,6 +30,7 @@ export const DEFAULT_CONFIG_FILES = [
 
 const TINT_DIR = "node_modules/.tint";
 const TS_EXTENSIONS = new Set([".ts", ".mts", ".cts"]);
+let loadCounter = 0;
 
 /** Return the first default config file that exists in `root`, or null. */
 export function findDefaultConfig(root = process.cwd()): string | null {
@@ -153,8 +154,10 @@ async function loadWithEsbuild(
   mkdirSync(dir, { recursive: true });
 
   const hash = createHash("md5").update(path).digest("hex").slice(0, 12);
-  const mtime = Math.round(statSync(path).mtimeMs);
-  const outfile = join(dir, `config.${hash}.${mtime}.${process.pid}.mjs`);
+  // The name must change on every load: imported dependencies can change without the
+  // config's own mtime moving, and module caches key on the file path.
+  const stamp = `${Date.now().toString(36)}${(loadCounter++).toString(36)}`;
+  const outfile = join(dir, `config.${hash}.${stamp}.${process.pid}.mjs`);
 
   try {
     const result = await build({

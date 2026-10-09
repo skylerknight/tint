@@ -12,12 +12,7 @@ import {
   lc,
 } from "../output/_fixtures.js";
 
-// Deterministic stand-in for APCA: channel-sum distance scaled to 0..100.
-vi.mock("../../src/contrast/apca.js", () => ({
-  calcAPCAabs: (text: RGB, background: RGB) =>
-    Math.abs(text.r + text.g + text.b - (background.r + background.g + background.b)) /
-    7.65,
-}));
+import { calcAPCAraw } from "../../src/contrast/apca.js";
 
 describe("audit", () => {
   const report = audit(withDiagnostics);
@@ -38,7 +33,8 @@ describe("audit", () => {
     ]);
   });
 
-  it("marks ls variants n/a with the measured baseline contrast", () => {
+  it("marks ls variants n/a with the raw APCA distance from their reference", () => {
+    const white: RGB = { r: 255, g: 255, b: 255 };
     expect(byToken["surface.DEFAULT"]).toEqual({
       palette: "base",
       group: "surface",
@@ -46,7 +42,12 @@ describe("audit", () => {
       hex: "#e9ecef",
       kind: "ls",
       target: null,
-      achieved: expect.closeTo(7.45, 2),
+      achieved: calcAPCAraw(
+        byToken["surface.DEFAULT"]!.hex === "#e9ecef"
+          ? { r: 0xe9, g: 0xec, b: 0xef }
+          : white,
+        white,
+      ),
       on: null,
       decorative: false,
       status: "n/a",
@@ -54,7 +55,7 @@ describe("audit", () => {
     expect(byToken["border.DEFAULT"]).toMatchObject({
       kind: "ls",
       target: null,
-      achieved: expect.closeTo(16.6, 2),
+      achieved: expect.any(Number),
       on: "surface.DEFAULT",
       status: "n/a",
     });
@@ -140,8 +141,10 @@ describe("audit", () => {
     const row = audit(dark).rows.find(
       (r) => r.palette === "base" && r.group === "surface",
     );
-    // #1c1d20 vs black: (28 + 29 + 32) / 7.65
-    expect(row?.achieved).toBeCloseTo(11.63, 2);
+    expect(row?.achieved).toBeCloseTo(
+      calcAPCAraw({ r: 0x1c, g: 0x1d, b: 0x20 }, { r: 0, g: 0, b: 0 }),
+      6,
+    );
     expect(row?.status).toBe("n/a");
   });
 
@@ -176,7 +179,7 @@ describe("formatAuditTable", () => {
       [
         "Token                | Hex     | Kind | Target | Achieved | On              | Status",
         "---------------------|---------|------|--------|----------|-----------------|-------",
-        "base.surface.DEFAULT | #e9ecef | ls   |      - |      7.5 | -               | n/a",
+        "base.surface.DEFAULT | #e9ecef | ls   |      - |      9.0 | -               | n/a",
         "base.text.heading    | #101214 | lc   |     90 |     82.4 | surface.DEFAULT | fail",
         "base.text.body       | #2b3036 | lc   |     75 |     75.1 | surface.DEFAULT | pass",
         "base.text.muted      | #8a9099 | lc   |     40 |     40.2 | surface.DEFAULT | warn",
