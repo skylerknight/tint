@@ -38,6 +38,8 @@ in shape; the engine, outputs and tooling are new.
 - Theme names must be safe identifiers (`/^[a-zA-Z][a-zA-Z0-9_-]*$/`) and unique within a
   multi-theme config; they become output directories.
 - `contrast-unreachable` reports the ceiling of the locked polarity when `$invert` is set.
+- Automatic (media query) theme blocks exclude sibling themes' class selectors
+  (`:root:not(.light)`), so a class can force a mode against the OS preference.
 
 - `lc: "pure"` on a foundation token is the mode baseline (white in light mode, black in
   dark); with a reference it is the extreme on the chosen polarity side.

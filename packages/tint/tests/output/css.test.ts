@@ -143,3 +143,24 @@ describe("toCSS", () => {
     expect(toCSS({ ...light, palettes: [] })).toBe(":root {\n}");
   });
 });
+
+describe("automatic block exclusions", () => {
+  it("excludes sibling themes' custom selectors so a class can force a mode", () => {
+    const lightClass = {
+      ...light,
+      selector: ".light",
+      prefersColorScheme: "light" as const,
+    };
+    const css = toCSS([lightClass, dark]);
+    expect(css).toContain("@media (prefers-color-scheme: light) {\n  :root:not(.dark) {");
+    expect(css).toContain("@media (prefers-color-scheme: dark) {\n  :root:not(.light) {");
+    expect(css.startsWith(".light {\n")).toBe(true);
+    expect(css).toContain("\n.dark {\n");
+  });
+
+  it("does not exclude :root siblings or itself", () => {
+    const css = toCSS([light, dark]);
+    expect(css).toContain("@media (prefers-color-scheme: dark) {\n  :root {");
+    expect(css).not.toContain(":not(");
+  });
+});

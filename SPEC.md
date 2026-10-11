@@ -409,8 +409,10 @@ Output per result (selector from `options.selector ?? result.selector`). Theme s
 `@media (…) { :root { … } }`; with a media preference and a custom selector such as
 `.dark`, a manual block `<selector> { … }` followed by the automatic `@media (…) { :root { … } }`
 block, so the theme applies when the class is present *or* when the OS prefers it. An
-explicit `options.selector` replaces `:root` in the automatic block too. The alias layer in
-`toCSSWithTailwindAndTint` is scoped the same way. One `/* <palette> palette */` comment per palette when `comments !== false`.
+explicit `options.selector` replaces `:root` in the automatic block too. When several results
+are formatted together, each automatic block excludes the custom (non-`:root`) selectors of
+the sibling themes (`:root:not(.light)`), so a class can override the OS preference. The
+alias layer in `toCSSWithTailwindAndTint` is scoped the same way. One `/* <palette> palette */` comment per palette when `comments !== false`.
 Variables named by `tokenVarName`. `format: "oklch"` uses `formatOKLCH`. Multiple results are
 joined with a blank line.
 

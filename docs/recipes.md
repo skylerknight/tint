@@ -243,28 +243,41 @@ theme must share the token structure.
 
 ```ts
 export default defineConfig([
-  { name: "light", mode: "light", selector: ":root", colors: lightColors, tokens },
+  { name: "light", mode: "light", selector: ".light", prefersColorScheme: "light", colors: lightColors, tokens },
   { name: "dark", mode: "dark", selector: ".dark", prefersColorScheme: "dark", colors: darkColors, tokens },
 ]);
 ```
 
-The dark theme is emitted twice: a manual `.dark { … }` block and an automatic
-`@media (prefers-color-scheme: dark) { :root { … } }` block. So it applies when the
-`dark` class is on `<html>` *or* when the OS prefers dark, and you get a working
-"follow the system" default plus a manual toggle for free:
+Each theme is emitted twice: a manual block (`.light { … }`, `.dark { … }`) and an
+automatic block that excludes the other theme's class
+(`@media (prefers-color-scheme: dark) { :root:not(.light) { … } }` and the mirror for
+light). With no class on `<html>` the OS preference decides; `.light` or `.dark` forces a
+mode regardless of the OS. That gives a "follow the system" default plus a real toggle:
 
 ```css
 @custom-variant dark (&:where(.dark, .dark *));
 ```
 
 ```ts
-document.documentElement.classList.toggle("dark");
+const html = document.documentElement;
+const isDark = () =>
+  html.classList.contains("dark") ||
+  (!html.classList.contains("light") && matchMedia("(prefers-color-scheme: dark)").matches);
+
+toggle.addEventListener("click", () => {
+  const dark = isDark();
+  html.classList.toggle("dark", !dark);
+  html.classList.toggle("light", dark);
+});
 ```
 
-If you want a class-only dark theme (no automatic switching), omit `prefersColorScheme`
-and only the `.dark { … }` block is emitted. If you want OS-only, use `selector: ":root"`
-and only the media block is emitted. The alias layer in the Tailwind output follows the
-same scoping, so unprefixed `--color-*` variables flip along with the theme.
+Two simpler setups: class-only (omit `prefersColorScheme`, keep `light` on `:root`; only
+`.dark { … }` is emitted and your script decides) and OS-only (`selector: ":root"` plus
+`prefersColorScheme`; only the media block is emitted). Avoid `light` on `:root` *with* a
+dark theme that has both a class and `prefersColorScheme`: under an OS dark preference
+the automatic dark block has nothing to exclude, so the page cannot be forced light. The
+alias layer in the Tailwind output follows the same scoping, so unprefixed `--color-*`
+variables flip along with the theme.
 
 For multiple *brands* (two customers, one product) add seeds rather than themes:
 `colors: { base, acme: "#0ea5e9", globex: "#f43f5e", … }` and apply `tint-acme` or

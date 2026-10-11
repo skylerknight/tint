@@ -564,6 +564,14 @@ An explicit `toCSS(result, { selector })` replaces the result's selector in the 
 block and `:root` in the automatic block. The alias layer of `toCSSWithTailwindAndTint`
 is scoped the same way.
 
+When several themes are formatted together, each automatic block excludes the other
+themes' custom selectors, so a class can override the OS preference. With
+`light: { selector: ".light", prefersColorScheme: "light" }` and
+`dark: { selector: ".dark", prefersColorScheme: "dark" }` the automatic blocks are
+`:root:not(.dark)` and `:root:not(.light)`: no class follows the OS, `.light` or `.dark`
+on `<html>` forces a mode either way. (With `light` on `:root` there is nothing to
+exclude, so under an OS dark preference the page cannot be forced light.)
+
 With `format: "oklch"`:
 
 ```css
@@ -1085,7 +1093,9 @@ location. Accepts a `default` export or a named `config` export, single or array
   (`@media (prefers-color-scheme: dark) { .dark { … } }`), so the theme only applied when
   both the class and the OS preference matched. v3 emits a manual `.dark { … }` block
   followed by an automatic `@media (…) { :root { … } }` block, so either one is enough.
-  If you relied on the old "both" semantics, drop `prefersColorScheme` and keep the class.
+  Give both themes a class selector and a `prefersColorScheme` to get "follow the OS,
+  but either class forces a mode". If you relied on the old "both" semantics, drop
+  `prefersColorScheme` and keep the class.
 
 ## FAQ
 

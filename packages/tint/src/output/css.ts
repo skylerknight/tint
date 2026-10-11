@@ -3,6 +3,11 @@ import { formatOKLCH } from "../color/oklch.js";
 import { tokenVarName } from "./names.js";
 
 export interface CSSOptions {
+  /**
+   * Other themes emitted alongside this one. Their custom selectors are excluded
+   * from this theme's automatic media block. `toCSS` fills this in for arrays.
+   */
+  siblings?: readonly GenerationResult[];
   /** Overrides `result.selector` for every result. */
   selector?: string;
   /** Value format (default `"hex"`). */
@@ -54,6 +59,22 @@ export function wrapInMediaQuery(
  *
  * `body` lines are already indented one level.
  */
+/**
+ * Selector for a theme's automatic (media query) block. It excludes the custom
+ * selectors of every sibling theme so a class like `.light` can force a mode even
+ * when the OS prefers the other one.
+ */
+export function automaticSelector(
+  result: GenerationResult,
+  siblings: readonly GenerationResult[] = [],
+  base = ":root",
+): string {
+  const exclusions = siblings
+    .filter((other) => other !== result && other.selector !== ":root")
+    .map((other) => `:not(${other.selector})`);
+  return base + exclusions.join("");
+}
+
 export function scopeBlock(
   body: readonly string[],
   result: GenerationResult,
@@ -112,9 +133,12 @@ export function resultToCSS(result: GenerationResult, options: CSSOptions = {}):
 
   const indented = body.map((line) => (line ? indent + line : line));
   // An explicit selector override also scopes the automatic (media query) block.
-  return scopeBlock(indented, result, selector, indent, options.selector ?? ":root").join(
-    "\n",
+  const automatic = automaticSelector(
+    result,
+    options.siblings,
+    options.selector ?? ":root",
   );
+  return scopeBlock(indented, result, selector, indent, automatic).join("\n");
 }
 
 /**
@@ -129,5 +153,7 @@ export function toCSS(
   options?: CSSOptions,
 ): string {
   const results = Array.isArray(result) ? result : [result];
-  return results.map((res) => resultToCSS(res, options)).join("\n\n");
+  return results
+    .map((res) => resultToCSS(res, { ...options, siblings: results }))
+    .join("\n\n");
 }

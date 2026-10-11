@@ -1,5 +1,5 @@
 import type { GenerationResult, GeneratedPalette } from "../engine/types.js";
-import { DEFAULT_INDENT, resultToCSS, scopeBlock } from "./css.js";
+import { DEFAULT_INDENT, automaticSelector, resultToCSS, scopeBlock } from "./css.js";
 import {
   TAILWIND_UTILITY_PREFIXES,
   cssVar,
@@ -228,7 +228,11 @@ function themeBlockWithTint(result: GenerationResult, opts: ResolvedOptions): st
  * scoped like the theme block (see `scopeBlock`). Returns `undefined` when the default
  * palette is absent.
  */
-function aliasLayer(result: GenerationResult, opts: ResolvedOptions): string | undefined {
+function aliasLayer(
+  result: GenerationResult,
+  siblings: readonly GenerationResult[],
+  opts: ResolvedOptions,
+): string | undefined {
   const defaultPalette = findPalette(result, opts.defaultPalette);
   if (!defaultPalette) return undefined;
 
@@ -241,7 +245,8 @@ function aliasLayer(result: GenerationResult, opts: ResolvedOptions): string | u
   }
 
   const indented = body.map((line) => opts.indent + line);
-  return scopeBlock(indented, result, result.selector, opts.indent).join("\n");
+  const automatic = automaticSelector(result, siblings);
+  return scopeBlock(indented, result, result.selector, opts.indent, automatic).join("\n");
 }
 
 /** One `@utility tint-<palette> { … }` per non-default palette. */
@@ -307,7 +312,11 @@ function shortcutUtilities(result: GenerationResult, opts: ResolvedOptions): str
 
 function cssBlocks(results: GenerationResult[], opts: ResolvedOptions): string[] {
   return results.map((res) =>
-    resultToCSS(res, { indent: opts.indent, includeOKLCH: opts.includeOKLCH }),
+    resultToCSS(res, {
+      indent: opts.indent,
+      includeOKLCH: opts.includeOKLCH,
+      siblings: results,
+    }),
   );
 }
 
@@ -382,7 +391,7 @@ export function toCSSWithTailwindAndTint(
   }
 
   for (const res of results) {
-    const aliases = aliasLayer(res, opts);
+    const aliases = aliasLayer(res, results, opts);
     if (aliases) sections.push(aliases);
   }
   sections.push(themeBlockWithTint(first, opts));

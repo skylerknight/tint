@@ -37,6 +37,14 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     .map((t) => `${t.name}: ${t.palettes.length} palettes, ${t.diagnostics.length} diagnostics`)
     .join("\n")}</pre>`;
 
+// Without a class the OS preference decides; a class forces a mode either way.
+const html = document.documentElement;
+const isDark = () =>
+  html.classList.contains("dark") ||
+  (!html.classList.contains("light") && matchMedia("(prefers-color-scheme: dark)").matches);
+
 document.querySelector("#toggle")!.addEventListener("click", () => {
-  document.documentElement.classList.toggle("dark");
+  const dark = isDark();
+  html.classList.toggle("dark", !dark);
+  html.classList.toggle("light", dark);
 });

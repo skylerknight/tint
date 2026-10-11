@@ -413,3 +413,20 @@ describe("shortcut collisions", () => {
     ).not.toThrow();
   });
 });
+
+describe("alias layer exclusions", () => {
+  it("scopes the automatic alias block with sibling exclusions", () => {
+    const lightClass = {
+      ...light,
+      selector: ".light",
+      prefersColorScheme: "light" as const,
+    };
+    const out = toCSSWithTailwindAndTint([lightClass, dark]);
+    expect(out).toContain(
+      "@media (prefers-color-scheme: dark) {\n  :root:not(.light) {\n    /* Unprefixed variables",
+    );
+    expect(out).toContain(
+      "@media (prefers-color-scheme: light) {\n  :root:not(.dark) {\n    /* Unprefixed variables",
+    );
+  });
+});

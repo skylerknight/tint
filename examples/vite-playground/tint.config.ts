@@ -54,7 +54,10 @@ export default defineConfig([
   {
     name: "light",
     mode: "light",
-    selector: ":root",
+    // Class selector + OS preference: applies automatically, and either class can
+    // force a mode (the automatic block excludes the other theme's selector).
+    selector: ".light",
+    prefersColorScheme: "light",
     colors: {
       base: "#ffffff",
       brand: "#7c3aed",
