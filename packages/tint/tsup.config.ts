@@ -1,6 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
+  // `src/v4` stays out of the bundle until the public cut-over.
   entry: {
     index: "src/index.ts",
     "cli/index": "src/cli/index.ts",
@@ -8,7 +9,13 @@ export default defineConfig({
     "postcss/index": "src/postcss/index.ts",
   },
   format: ["esm", "cjs"],
-  dts: { entry: { index: "src/index.ts", "vite/index": "src/vite/index.ts", "postcss/index": "src/postcss/index.ts" } },
+  dts: {
+    entry: {
+      index: "src/index.ts",
+      "vite/index": "src/vite/index.ts",
+      "postcss/index": "src/postcss/index.ts",
+    },
+  },
   splitting: false,
   sourcemap: true,
   clean: true,
