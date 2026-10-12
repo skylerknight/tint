@@ -607,6 +607,14 @@ export function buildSchema(): Schema {
               "Emitted color notation. Default `oklch`. Internal math stays OKLCH (§7).",
             enum: COLOR_FORMATS,
           },
+          prefix: {
+            description:
+              "Optional CSS identifier prepended to every custom property (§7). " +
+              '`"tint"` emits `--tint-brand-action-hover` and alias `--tint-action-hover`. ' +
+              "Omit it for no prefix. Utility names stay `tint-<palette>`.",
+            type: "string",
+            pattern: CSS_IDENT,
+          },
         },
         additionalProperties: false,
       },

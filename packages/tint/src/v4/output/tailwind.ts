@@ -1,9 +1,10 @@
 /**
  * Tailwind v4 output (docs/v4-spec.md §7, §8.2).
  *
- * `@theme static` maps unprefixed `--color-<group>[-<token>]` onto the
- * alias layer. `@utility tint-<palette>` re-points that layer (and the
- * theme color variables) for every palette except the default.
+ * `@theme static` maps `--color-<group>[-<token>]` onto the alias layer.
+ * `output.prefix` is included in those `var()` references. `@utility tint-<palette>`
+ * re-points that layer (and the theme color variables) for every palette
+ * except the default. The utility name stays `tint-<palette>`.
  * Groups that share a Tailwind prefix also get shortcuts (`text-strong`,
  * `border-firm`). `DEFAULT` becomes `<prefix>-default` (`text-default`).
  */
@@ -63,6 +64,7 @@ function resolveOptions(options: TailwindOptions | undefined): ResolvedTailwindO
   if (options?.comments !== undefined) css.comments = options.comments;
   if (options?.selector !== undefined) css.selector = options.selector;
   if (options?.aliases !== undefined) css.aliases = options.aliases;
+  if (options?.prefix !== undefined && options.prefix !== "") css.prefix = options.prefix;
   return {
     indent: options?.indent ?? DEFAULT_INDENT,
     tintUtilities: options?.tintUtilities ?? true,
@@ -141,11 +143,15 @@ function assertUniqueShortcuts(tokens: readonly SolvedTokenV4[]): void {
   }
 }
 
-function themeBlock(tokens: readonly SolvedTokenV4[], indent: string): string {
+function themeBlock(
+  tokens: readonly SolvedTokenV4[],
+  indent: string,
+  prefix: string | undefined,
+): string {
   const lines = ["@theme static {"];
   for (const token of tokens) {
     const color = themeColorVar(token.group, token.name);
-    const alias = aliasVarName(token.group, token.name);
+    const alias = aliasVarName(token.group, token.name, prefix);
     lines.push(`${indent}${color}: var(${alias});`);
   }
   lines.push("}");
@@ -163,22 +169,29 @@ function tintBlock(
   palette: PaletteResultV4,
   tokens: readonly SolvedTokenV4[],
   indent: string,
+  prefix: string | undefined,
 ): string {
   const lines = [`@utility tint-${palette.name} {`];
   for (const token of tokens) {
-    const source = tokenVarName(palette.name, token.group, token.name);
-    lines.push(`${indent}${aliasVarName(token.group, token.name)}: var(${source});`);
+    const source = tokenVarName(palette.name, token.group, token.name, prefix);
+    lines.push(
+      `${indent}${aliasVarName(token.group, token.name, prefix)}: var(${source});`,
+    );
     lines.push(`${indent}${themeColorVar(token.group, token.name)}: var(${source});`);
   }
   lines.push("}");
   return lines.join("\n");
 }
 
-function shortcutBlock(token: SolvedTokenV4, indent: string): string | undefined {
+function shortcutBlock(
+  token: SolvedTokenV4,
+  indent: string,
+  prefix: string | undefined,
+): string | undefined {
   const name = shortcutName(token);
   const property = SHORTCUT_PROPERTIES[token.group.toLowerCase()];
   if (name === undefined || property === undefined) return undefined;
-  const value = `var(${aliasVarName(token.group, token.name)})`;
+  const value = `var(${aliasVarName(token.group, token.name, prefix)})`;
   const lines = [`@utility ${name} {`];
   if (typeof property === "string") {
     lines.push(`${indent}${property}: ${value};`);
@@ -207,16 +220,17 @@ export function toTailwind(
   const tokens = fallback === undefined ? [] : authoredTokens(fallback);
   if (resolved.shortcuts) assertUniqueShortcuts(tokens);
 
-  const sections = [themeBlock(tokens, resolved.indent)];
+  const prefix = resolved.css.prefix;
+  const sections = [themeBlock(tokens, resolved.indent, prefix)];
   if (resolved.tintUtilities && fallback !== undefined) {
     for (const palette of first.palettes) {
       if (palette === fallback || tokens.length === 0) continue;
-      sections.push(tintBlock(palette, tokens, resolved.indent));
+      sections.push(tintBlock(palette, tokens, resolved.indent, prefix));
     }
   }
   if (resolved.shortcuts) {
     for (const token of tokens) {
-      const block = shortcutBlock(token, resolved.indent);
+      const block = shortcutBlock(token, resolved.indent, prefix);
       if (block !== undefined) sections.push(block);
     }
   }

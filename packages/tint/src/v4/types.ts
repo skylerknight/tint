@@ -256,6 +256,12 @@ export interface OutputOptions {
   formats?: readonly OutputFormat[];
   /** Default `oklch`. */
   format?: ColorFormat;
+  /**
+   * Prepended to every CSS custom property (§7).
+   * `"tint"` emits `--tint-brand-action-hover` and alias `--tint-action-hover`.
+   * Omit it for no prefix. `tint-<palette>` utility names are unchanged.
+   */
+  prefix?: string;
 }
 
 /**

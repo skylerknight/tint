@@ -223,6 +223,7 @@ const valid = [
         path: "./tint",
         formats: ["css", "tailwind", "dtcg", "flat"],
         format: "rgb",
+        prefix: "tint",
       },
     }),
   },
@@ -315,6 +316,12 @@ const invalid: { name: string; config: unknown; keyword: string; path: string }[
     config: base({ themes: { bare: {} } }),
     keyword: "anyOf",
     path: "/themes/bare",
+  },
+  {
+    name: "prefix is not a CSS identifier",
+    config: base({ output: { prefix: "9tint" } }),
+    keyword: "pattern",
+    path: "/output/prefix",
   },
 ];
 
