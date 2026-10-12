@@ -262,7 +262,7 @@ function applyState(
     }
   }
   if (state === "selected") draft.chroma *= SELECTED_CHROMA;
-  addSteps(draft, stateCount(kind, state, ctx), ctx);
+  addSteps(draft, stateStepCount(kind, state, ctx.states), ctx);
 }
 
 /**
@@ -301,8 +301,13 @@ function addSteps(draft: Draft, count: number, ctx: LowerContext): void {
   draft.away += count;
 }
 
-function stateCount(kind: Kind, state: CanonicalState, ctx: LowerContext): number {
-  const table = ctx.states?.[kind];
+/** Step count for one state atom (§4). `disabled` is 0; `applyState` handles it. */
+export function stateStepCount(
+  kind: Kind,
+  state: CanonicalState,
+  states: StateSteps | undefined,
+): number {
+  const table = states?.[kind];
   if (table !== undefined) {
     if (state === "pressed") {
       if (typeof table.pressed === "number") return table.pressed;
