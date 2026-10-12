@@ -106,3 +106,31 @@ export type {
   ResolvedPaletteColor,
   ResolvedTheme,
 } from "./resolve.js";
+export {
+  aliasVarName,
+  authoredTokens,
+  defaultPalette,
+  dtcgTokenKey,
+  flatTokenKey,
+  formatColor,
+  mediaQueryFor,
+  oklchComponents,
+  themeColorVar,
+  toCSS,
+  toCSSWithTailwind,
+  toDTCG,
+  toDTCGJSON,
+  toFlat,
+  toFlatJSON,
+  toTailwind,
+  assertConsistentStructure,
+} from "./output/index.js";
+export type {
+  CSSOptions,
+  DTCGColorToken,
+  DTCGColorValue,
+  DTCGFile,
+  FlatOptions,
+  TailwindOptions,
+  TintTokenExtension,
+} from "./output/index.js";
