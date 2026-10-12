@@ -39,6 +39,7 @@ export type {
   Config,
 } from "./types.js";
 
+export { MODES, DIRECTIONS, PRESETS, OUTPUT_FORMATS, COLOR_FORMATS } from "./types.js";
 export { surface, text, border, emphasis } from "./kinds.js";
 export { defineConfig } from "./define.js";
 export {
@@ -76,5 +77,5 @@ export {
   parseState,
 } from "./states.js";
 export type { CanonicalState, ParseStateResult } from "./states.js";
-export { normalizeToken } from "./normalize.js";
+export { HUE_SHIFT_PATTERN, normalizeToken } from "./normalize.js";
 export type { NormalizedToken, NormalizeResult, NormalizeOptions } from "./normalize.js";
