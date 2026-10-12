@@ -91,6 +91,14 @@ export type {
   TokenGraph,
 } from "./graph.js";
 export { resolveConfig } from "./resolve.js";
+export { generateV4 } from "./engine.js";
+export type {
+  EngineDiagnosticV4,
+  GeneratedColorV4,
+  GenerationResultV4,
+  PaletteResultV4,
+  SolvedTokenV4,
+} from "./engine.js";
 export type {
   ResolveResult,
   ResolvedConfig,
