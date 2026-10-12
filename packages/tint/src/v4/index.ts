@@ -78,3 +78,7 @@ export {
 export type { CanonicalState, ParseStateResult } from "./states.js";
 export { normalizeToken } from "./normalize.js";
 export type { NormalizedToken, NormalizeResult, NormalizeOptions } from "./normalize.js";
+export { validateConfig, assertConfig } from "./validate.js";
+export type { ValidationResult } from "./validate.js";
+export { ConfigError, formatConfigIssues } from "./errors.js";
+export type { ConfigIssue, ConfigFix } from "./errors.js";
