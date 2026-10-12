@@ -5,8 +5,12 @@
  * stored as written and resolved at build time (§2.4).
  */
 
-/** Light or dark theme baseline (§2.3). */
-export type Mode = "light" | "dark";
+/**
+ * Light or dark theme baseline (§2.3).
+ * The array is the source for the v4 JSON Schema enum.
+ */
+export const MODES = ["light", "dark"] as const;
+export type Mode = (typeof MODES)[number];
 
 /** Token kind. The name is the token's role (§2.4, §3). */
 export type Kind = "surface" | "text" | "border" | "emphasis";
@@ -45,8 +49,12 @@ export type State = AtomicState | CompoundState;
 /** One-token shift of the contrast ordinal (§2.4, §5). */
 export type ContrastNudge = "+1" | "-1" | "+2" | "-2";
 
-/** Force the solved side relative to the backdrop (§2.4). Replaces v3 `$invert`. */
-export type Direction = "lighter" | "darker";
+/**
+ * Force the solved side relative to the backdrop (§2.4). Replaces v3 `$invert`.
+ * The array is the source for the v4 JSON Schema enum.
+ */
+export const DIRECTIONS = ["lighter", "darker"] as const;
+export type Direction = (typeof DIRECTIONS)[number];
 
 /**
  * Absolute hue, or a degree shift written `+12` / `-12` (§2.4).
@@ -217,14 +225,26 @@ export interface StateSteps {
   emphasis?: StateStepCounts;
 }
 
-/** Built-in vocabulary (§2, §9). */
-export type Preset = "shadcn" | "material" | "primer" | "radix" | "polaris";
+/**
+ * Built-in vocabulary (§2, §9).
+ * The array is the source for the v4 JSON Schema enum.
+ */
+export const PRESETS = ["shadcn", "material", "primer", "radix", "polaris"] as const;
+export type Preset = (typeof PRESETS)[number];
 
-/** Artifacts `tint build` writes (§2, §7). */
-export type OutputFormat = "css" | "tailwind" | "dtcg" | "flat";
+/**
+ * Artifacts `tint build` writes (§2, §7).
+ * The array is the source for the v4 JSON Schema enum.
+ */
+export const OUTPUT_FORMATS = ["css", "tailwind", "dtcg", "flat"] as const;
+export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
 
-/** Emitted color notation. Internal math is always OKLCH (§7). */
-export type ColorFormat = "oklch" | "hex" | "rgb";
+/**
+ * Emitted color notation. Internal math is always OKLCH (§7).
+ * The array is the source for the v4 JSON Schema enum.
+ */
+export const COLOR_FORMATS = ["oklch", "hex", "rgb"] as const;
+export type ColorFormat = (typeof COLOR_FORMATS)[number];
 
 export interface OutputOptions {
   /** Output directory for `tint build`. */

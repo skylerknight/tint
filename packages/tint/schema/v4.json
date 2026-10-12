@@ -1,0 +1,719 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://unpkg.com/@skylerknight/tint/schema/v4.json",
+  "$comment": "Generated from packages/tint/src/v4 by scripts/build-schema.ts. Do not edit by hand.",
+  "title": "tint v4 config",
+  "description": "JSON form of a tint v4 config (docs/v4-spec.md §2). Kind functions return this data. `$schema` may be set on a JSON config (§7, §8).",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "description": "Optional document pointer. Canonical URL: https://unpkg.com/@skylerknight/tint/schema/v4.json.",
+      "type": "string",
+      "minLength": 1
+    },
+    "contrast": {
+      "$ref": "#/$defs/contrast"
+    },
+    "palette": {
+      "description": "Named palette colors (§2.2). At least one. Names are CSS identifiers (escapes are not accepted). The first entry is the default palette unless `default` is set.",
+      "type": "object",
+      "minProperties": 1,
+      "patternProperties": {
+        "^-?(?:[A-Za-z_]|[^\\u0000-\\u007F])(?:[A-Za-z0-9_-]|[^\\u0000-\\u007F])*$": {
+          "description": "A CSS color, or a palette color object (§2.2).",
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "$ref": "#/$defs/paletteColor"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "themes": {
+      "description": "Theme map (§2.3). Default when omitted: `{ light: { mode: \"light\" } }`. `mode` is required unless `extends` is set.",
+      "type": "object",
+      "patternProperties": {
+        "^.+$": {
+          "$ref": "#/$defs/theme"
+        }
+      },
+      "additionalProperties": false
+    },
+    "levels": {
+      "description": "Rename or add level aliases per kind (§2.5). Built-in names stay unless `$replace`.",
+      "type": "object",
+      "properties": {
+        "surface": {
+          "$ref": "#/$defs/kindLevelNames"
+        },
+        "text": {
+          "$ref": "#/$defs/kindLevelNames"
+        },
+        "border": {
+          "$ref": "#/$defs/kindLevelNames"
+        },
+        "emphasis": {
+          "$ref": "#/$defs/kindLevelNames"
+        }
+      },
+      "additionalProperties": false
+    },
+    "states": {
+      "description": "Per-kind state step overrides (§2, §4).",
+      "type": "object",
+      "properties": {
+        "surface": {
+          "$ref": "#/$defs/surfaceStateSteps"
+        },
+        "text": {
+          "$ref": "#/$defs/stateStepCounts"
+        },
+        "border": {
+          "$ref": "#/$defs/stateStepCounts"
+        },
+        "emphasis": {
+          "$ref": "#/$defs/stateStepCounts"
+        }
+      },
+      "additionalProperties": false
+    },
+    "preset": {
+      "description": "Built-in vocabulary (§2, §9).",
+      "enum": ["shadcn", "material", "primer", "radix", "polaris"]
+    },
+    "tokens": {
+      "description": "Groups of tokens (§2.4). Groups contain only tokens. Group and token names match ^[a-zA-Z][a-zA-Z0-9_-]*$.",
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9_-]*$": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z][a-zA-Z0-9_-]*$": {
+              "$ref": "#/$defs/token"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "output": {
+      "$ref": "#/$defs/output"
+    }
+  },
+  "required": ["palette", "tokens"],
+  "additionalProperties": false,
+  "$defs": {
+    "contrast": {
+      "title": "ContrastOptions",
+      "description": "Which contrast table to use, and how far to shift it (§2.1, §5).",
+      "type": "object",
+      "properties": {
+        "algorithm": {
+          "description": "Default `apca`.",
+          "enum": ["apca", "wcag2"]
+        },
+        "level": {
+          "description": "Default `standard` (shift 0). `more` / `max` shift by +1 / +2, capped at 5.",
+          "enum": ["standard", "more", "max"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "themeContrast": {
+      "title": "ThemeContrastOptions",
+      "description": "A theme may override the contrast level, not the algorithm (§2.3).",
+      "type": "object",
+      "properties": {
+        "level": {
+          "enum": ["standard", "more", "max"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "paletteColor": {
+      "title": "PaletteColor",
+      "type": "object",
+      "properties": {
+        "color": {
+          "description": "Any CSS color. Supplies hue and chroma; lightness is solved (§2.2).",
+          "type": "string",
+          "minLength": 1
+        },
+        "default": {
+          "description": "Make this the unprefixed palette. Otherwise the first palette color is.",
+          "type": "boolean"
+        },
+        "exact": {
+          "description": "`true` snaps the first emphasis rest token to `color` when it passes. A \"group.token\" path snaps that token (§2.2, §6.5).",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*\\.[a-zA-Z][a-zA-Z0-9_-]*$"
+            }
+          ]
+        },
+        "tune": {
+          "description": "Per-palette-color overrides keyed by token path (§2.2). A Token replaces the token. TokenOptions merge.",
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z][a-zA-Z0-9_-]*(?:\\.(?:\\*|[a-zA-Z][a-zA-Z0-9_-]*))?$": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/token"
+                },
+                {
+                  "$ref": "#/$defs/tokenOptions"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["color"],
+      "additionalProperties": false
+    },
+    "paletteColorDelta": {
+      "title": "PaletteColorDelta",
+      "description": "Per-theme palette delta. Every field is optional (§2.3).",
+      "type": "object",
+      "properties": {
+        "color": {
+          "description": "Any CSS color. Supplies hue and chroma; lightness is solved (§2.2).",
+          "type": "string",
+          "minLength": 1
+        },
+        "default": {
+          "description": "Make this the unprefixed palette. Otherwise the first palette color is.",
+          "type": "boolean"
+        },
+        "exact": {
+          "description": "`true` snaps the first emphasis rest token to `color` when it passes. A \"group.token\" path snaps that token (§2.2, §6.5).",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*\\.[a-zA-Z][a-zA-Z0-9_-]*$"
+            }
+          ]
+        },
+        "tune": {
+          "description": "Per-palette-color overrides keyed by token path (§2.2). A Token replaces the token. TokenOptions merge.",
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z][a-zA-Z0-9_-]*(?:\\.(?:\\*|[a-zA-Z][a-zA-Z0-9_-]*))?$": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/token"
+                },
+                {
+                  "$ref": "#/$defs/tokenOptions"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "token": {
+      "title": "Token",
+      "description": "A token's kind, plus an optional level and options (§2.4). Names are kept as written.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "description": "What the token is (§2.4, §3).",
+          "enum": ["surface", "text", "border", "emphasis"]
+        },
+        "level": {
+          "description": "Ordinal 1–5, the strings \"1\"–\"5\", or a level name (§2.4, §2.5, §3). Custom aliases from `levels` are accepted, including names kept after `$replace`, so this is not a closed per-kind enum. Built-in names: surface: sunken (1), flat (2), base (3), raised (4), floating (5), default (3); text: faint (1), muted (2), body (3), strong (4), max (5), default (3); border: hairline (1), soft (2), default (3), firm (4), heavy (5); emphasis: quiet (1), subtle (2), default (3), bold (4), loud (5).",
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            },
+            {
+              "type": "string",
+              "enum": ["1", "2", "3", "4", "5"]
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "not": {
+                "pattern": "^[0-9]+$"
+              }
+            }
+          ]
+        },
+        "state": {
+          "description": "Interaction layered on the rest token (§4). Enumerated from CANONICAL_STATES. `active` is an alias of `pressed` and is accepted in the same position (`selected-active`, not `active-selected`). Which strings apply depends on `kind` (`checked` is emphasis and border only)."
+        },
+        "on": {
+          "description": "Single backdrop: \"group\" or \"group.token\" (§2.4, §6.2).",
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*(?:\\.[a-zA-Z][a-zA-Z0-9_-]*)?$"
+        },
+        "contrast": {
+          "description": "Relative level nudge for this token only (§2.4, §5).",
+          "enum": ["+1", "-1", "+2", "-2"]
+        },
+        "direction": {
+          "description": "Force lighter or darker against the backdrop (§2.4).",
+          "enum": ["lighter", "darker"]
+        },
+        "chroma": {
+          "description": "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces capped) (§2.4).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "hue": {
+          "description": "Absolute hue in degrees, or a + / - shift (§2.4).",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^[+-](?:\\d+\\.?\\d*|\\.\\d+)$"
+            }
+          ]
+        },
+        "lc": {
+          "description": "Raw APCA target. Expert escape hatch; only with algorithm apca (§2.4).",
+          "type": "number"
+        },
+        "ratio": {
+          "description": "Raw WCAG ratio. Expert escape hatch; only with algorithm wcag2 (§2.4).",
+          "type": "number"
+        },
+        "step": {
+          "description": "Raw lightness steps (surface) or a step offset (other kinds) (§2.4).",
+          "type": "number"
+        },
+        "nudge": {
+          "description": "`false` disables auto-nudge for this token (§2.4, §6.4).",
+          "type": "boolean"
+        }
+      },
+      "required": ["kind"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "surface"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "hover",
+                  "pressed",
+                  "focus",
+                  "selected",
+                  "disabled",
+                  "selected-hover",
+                  "selected-pressed",
+                  "selected-focus",
+                  "selected-disabled",
+                  "active",
+                  "selected-active"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "text"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "hover",
+                  "pressed",
+                  "focus",
+                  "selected",
+                  "disabled",
+                  "selected-hover",
+                  "selected-pressed",
+                  "selected-focus",
+                  "selected-disabled",
+                  "active",
+                  "selected-active"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "border"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "hover",
+                  "pressed",
+                  "focus",
+                  "selected",
+                  "checked",
+                  "disabled",
+                  "selected-hover",
+                  "selected-pressed",
+                  "selected-focus",
+                  "selected-disabled",
+                  "checked-hover",
+                  "checked-pressed",
+                  "checked-focus",
+                  "checked-disabled",
+                  "active",
+                  "selected-active",
+                  "checked-active"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "emphasis"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "hover",
+                  "pressed",
+                  "focus",
+                  "selected",
+                  "checked",
+                  "disabled",
+                  "selected-hover",
+                  "selected-pressed",
+                  "selected-focus",
+                  "selected-disabled",
+                  "checked-hover",
+                  "checked-pressed",
+                  "checked-focus",
+                  "checked-disabled",
+                  "active",
+                  "selected-active",
+                  "checked-active"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "tokenOptions": {
+      "title": "TokenOptions",
+      "description": "Options merged onto a token by palette `tune` (§2.2). A replacement token is a Token and includes `kind`. The merged token's kind is not known here, so every input state spelling is allowed.",
+      "type": "object",
+      "properties": {
+        "state": {
+          "description": "Interaction layered on the rest token (§4). Enumerated from CANONICAL_STATES. `active` is an alias of `pressed` and is accepted in the same position (`selected-active`, not `active-selected`).",
+          "enum": [
+            "hover",
+            "pressed",
+            "focus",
+            "selected",
+            "checked",
+            "disabled",
+            "selected-hover",
+            "selected-pressed",
+            "selected-focus",
+            "selected-disabled",
+            "checked-hover",
+            "checked-pressed",
+            "checked-focus",
+            "checked-disabled",
+            "active",
+            "selected-active",
+            "checked-active"
+          ]
+        },
+        "on": {
+          "description": "Single backdrop: \"group\" or \"group.token\" (§2.4, §6.2).",
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*(?:\\.[a-zA-Z][a-zA-Z0-9_-]*)?$"
+        },
+        "contrast": {
+          "description": "Relative level nudge for this token only (§2.4, §5).",
+          "enum": ["+1", "-1", "+2", "-2"]
+        },
+        "direction": {
+          "description": "Force lighter or darker against the backdrop (§2.4).",
+          "enum": ["lighter", "darker"]
+        },
+        "chroma": {
+          "description": "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces capped) (§2.4).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "hue": {
+          "description": "Absolute hue in degrees, or a + / - shift (§2.4).",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^[+-](?:\\d+\\.?\\d*|\\.\\d+)$"
+            }
+          ]
+        },
+        "lc": {
+          "description": "Raw APCA target. Expert escape hatch; only with algorithm apca (§2.4).",
+          "type": "number"
+        },
+        "ratio": {
+          "description": "Raw WCAG ratio. Expert escape hatch; only with algorithm wcag2 (§2.4).",
+          "type": "number"
+        },
+        "step": {
+          "description": "Raw lightness steps (surface) or a step offset (other kinds) (§2.4).",
+          "type": "number"
+        },
+        "nudge": {
+          "description": "`false` disables auto-nudge for this token (§2.4, §6.4).",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "kindLevelNames": {
+      "title": "KindLevelNames",
+      "description": "Aliases for one kind (§2.5). Values are ordinals 1–5. `$replace: true` drops the built-in names, including `default`.",
+      "type": "object",
+      "properties": {
+        "$replace": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^(?!\\$)(?!(?:1|2|3|4|5)$).+$": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      },
+      "additionalProperties": false
+    },
+    "stateStepCounts": {
+      "title": "StateStepCounts",
+      "description": "Per-state step counts (§4). `active` is an alias of `pressed`.",
+      "type": "object",
+      "properties": {
+        "hover": {
+          "description": "How many steps `hover` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "pressed": {
+          "description": "How many steps `pressed` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "focus": {
+          "description": "How many steps `focus` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "selected": {
+          "description": "How many steps `selected` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "checked": {
+          "description": "How many steps `checked` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "disabled": {
+          "description": "How many steps `disabled` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "active": {
+          "description": "Step count for the `active` alias of `pressed` (§4).",
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "surfaceStateSteps": {
+      "title": "SurfaceStateSteps",
+      "description": "Surface step counts, plus the OKLCH lightness size of one step (§4).",
+      "type": "object",
+      "properties": {
+        "hover": {
+          "description": "How many steps `hover` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "pressed": {
+          "description": "How many steps `pressed` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "focus": {
+          "description": "How many steps `focus` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "selected": {
+          "description": "How many steps `selected` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "checked": {
+          "description": "How many steps `checked` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "disabled": {
+          "description": "How many steps `disabled` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "active": {
+          "description": "Step count for the `active` alias of `pressed` (§4).",
+          "type": "number"
+        },
+        "step": {
+          "type": "object",
+          "properties": {
+            "light": {
+              "type": "number"
+            },
+            "dark": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "theme": {
+      "title": "ThemeOptions",
+      "description": "Theme options (§2.3). `mode` may be omitted when `extends` names another theme.",
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": ["light", "dark"]
+        },
+        "selector": {
+          "description": "Default `:root`.",
+          "type": "string"
+        },
+        "media": {
+          "description": "`true` means `prefers-color-scheme` matching `mode`. A string is a custom media query.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "contrast": {
+          "$ref": "#/$defs/themeContrast"
+        },
+        "palette": {
+          "description": "Per-theme palette deltas. A string replaces `color` (§2.3).",
+          "type": "object",
+          "patternProperties": {
+            "^-?(?:[A-Za-z_]|[^\\u0000-\\u007F])(?:[A-Za-z0-9_-]|[^\\u0000-\\u007F])*$": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "$ref": "#/$defs/paletteColorDelta"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "extends": {
+          "description": "Inherit another theme's options.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": ["mode"],
+          "properties": {
+            "mode": {
+              "enum": ["light", "dark"]
+            }
+          }
+        },
+        {
+          "required": ["extends"],
+          "properties": {
+            "extends": {
+              "description": "Inherit another theme's options.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "output": {
+      "title": "OutputOptions",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "Output directory for `tint build`.",
+          "type": "string"
+        },
+        "formats": {
+          "description": "File formats (§2, §7).",
+          "type": "array",
+          "items": {
+            "enum": ["css", "tailwind", "dtcg", "flat"]
+          }
+        },
+        "format": {
+          "description": "Emitted color notation. Default `oklch`. Internal math stays OKLCH (§7).",
+          "enum": ["oklch", "hex", "rgb"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

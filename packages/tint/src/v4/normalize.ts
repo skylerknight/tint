@@ -282,7 +282,13 @@ function isDirection(value: unknown): value is Direction {
   return typeof value === "string" && (DIRECTIONS as readonly string[]).includes(value);
 }
 
+/**
+ * Degree shift written `+12` / `-12` (§2.4). Absolute hues are numbers.
+ * Shared with the v4 JSON Schema so the pattern cannot drift.
+ */
+export const HUE_SHIFT_PATTERN = /^[+-](?:\d+\.?\d*|\.\d+)$/;
+
 function isHue(value: unknown): value is Hue {
   if (typeof value === "number") return Number.isFinite(value);
-  return typeof value === "string" && /^[+-](?:\d+\.?\d*|\.\d+)$/.test(value);
+  return typeof value === "string" && HUE_SHIFT_PATTERN.test(value);
 }
