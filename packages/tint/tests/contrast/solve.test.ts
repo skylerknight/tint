@@ -24,6 +24,7 @@ import {
   apcaRawMetric,
   maxContrast,
   preferredPolarity,
+  solveAgainstSet,
   solveContrast,
   wcag2Metric,
 } from "../../src/contrast/solve.js";
@@ -366,5 +367,47 @@ describe("solveContrast wcag2 metric", () => {
     expect(darker.reached).toBe(false);
     expect(darker.color.l).toBe(0);
     expect(darker.lc).toBe(1);
+  });
+});
+
+describe("solveAgainstSet", () => {
+  const seed: OKLCH = { l: 0.55, c: 0.12, h: 250 };
+
+  it("meets the target on every backdrop of the chosen side", () => {
+    const backs = [WHITE, gray(230), gray(245)];
+    const result = solveAgainstSet(seed, backs, 60);
+    expect(result.polarity).toBe("darker");
+    expect(result.reached).toBe(true);
+    for (const bg of backs) {
+      expect(lcOf(result.color, bg)).toBeGreaterThanOrEqual(60);
+    }
+    expect(result.lc).toBeCloseTo(
+      Math.min(...backs.map((bg) => lcOf(result.color, bg))),
+      6,
+    );
+  });
+
+  it("matches a locked single-backdrop solveContrast call", () => {
+    const alone = solveContrast(seed, gray(210), 75, { polarity: "darker" });
+    const set = solveAgainstSet(seed, [gray(210)], 75, { polarity: "darker" });
+    expect(set.polarity).toBe("darker");
+    expect(set.reached).toBe(alone.reached);
+    expect(set.color).toEqual(alone.color);
+    expect(set.lc).toBeCloseTo(alone.lc, 6);
+  });
+
+  it("stays on a locked side when the target is unreachable", () => {
+    const result = solveAgainstSet(seed, [WHITE], 90, { polarity: "lighter" });
+    expect(result.polarity).toBe("lighter");
+    expect(result.reached).toBe(false);
+    expect(result.color.l).toBe(1);
+  });
+
+  it("chooses the side that can reach when the other cannot", () => {
+    // Lighter-on-white cannot reach Lc 45. The unlocked search must pick darker.
+    const result = solveAgainstSet(seed, [WHITE], 45, { metric: apcaMetric });
+    expect(result.reached).toBe(true);
+    expect(result.polarity).toBe("darker");
+    expect(lcOf(result.color, WHITE)).toBeGreaterThanOrEqual(45);
   });
 });

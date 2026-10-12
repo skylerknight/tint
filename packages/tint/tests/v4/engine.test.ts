@@ -21,9 +21,9 @@ const PALETTE = {
 } as const;
 
 /**
- * Rest tokens plus states. Each backdrop is a single color (the page or the
- * base surface). A later change solves against every member of a backdrop set.
- * Targets stay reachable without the label auto-nudge in §6.4.
+ * Rest tokens plus states, and text whose backdrop is the whole row set
+ * (default, hover, pressed, selected). Targets stay reachable without the
+ * label auto-nudge in §6.4, which this milestone does not run.
  */
 function sampleConfig(algorithm: ContrastAlgorithm) {
   return {
@@ -40,6 +40,15 @@ function sampleConfig(algorithm: ContrastAlgorithm) {
         raised: surface("raised"),
         hover: surface({ state: "hover" }),
         pressed: surface({ state: "pressed" }),
+      },
+      row: {
+        DEFAULT: surface(),
+        hover: surface({ state: "hover" }),
+        pressed: surface({ state: "pressed" }),
+        selected: surface({ state: "selected" }),
+        on: text({ on: "row" }),
+        "on-hover": text({ state: "hover", on: "row" }),
+        "on-pressed": text({ state: "pressed", on: "row" }),
       },
       action: {
         quiet: emphasis("quiet"),
@@ -177,6 +186,7 @@ describe("generateV4", () => {
             ["action.DEFAULT", "action.hover", "action.pressed"],
             ["ink.DEFAULT", "ink.hover", "ink.pressed"],
             ["line.DEFAULT", "line.hover", "line.pressed"],
+            ["row.on", "row.on-hover", "row.on-pressed"],
           ] as const;
           for (const [restId, hoverId, pressedId] of groups) {
             const rest = token(palette, restId);
