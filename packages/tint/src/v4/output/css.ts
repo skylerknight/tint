@@ -2,8 +2,9 @@
  * v4 CSS variables (docs/v4-spec.md §2.3, §7, §8.1).
  *
  * Every palette color emits the full authored token set. The default
- * palette also emits an unprefixed alias layer (`--tint-ink`, `--action`)
- * inside the same theme scope. `tint-<palette>` re-points those aliases.
+ * palette also emits an alias layer (`--action`, or `--tint-action` when
+ * `prefix` is set) inside the same theme scope. `tint-<palette>` re-points
+ * those aliases. The utility name does not take `prefix`.
  *
  * Theme scoping matches v3: selector block, media block, or both. Sibling
  * class selectors are excluded from the automatic block. `media: true` is
@@ -17,7 +18,13 @@ import { formatOKLCH } from "../../color/oklch.js";
 import { DEFAULT_INDENT, automaticSelector, scopeBlock } from "../../output/css.js";
 import type { ColorFormat } from "../types.js";
 import type { GeneratedColorV4, GenerationResultV4, PaletteResultV4 } from "../engine.js";
-import { aliasVarName, authoredTokens, defaultPalette, tokenVarName } from "./names.js";
+import {
+  aliasVarName,
+  authoredTokens,
+  cssPrefix,
+  defaultPalette,
+  tokenVarName,
+} from "./names.js";
 
 export interface CSSOptions {
   /** Emitted notation. Default `oklch`. Internal colors stay OKLCH. */
@@ -33,6 +40,11 @@ export interface CSSOptions {
   selector?: string;
   /** Unprefixed alias layer for the default palette. Default true. */
   aliases?: boolean;
+  /**
+   * Prepended to every custom property (`"tint"` → `--tint-brand-action`).
+   * Default: none. Does not change `tint-<palette>` utility names.
+   */
+  prefix?: string;
 }
 
 interface ResolvedCSSOptions {
@@ -41,6 +53,7 @@ interface ResolvedCSSOptions {
   comments: boolean;
   selector?: string;
   aliases: boolean;
+  prefix?: string;
 }
 
 const V3_CONTRAST = {
@@ -81,13 +94,16 @@ function channel(value: number): number {
 }
 
 function resolveOptions(options: CSSOptions | undefined): ResolvedCSSOptions {
-  const resolved: ResolvedCSSOptions = {
+  let resolved: ResolvedCSSOptions = {
     format: options?.format ?? "oklch",
     indent: options?.indent ?? DEFAULT_INDENT,
     comments: options?.comments ?? true,
     aliases: options?.aliases ?? true,
   };
-  if (options?.selector !== undefined) return { ...resolved, selector: options.selector };
+  if (options?.selector !== undefined)
+    resolved = { ...resolved, selector: options.selector };
+  const prefix = cssPrefix(options?.prefix);
+  if (prefix !== undefined) resolved = { ...resolved, prefix };
   return resolved;
 }
 
@@ -199,26 +215,37 @@ function paletteLines(
   palette: PaletteResultV4,
   format: ColorFormat,
   comments: boolean,
+  prefix: string | undefined,
 ): string[] {
   const tokens = authoredTokens(palette);
   if (tokens.length === 0 && !comments) return [];
   const lines: string[] = [];
   if (comments) lines.push(`/* ${palette.name} palette */`);
   for (const token of tokens) {
-    const name = tokenVarName(palette.name, token.group, token.name);
+    const name = tokenVarName(palette.name, token.group, token.name, prefix);
     lines.push(`${name}: ${formatColor(token.color, format)};`);
   }
   return lines;
 }
 
-function aliasLines(palette: PaletteResultV4, comments: boolean): string[] {
+function aliasLines(
+  palette: PaletteResultV4,
+  comments: boolean,
+  prefix: string | undefined,
+): string[] {
   const tokens = authoredTokens(palette);
   if (tokens.length === 0) return [];
   const lines: string[] = [];
-  if (comments) lines.push(`/* Unprefixed aliases (${palette.name}) */`);
+  if (comments) {
+    lines.push(
+      prefix === undefined
+        ? `/* Unprefixed aliases (${palette.name}) */`
+        : `/* Aliases (${palette.name}) */`,
+    );
+  }
   for (const token of tokens) {
-    const alias = aliasVarName(token.group, token.name);
-    const source = tokenVarName(palette.name, token.group, token.name);
+    const alias = aliasVarName(token.group, token.name, prefix);
+    const source = tokenVarName(palette.name, token.group, token.name, prefix);
     lines.push(`${alias}: var(${source});`);
   }
   return lines;
@@ -227,7 +254,9 @@ function aliasLines(palette: PaletteResultV4, comments: boolean): string[] {
 function resultBody(result: GenerationResultV4, options: ResolvedCSSOptions): string[] {
   const body: string[] = [];
   const blocks = result.palettes
-    .map((palette) => paletteLines(palette, options.format, options.comments))
+    .map((palette) =>
+      paletteLines(palette, options.format, options.comments, options.prefix),
+    )
     .filter((lines) => lines.length > 0);
   blocks.forEach((lines, index) => {
     if (index > 0) body.push("");
@@ -237,7 +266,7 @@ function resultBody(result: GenerationResultV4, options: ResolvedCSSOptions): st
   if (!options.aliases) return body;
   const fallback = defaultPalette(result);
   if (fallback === undefined) return body;
-  const aliases = aliasLines(fallback, options.comments);
+  const aliases = aliasLines(fallback, options.comments, options.prefix);
   if (aliases.length === 0) return body;
   if (body.length > 0) body.push("");
   body.push(...aliases);

@@ -49,7 +49,7 @@ defineConfig({
   states?: StateSteps,                                // override per-kind state step sizes
   preset?: Preset,                                    // shadcn | material | primer | radix | polaris
   tokens:  Record<string /*group*/, Record<string /*token*/, Token>>,
-  output?: { path?: string, formats?: ('css' | 'tailwind' | 'dtcg' | 'flat')[], format?: 'oklch' | 'hex' | 'rgb' },
+  output?: { path?: string, formats?: ('css' | 'tailwind' | 'dtcg' | 'flat')[], format?: 'oklch' | 'hex' | 'rgb', prefix?: string },
 })
 ```
 
@@ -285,8 +285,8 @@ Disabled tokens and `border(1–2)` are never contrast-linted.
 
 ## 7. Outputs
 
-- **CSS variables:** `--<name>-<group>[-<token>]` per theme block. The default palette color also gets an unprefixed alias layer (`--action`) that `tint-<name>` re-points. All math is OKLCH internally (not configurable). `output.format` picks the emitted notation: `'oklch'` (default), `'hex'`, or `'rgb'`. Output is sRGB-gamut only for now.
-- **Tailwind v4:** `@theme static { --color-<group>[-<token>]: var(--<group>[-<token>]) }`, plus `@utility tint-<name>` for every non-default palette color, plus shortcut utilities when the group name is a Tailwind prefix (`text-strong`, `border-firm`).
+- **CSS variables:** `--<name>-<group>[-<token>]` per theme block. The default palette color also gets an alias layer (`--action`) that `tint-<name>` re-points. `output.prefix` is an optional CSS identifier prepended to every custom property (default: none). `prefix: "tint"` emits `--tint-brand-action-hover` and alias `--tint-action-hover`. Swap classes stay `tint-<palette>`. All math is OKLCH internally (not configurable). `output.format` picks the emitted notation: `'oklch'` (default), `'hex'`, or `'rgb'`. Output is sRGB-gamut only for now.
+- **Tailwind v4:** `@theme static { --color-<group>[-<token>]: var(--[<prefix>-]<group>[-<token>]) }`, plus `@utility tint-<name>` for every non-default palette color, plus shortcut utilities when the group name is a Tailwind prefix (`text-strong`, `border-firm`). The `var()` targets include `output.prefix`. The utility names do not.
 - **DTCG 2025.10 JSON:** `{ <name>: { <group>: { $root | <token>: { $type: 'color', $value: { colorSpace: 'oklch', components, hex }, $description, $extensions: { 'dev.tint': { kind, level, state, on, algorithm, target, achieved } } } } } }`. One file per theme.
 - **Flat JSON:** `{ "brand.action.hover": "#…" }`.
 - **JSON Schema** for the config, published at `https://unpkg.com/@skylerknight/tint/schema/v4.json`; `tint.config.json` may set `$schema`.
@@ -502,3 +502,4 @@ A preset supplies `levels` renames, optional state aliases, and optionally a tok
 | Oct 12, 2026 | **State grammar (§4).** At most one persistent state (`selected` or `checked`), then optional `disabled`, then optional one temporary state (`hover`, `pressed`, or `focus`). `disabled` does not combine with a temporary state. `active` normalizes to `pressed`. `checked` is emphasis and border only. The canonical strings are `CANONICAL_STATES`. |
 | Oct 12, 2026 | **`nudge?: boolean`** is a `TokenOptions` field (§2.4). §6.4 already consumes `nudge: false` on emphasis tokens; the field is accepted on every kind. |
 | Oct 12, 2026 | **`light-hc` sets `mode: "light"`.** §2.3 requires `mode`; the §8 example had dropped it. |
+| Oct 12, 2026 | **`output.prefix`.** Optional CSS identifier. When set, every custom property is `--<prefix>-…`, including aliases. `@theme` `var()` references follow. `tint-<palette>` utility names do not. Default is no prefix. |

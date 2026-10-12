@@ -220,7 +220,7 @@ describe("defineConfig", () => {
           on: text({ on: "action" }),
         },
       },
-      output: { path: "tint", formats: ["css", "dtcg"], format: "oklch" },
+      output: { path: "tint", formats: ["css", "dtcg"], format: "oklch", prefix: "tint" },
     });
 
     expectTypeOf(config.palette).toHaveProperty("neutral");
@@ -233,6 +233,7 @@ describe("defineConfig", () => {
     expectTypeOf(config.tokens.action).toHaveProperty("on");
     expectTypeOf(config.contrast.algorithm).toEqualTypeOf<"apca">();
     expectTypeOf(config.output.format).toEqualTypeOf<"oklch">();
+    expectTypeOf(config.output.prefix).toEqualTypeOf<"tint">();
   });
 
   it("accepts the §8 example", () => {

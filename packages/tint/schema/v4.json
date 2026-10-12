@@ -711,6 +711,11 @@
         "format": {
           "description": "Emitted color notation. Default `oklch`. Internal math stays OKLCH (§7).",
           "enum": ["oklch", "hex", "rgb"]
+        },
+        "prefix": {
+          "description": "Optional CSS identifier prepended to every custom property (§7). `\"tint\"` emits `--tint-brand-action-hover` and alias `--tint-action-hover`. Omit it for no prefix. Utility names stay `tint-<palette>`.",
+          "type": "string",
+          "pattern": "^-?(?:[A-Za-z_]|[^\\u0000-\\u007F])(?:[A-Za-z0-9_-]|[^\\u0000-\\u007F])*$"
         }
       },
       "additionalProperties": false

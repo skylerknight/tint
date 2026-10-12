@@ -49,7 +49,7 @@ const THEME_KEYS: readonly string[] = [
   "extends",
 ];
 const PALETTE_COLOR_KEYS: readonly string[] = ["color", "default", "exact", "tune"];
-const OUTPUT_KEYS: readonly string[] = ["path", "formats", "format"];
+const OUTPUT_KEYS: readonly string[] = ["path", "formats", "format", "prefix"];
 const THEME_CONTRAST_KEYS: readonly string[] = ["level"];
 const SURFACE_STEP_KEYS: readonly string[] = ["light", "dark"];
 const STATE_COUNT_KEYS: readonly string[] = [
@@ -90,6 +90,12 @@ const NAME_RE = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
 const ON_RE = /^[a-zA-Z][a-zA-Z0-9_-]*(?:\.[a-zA-Z][a-zA-Z0-9_-]*)?$/;
 /** `tune` keys: `group`, `group.token`, or `group.*` (§2.2). */
 const TUNE_RE = /^[a-zA-Z][a-zA-Z0-9_-]*(?:\.(?:\*|[a-zA-Z][a-zA-Z0-9_-]*))?$/;
+/**
+ * CSS identifier without escapes. Same pattern as palette names in the
+ * JSON Schema (`scripts/build-schema.ts`). `output.prefix` is one of these.
+ */
+const CSS_IDENT_RE =
+  /^-?(?:[A-Za-z_]|[^\u0000-\u007F])(?:[A-Za-z0-9_-]|[^\u0000-\u007F])*$/;
 
 /** Chroma multiplier (§2.4). Surfaces being capped further is an engine concern. */
 const CHROMA_MIN = 0;
@@ -1249,8 +1255,8 @@ function checkOutput(value: unknown, push: Ctx["push"]): void {
       issue({
         path: "output",
         message: "Expected output options.",
-        expected: "{ path?, formats?, format? }",
-        hint: "formats are css, tailwind, dtcg, or flat. format is oklch, hex, or rgb.",
+        expected: "{ path?, formats?, format?, prefix? }",
+        hint: "formats are css, tailwind, dtcg, or flat. format is oklch, hex, or rgb. prefix is a CSS identifier.",
       }),
     );
     return;
@@ -1275,6 +1281,7 @@ function checkOutput(value: unknown, push: Ctx["push"]): void {
   ) {
     push(enumIssue("output.format", value.format, COLOR_FORMATS, "Color format"));
   }
+  if (present(value, "prefix")) checkPrefix(value.prefix, push);
   if (!present(value, "formats")) return;
   if (!Array.isArray(value.formats)) {
     push(
@@ -1290,6 +1297,22 @@ function checkOutput(value: unknown, push: Ctx["push"]): void {
   for (let index = 0; index < value.formats.length; index += 1) {
     checkOutputFormat(value.formats[index], `output.formats.${index}`, push);
   }
+}
+
+function checkPrefix(value: unknown, push: Ctx["push"]): void {
+  if (typeof value === "string" && CSS_IDENT_RE.test(value)) return;
+  const shown = typeof value === "string" ? `"${value}"` : "";
+  push(
+    issue({
+      path: "output.prefix",
+      message:
+        shown === ""
+          ? "output.prefix must be a CSS identifier."
+          : `output.prefix ${shown} must be a CSS identifier.`,
+      expected: "a CSS identifier, with no escapes",
+      hint: 'Example: "tint". Omit prefix for no prefix. It is prepended to every CSS variable.',
+    }),
+  );
 }
 
 function checkOutputFormat(value: unknown, path: string, push: Ctx["push"]): void {

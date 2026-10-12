@@ -130,6 +130,7 @@ describe("valid configs", () => {
           path: "./out",
           formats: ["css", "tailwind", "dtcg", "flat"],
           format: "hex",
+          prefix: "tint",
         },
         tokens: {
           surface: { DEFAULT: { kind: "surface", step: 0 } },
@@ -752,6 +753,26 @@ describe("the rest of the config", () => {
       "contrast.level",
     );
     expect(level.didYouMean).toBe("standard");
+  });
+
+  it("accepts a CSS-identifier prefix and rejects one that is not", () => {
+    expect(issuesOf({ ...base(), output: { prefix: "tint" } })).toEqual([]);
+    expect(issuesOf({ ...base(), output: { prefix: "_brand" } })).toEqual([]);
+    expect(issuesOf({ ...base(), output: { prefix: "-ink" } })).toEqual([]);
+    const digit = at(
+      issuesOf({ ...base(), output: { prefix: "9tint" } }),
+      "output.prefix",
+    );
+    expect(digit.message).toContain("CSS identifier");
+    const spaced = at(
+      issuesOf({ ...base(), output: { prefix: "tint ink" } }),
+      "output.prefix",
+    );
+    expect(spaced.expected).toContain("CSS identifier");
+    const empty = at(issuesOf({ ...base(), output: { prefix: "" } }), "output.prefix");
+    expect(empty.message).toContain("CSS identifier");
+    const number = at(issuesOf({ ...base(), output: { prefix: 1 } }), "output.prefix");
+    expect(number.message).toBe("output.prefix must be a CSS identifier.");
   });
 
   it("rejects an unknown preset and a v3 json format", () => {
