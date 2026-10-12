@@ -244,6 +244,27 @@ describe("tint PostCSS plugin", () => {
     expect(existsSync(intellisenseFile())).toBe(false);
   });
 
+  it("passes output.prefix from the config, and a plugin prefix wins", async () => {
+    writeFixture(`export default {
+      palette: { neutral: "#ffffff", brand: "#3b82f6" },
+      tokens: {
+        surface: { DEFAULT: { kind: "surface" } },
+        text: { strong: { kind: "text", level: "strong" } },
+      },
+      output: { prefix: "tint" },
+    };`);
+
+    const fromConfig = await run(`@tint "./tint.config.ts";`);
+    expect(fromConfig.css).toContain("--tint-neutral-surface:");
+    expect(fromConfig.css).toContain("--color-surface: var(--tint-surface);");
+    expect(fromConfig.css).toContain("@utility tint-brand");
+    expect(fromConfig.css).not.toContain("@utility tint-tint-");
+
+    const overridden = await run(`@tint "./tint.config.ts";`, { prefix: "app" });
+    expect(overridden.css).toContain("--app-neutral-surface:");
+    expect(overridden.css).not.toContain("--tint-neutral-surface:");
+  });
+
   it("forwards formatter options such as format", async () => {
     writeFixture();
     const result = await run(`@tint "./tint.config.ts";`, { format: "hex" });

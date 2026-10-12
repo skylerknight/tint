@@ -2,6 +2,7 @@ import { mkdirSync, utimesSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import type { Logger, Plugin, ResolvedConfig, ViteDevServer } from "vite";
 import { findDefaultConfig, loadConfig, tintCacheDir } from "../loader/index.js";
+import { withConfigOutput } from "../v4/emit-options.js";
 import { generateV4 } from "../v4/engine.js";
 import type { GenerationResultV4 } from "../v4/engine.js";
 import { toTailwindIntelliSense } from "../v4/intellisense.js";
@@ -28,6 +29,7 @@ const TAILWIND_OPTION_KEYS = [
   "comments",
   "selector",
   "aliases",
+  "prefix",
   "tintUtilities",
   "shortcuts",
 ] as const satisfies readonly (keyof TailwindOptions)[];
@@ -124,7 +126,10 @@ export function tint(options: TintVitePluginOptions = {}): Plugin {
     const loaded = await loadConfig({ root, configPath });
     const results = generateV4(loaded.config);
     const entry: CacheEntry = {
-      css: toCSSWithTailwind(results, tintOptions),
+      css: toCSSWithTailwind(
+        results,
+        withConfigOutput(tintOptions, loaded.config.output),
+      ),
       intellisense: toTailwindIntelliSense(results),
       results,
       dependencies: loaded.dependencies,

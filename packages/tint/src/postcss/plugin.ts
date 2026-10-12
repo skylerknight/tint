@@ -2,6 +2,7 @@ import postcss from "postcss";
 import type { AtRule, Plugin, PluginCreator, Result } from "postcss";
 import { resolve } from "node:path";
 import { loadConfig } from "../loader/index.js";
+import { withConfigOutput } from "../v4/emit-options.js";
 import { generateV4 } from "../v4/engine.js";
 import { toTailwindIntelliSense } from "../v4/intellisense.js";
 import { toCSSWithTailwind } from "../v4/output/tailwind.js";
@@ -21,6 +22,7 @@ const FORMATTER_KEYS = [
   "comments",
   "selector",
   "aliases",
+  "prefix",
   "tintUtilities",
   "shortcuts",
 ] as const satisfies ReadonlyArray<keyof TailwindOptions>;
@@ -105,7 +107,10 @@ export const tintPostCSS: PluginCreator<TintPostCSSOptions> = (options = {}) => 
         }
       }
 
-      const css = toCSSWithTailwind(results, formatterOptions);
+      const css = toCSSWithTailwind(
+        results,
+        withConfigOutput(formatterOptions, loaded.config.output),
+      );
 
       if (writeIntelliSense) {
         writeQuietly(intellisensePath(root), toTailwindIntelliSense(results));

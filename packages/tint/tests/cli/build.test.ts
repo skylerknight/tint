@@ -64,6 +64,43 @@ describe("tint build", () => {
     expect(c.out()).toContain("Wrote 8 files to out/tokens");
   });
 
+  it("passes output.prefix through to CSS and Tailwind", async () => {
+    c.write(
+      "tint.config.json",
+      JSON.stringify({
+        palette: { neutral: "#ffffff", brand: "#2563eb" },
+        tokens: {
+          surface: { DEFAULT: { kind: "surface" } },
+          text: { strong: { kind: "text", level: "strong" } },
+        },
+        output: { prefix: "tint", formats: ["css", "tailwind", "dtcg", "flat"] },
+      }),
+    );
+    expect(await c.run(["build"])).toBe(0);
+
+    const css = readFileSync(join(c.dir, "tint", "light", "tokens.css"), "utf8");
+    expect(css).toContain("--tint-neutral-surface:");
+    expect(css).toContain("--tint-brand-text-strong:");
+    expect(css).not.toMatch(/^ {2}--neutral-surface:/m);
+
+    const tw = readFileSync(join(c.dir, "tint", "light", "tailwind.css"), "utf8");
+    expect(tw).toContain("--color-text-strong: var(--tint-text-strong);");
+    expect(tw).toContain("@utility tint-brand");
+    expect(tw).not.toContain("@utility tint-tint-");
+
+    const flat = JSON.parse(
+      readFileSync(join(c.dir, "tint", "light", "tokens.flat.json"), "utf8"),
+    );
+    expect(flat["brand.text.strong"]).toMatch(/^oklch\(/);
+    expect(flat).not.toHaveProperty("tint.brand.text.strong");
+
+    const dtcg = JSON.parse(
+      readFileSync(join(c.dir, "tint", "light", "tokens.dtcg.json"), "utf8"),
+    );
+    expect(dtcg.brand.text.strong.$type).toBe("color");
+    expect(dtcg).not.toHaveProperty("tint");
+  });
+
   it("falls back to config.output path and formats", async () => {
     c.write("tint.config.json", CLEAN_JSON_WITH_OUTPUT);
     expect(await c.run(["build"])).toBe(0);

@@ -255,6 +255,27 @@ describe("transform", () => {
     expect(warnings[0]).toContain("sRGB");
   });
 
+  it("passes output.prefix from the config into the stylesheet", async () => {
+    writeFileSync(
+      join(dir, "tint.config.ts"),
+      `export default {
+        palette: { neutral: "#ffffff", brand: "#3366ff" },
+        tokens: ${TOKENS},
+        output: { prefix: "tint" },
+      };
+      `,
+    );
+    const { transform } = createPlugin(dir);
+    const result = await transform.call(
+      createContext(),
+      `@tint "./tint.config.ts";`,
+      join(dir, "app.css"),
+    );
+    expect(result!.code).toContain("--tint-neutral-surface:");
+    expect(result!.code).toContain("--color-surface: var(--tint-surface);");
+    expect(result!.code).toContain("@utility tint-brand");
+  });
+
   it("forwards only utility options to the formatter", async () => {
     writeFileSync(join(dir, "tint.config.ts"), configSource());
     const { transform } = createPlugin(dir, {
