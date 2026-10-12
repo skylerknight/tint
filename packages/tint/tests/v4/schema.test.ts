@@ -20,7 +20,7 @@ function base(overrides: Record<string, unknown> = {}): Record<string, unknown> 
 
 /** Spec §8, the whole example, in the JSON form kind functions return. */
 const SPEC_EXAMPLE = {
-  $schema: "https://tint.dev/schema/v4.json",
+  $schema: "https://unpkg.com/@skylerknight/tint/schema/v4.json",
   contrast: { algorithm: "apca", level: "standard" },
   palette: {
     neutral: "#71717a",
@@ -93,7 +93,7 @@ const SPEC_EXAMPLE = {
 
 /** Spec §8 JSON excerpt, unchanged. */
 const SPEC_EXCERPT = {
-  $schema: "https://tint.dev/schema/v4.json",
+  $schema: "https://unpkg.com/@skylerknight/tint/schema/v4.json",
   palette: {
     neutral: "#71717a",
     brand: { color: "#7c3aed", exact: true },
@@ -359,7 +359,7 @@ describe("v4 JSON Schema", () => {
   it("is draft 2020-12 and published at the spec URL", () => {
     expect(schema).toMatchObject({
       $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "https://tint.dev/schema/v4.json",
+      $id: "https://unpkg.com/@skylerknight/tint/schema/v4.json",
     });
   });
 

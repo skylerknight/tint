@@ -5,8 +5,8 @@
  * contrast algorithms and shifts, output formats) so the published schema
  * cannot drift from those sources. Run: `pnpm --filter @skylerknight/tint schema`.
  *
- * Spec: docs/v4-spec.md §2–§4, §7, §8. The document id is
- * `https://tint.dev/schema/v4.json`.
+ * Spec: docs/v4-spec.md §2–§4, §7, §8. The document id is the file
+ * published with the package on unpkg.
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -61,7 +61,7 @@ const TUNE_PATTERN = `^${NAME}(?:\\.(?:\\*|${NAME}))?$`;
 const CSS_IDENT =
   "^-?(?:[A-Za-z_]|[^\\u0000-\\u007F])(?:[A-Za-z0-9_-]|[^\\u0000-\\u007F])*$";
 
-const SCHEMA_URL = "https://tint.dev/schema/v4.json";
+const SCHEMA_URL = "https://unpkg.com/@skylerknight/tint/schema/v4.json";
 
 type Equal<A, B> =
   (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;

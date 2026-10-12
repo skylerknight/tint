@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://tint.dev/schema/v4.json",
+  "$id": "https://unpkg.com/@skylerknight/tint/schema/v4.json",
   "$comment": "Generated from packages/tint/src/v4 by scripts/build-schema.ts. Do not edit by hand.",
   "title": "tint v4 config",
   "description": "JSON form of a tint v4 config (docs/v4-spec.md §2). Kind functions return this data. `$schema` may be set on a JSON config (§7, §8).",
   "type": "object",
   "properties": {
     "$schema": {
-      "description": "Optional document pointer. Canonical URL: https://tint.dev/schema/v4.json.",
+      "description": "Optional document pointer. Canonical URL: https://unpkg.com/@skylerknight/tint/schema/v4.json.",
       "type": "string",
       "minLength": 1
     },

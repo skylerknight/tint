@@ -289,7 +289,7 @@ Disabled tokens and `border(1–2)` are never contrast-linted.
 - **Tailwind v4:** `@theme static { --color-<group>[-<token>]: var(--<group>[-<token>]) }`, plus `@utility tint-<name>` for every non-default palette color, plus shortcut utilities when the group name is a Tailwind prefix (`text-strong`, `border-firm`).
 - **DTCG 2025.10 JSON:** `{ <name>: { <group>: { $root | <token>: { $type: 'color', $value: { colorSpace: 'oklch', components, hex }, $description, $extensions: { 'dev.tint': { kind, level, state, on, algorithm, target, achieved } } } } } }`. One file per theme.
 - **Flat JSON:** `{ "brand.action.hover": "#…" }`.
-- **JSON Schema** for the config, published at `https://tint.dev/schema/v4.json`; `tint.config.json` may set `$schema`.
+- **JSON Schema** for the config, published at `https://unpkg.com/@skylerknight/tint/schema/v4.json`; `tint.config.json` may set `$schema`.
 - **CLI:**
   - `tint build`
   - `tint check [--strict]`
@@ -384,7 +384,7 @@ export default defineConfig({
 
 JSON equivalent (excerpt):
 ```json
-{ "$schema": "https://tint.dev/schema/v4.json",
+{ "$schema": "https://unpkg.com/@skylerknight/tint/schema/v4.json",
   "palette": { "neutral": "#71717a", "brand": { "color": "#7c3aed", "exact": true } },
   "tokens": { "action": {
     "DEFAULT": { "kind": "emphasis" },
