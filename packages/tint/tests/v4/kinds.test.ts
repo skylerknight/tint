@@ -69,6 +69,7 @@ describe("kind functions", () => {
         lc: 70,
         ratio: 4.5,
         step: 0,
+        nudge: false,
       }),
       border("heavy", { hue: -15, contrast: "-1", direction: "lighter" }),
       surface("raised", { on: "panel", step: 2 }),
@@ -138,7 +139,9 @@ describe("kind types", () => {
       | "lc"
       | "ratio"
       | "step"
+      | "nudge"
     >();
+    expectTypeOf<TokenOptions>().toHaveProperty("nudge");
     expectTypeOf<TokenOptions>().toHaveProperty("state");
     expectTypeOf<TokenOptions>().toHaveProperty("on");
     expectTypeOf<TokenOptions>().not.toHaveProperty("kind");
@@ -250,6 +253,7 @@ describe("defineConfig", () => {
           palette: { brand: "#a78bfa" },
         },
         "light-hc": {
+          mode: "light",
           extends: "light",
           media: "(prefers-contrast: more)",
           contrast: { level: "more" },

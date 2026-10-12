@@ -32,9 +32,10 @@ export type AtomicState =
 /**
  * Compound states are `-`-joined and applied left to right (§4).
  *
- * Only pairs are modeled (`selected-hover`). The spec doesn't cap length, and
- * it leaves unknown or nonsensical combinations (`disabled-hover`) to
- * validation, so those pairs still type-check.
+ * Only pairs are modeled (`selected-hover`). The grammar in §4 is narrower
+ * than this type: `disabled-hover` still type-checks, and `parseState`
+ * rejects it. Three-part strings are not in this type; the parser rejects
+ * them at runtime anyway, because JSON configs are not type-checked.
  */
 export type CompoundState = `${AtomicState}-${AtomicState}`;
 
@@ -56,8 +57,8 @@ export type Hue = number | `+${number}` | `-${number}`;
 /**
  * Options shared by every kind (§2.4). `level` is a separate argument.
  *
- * `nudge` is mentioned on emphasis tokens in §6.4 but is not a field here.
- * It stays off this type until §2 lists it.
+ * `nudge: false` disables auto-nudge (§6.4). The spec describes that for
+ * emphasis tokens; the field sits on the shared options object.
  */
 export interface TokenOptions {
   /** Interaction layered on the rest token (§4). */
@@ -78,6 +79,8 @@ export interface TokenOptions {
   ratio?: number;
   /** Raw lightness steps (surface) or a step offset (other kinds). */
   step?: number;
+  /** `false` disables auto-nudge for this token (§2.4, §6.4). */
+  nudge?: boolean;
 }
 
 /** A token: its kind, plus an optional level and {@link TokenOptions}. */
@@ -141,9 +144,9 @@ interface ThemeFields {
 /**
  * Theme options (§2.3).
  *
- * §2.3 lists `mode` as required. The §8 `light-hc` theme omits it and sets
- * `extends` instead, so `mode` is required only when the theme does not
- * inherit another one.
+ * §2.3 lists `mode` as required, and the §8 `light-hc` example sets it.
+ * `extends` inherits another theme's options, so `mode` may be omitted when
+ * `extends` is set and the parent supplies it.
  */
 export type ThemeOptions =
   | (ThemeFields & { mode: Mode; extends?: string })

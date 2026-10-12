@@ -100,6 +100,7 @@ type TokenOptions = {
   direction?: 'lighter' | 'darker';             // force the side vs the backdrop (replaces $invert)
   chroma?: number;                              // multiplier on the palette color's chroma, 0..2 (default 1; surfaces capped)
   hue?: number | `+${number}` | `-${number}`;   // absolute hue or shift (degrees)
+  nudge?: boolean;                              // false disables auto-nudge for this token (§6.4)
   // expert escape hatches (lint: expert-value)
   lc?: number;                                  // raw APCA target (only with algorithm 'apca')
   ratio?: number;                               // raw WCAG ratio (only with algorithm 'wcag2')
@@ -107,6 +108,7 @@ type TokenOptions = {
 };
 ```
 - `level` may be omitted when only options are passed: `emphasis({ state: 'hover' })`.
+- `nudge: false` disables the label auto-nudge (§6.4) for that token. It is described for emphasis tokens and is accepted on every kind.
 - **Returned data** (and the JSON form): `{ "kind": "emphasis", "level": 3, "state": "hover", "on": "surface" }`. Names are kept as written and resolved at build time.
 - **Group and token names** must match `/^[a-zA-Z][a-zA-Z0-9_-]*$/`.
 - **`DEFAULT`** drops its segment in CSS names and becomes `$root` in DTCG.
@@ -119,6 +121,8 @@ levels: {
   emphasis: { primary: 3, $replace: true } // $replace: only these names are valid
 }
 ```
+
+Aliases merge with the §3 defaults. `$replace: true` drops those defaults, including the universal `default` alias. Ordinals `1`–`5`, including the strings `"1"`–`"5"`, still resolve. Omitting `level` is still ordinal 3, even when `default` was removed or pointed at another ordinal.
 
 ---
 
@@ -153,7 +157,29 @@ States are transient or toggled **interactions**, written as participles. They m
 | `checked` | emphasis, border | → level `default` (solid), at least | yes |
 | `disabled` | all | contrast to Lc 15 / 1.5:1, chroma ×0.3 | **never** |
 
-**Compound states** are `-`-joined strings, applied left to right: `'selected-hover'`, `'selected-pressed'`, `'checked-disabled'`. Validation rejects unknown parts and nonsensical combinations (`disabled-hover`).
+**Compound states** are `-`-joined strings, applied left to right. `active` is an alias of `pressed` and normalizes to it; it is not itself a canonical state. Parts belong to three groups:
+
+| Group | States | Rule |
+| --- | --- | --- |
+| Persistent | `selected`, `checked` | at most one, written first |
+| Disabled | `disabled` | at most one; never combined with a temporary state |
+| Temporary | `hover`, `pressed`, `focus` | at most one, written last |
+
+Written order is **persistent, then `disabled`, then temporary**. `checked-disabled` is the disabled form of a persistent state. `disabled-hover` is rejected, and so is the same pair in the other order. The canonical list — the source of truth `CANONICAL_STATES`, which JSON Schema is generated from — is:
+
+`hover` · `pressed` · `focus` · `selected` · `checked` · `disabled` · `selected-hover` · `selected-pressed` · `selected-focus` · `selected-disabled` · `checked-hover` · `checked-pressed` · `checked-focus` · `checked-disabled`
+
+`checked` and any compound that includes it apply only to `emphasis` and `border` (the table above). Every other state applies to all four kinds.
+
+Rejected:
+
+- **Wrong order.** `hover-selected` → `selected-hover`. `disabled-checked` → `checked-disabled`. `active-selected` → `selected-pressed`.
+- **Duplicates.** `hover-hover`. `pressed-active` (`active` is already `pressed`).
+- **`disabled` with a temporary state.** `disabled-hover`, `hover-disabled`, `selected-disabled-hover`.
+- **Two persistent or two temporary states.** `selected-checked`, `hover-pressed`.
+- **Three or more parts,** empty parts (`selected-`), and unknown parts.
+
+A normalized token stores `states` as those canonical atoms in that order: `selected-active` → `["selected", "pressed"]`. A rest token has `states: []`. Unknown names and rejected combinations are issues `{ path, message, didYouMean? }`. They do not throw. `didYouMean` is the legal spelling when there is one (`hovver` → `hover`, `hover-selected` → `selected-hover`) and is omitted when the parts cannot be repaired into a state that applies to that kind.
 
 **Step sizes per kind** (one "step"), overridable with `states`:
 
@@ -210,6 +236,8 @@ Notes:
 
 ### 6.1 Pipeline
 `validate → normalize (names → ordinals, presets, levels) → expand per theme × palette color (apply theme palette deltas, then `tune`) → build backdrop graph → topological solve → nudge pass (§6.4) → diagnostics → outputs`.
+
+**Normalized token.** Normalization resolves names and does not throw. A token becomes `{ kind, ordinal, states, ...options }`. `ordinal` is 1–5 (§3): names, the universal `default` alias, and the strings `"1"`–`"5"` are resolved, and an omitted `level` is ordinal 3. `states` is the canonical atoms from §4 (`[]` at rest). The other `TokenOptions`, including `nudge`, are copied. `level` and `state` are not kept. An unknown level name or state string is an issue `{ path, message, didYouMean? }`. Preset renames (§9) are a separate step and are not applied here.
 
 ### 6.2 `on` (backdrop)
 | Form | Backdrop set |
@@ -300,7 +328,7 @@ export default defineConfig({
   themes: {
     light: { mode: "light", selector: ".light", media: true },
     dark: { mode: "dark", selector: ".dark", media: true, palette: { brand: "#a78bfa" } },
-    "light-hc": { extends: "light", media: "(prefers-contrast: more)", contrast: { level: "more" } },
+    "light-hc": { mode: "light", extends: "light", media: "(prefers-contrast: more)", contrast: { level: "more" } },
   },
 
   tokens: {
@@ -453,7 +481,7 @@ A preset supplies `levels` renames, optional state aliases, and optionally a tok
 3. **`checked`** for emphasis: always force the solid (`default`) level, or step from the current level?
 4. **Presets:** levels only, or also a token template (so shadcn users get `bg-primary text-primary-foreground`)?
 5. **Reuse:** add a `ref('group.token')` alias token (CSS `var()`, DTCG `{alias}`) alongside the `duplicate-token` lint?
-6. **Auto-nudge limit:** max +2 levels? Opt-out per token (`nudge: false`) or globally?
+6. **Auto-nudge limit:** max +2 levels? Is there a global opt-out in addition to `nudge: false` on the token (§2.4, §6.4)?
 7. **Page baseline** (v3 `offset`, `pure`): expose as `themes.x.page`, or keep internal?
 8. **Tailwind stutter** (`text-text`, `border-border`): rely on shortcut utilities, or offer an output `aliases` option?
 9. **Name of the default palette color** (`neutral` vs `base`), and should the default palette be allowed to be non-neutral?
@@ -471,3 +499,6 @@ A preset supplies `levels` renames, optional state aliases, and optionally a tok
 | Oct 11, 2026 | **`on` takes a single target** (`'group'` or `'group.token'`), never a list. Lists were rejected because the hardest target dominates the result anyway, and lists add solve cost. To cover several backdrops, point `on` at the hardest one. |
 | Oct 12, 2026 | **`seeds` renamed to `palette`** (singular). Each key is a named palette color (`palette: { neutral: '#64748b', brand: { color: '#4f46e5', exact: true }, danger: '#dc2626' }`). "Seed" terminology is replaced throughout (`PaletteColor`, `color-out-of-gamut`, per-theme `palette` deltas). Swap class stays `tint-<name>`. |
 | Oct 12, 2026 | **Color space:** internal math is always OKLCH (not configurable). New `output.format: 'oklch' \| 'hex' \| 'rgb'` (default `'oklch'`). No gamut option for now; P3 stays a later item. |
+| Oct 12, 2026 | **State grammar (§4).** At most one persistent state (`selected` or `checked`), then optional `disabled`, then optional one temporary state (`hover`, `pressed`, or `focus`). `disabled` does not combine with a temporary state. `active` normalizes to `pressed`. `checked` is emphasis and border only. The canonical strings are `CANONICAL_STATES`. |
+| Oct 12, 2026 | **`nudge?: boolean`** is a `TokenOptions` field (§2.4). §6.4 already consumes `nudge: false` on emphasis tokens; the field is accepted on every kind. |
+| Oct 12, 2026 | **`light-hc` sets `mode: "light"`.** §2.3 requires `mode`; the §8 example had dropped it. |
