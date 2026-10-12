@@ -83,3 +83,18 @@ export { validateConfig, assertConfig } from "./validate.js";
 export type { ValidationResult } from "./validate.js";
 export { ConfigError, formatConfigIssues } from "./errors.js";
 export type { ConfigIssue, ConfigFix } from "./errors.js";
+export { PAGE, buildTokenGraph } from "./graph.js";
+export type {
+  AuthoredToken,
+  GraphDiagnostic,
+  ResolvedToken,
+  TokenGraph,
+} from "./graph.js";
+export { resolveConfig } from "./resolve.js";
+export type {
+  ResolveResult,
+  ResolvedConfig,
+  ResolvedExpansion,
+  ResolvedPaletteColor,
+  ResolvedTheme,
+} from "./resolve.js";
