@@ -18,10 +18,14 @@ vi.mock("../../src/color/oklch.js", async () => {
 });
 
 import { calcAPCAabs, calcAPCAraw } from "../../src/contrast/apca.js";
+import { wcag2Ratio } from "../../src/contrast/wcag2.js";
 import {
+  apcaMetric,
+  apcaRawMetric,
   maxContrast,
   preferredPolarity,
   solveContrast,
+  wcag2Metric,
 } from "../../src/contrast/solve.js";
 import { oklchToRGBGamut, rgbToOKLCH } from "./_color.js";
 
@@ -269,5 +273,98 @@ describe("solveContrast", () => {
         }
       }
     }
+  });
+});
+
+const WCAG_TARGETS = [1.5, 2, 3, 3.5, 4.5, 7, 10];
+
+describe("solveContrast wcag2 metric", () => {
+  it("defaults to clipped APCA when metric is omitted", () => {
+    const seed: OKLCH = { l: 0.55, c: 0.12, h: 200 };
+    expect(solveContrast(seed, WHITE, 60, { polarity: "darker" })).toEqual(
+      solveContrast(seed, WHITE, 60, { polarity: "darker", metric: apcaMetric }),
+    );
+    expect(solveContrast(seed, gray(128), 7, { polarity: "lighter", raw: true })).toEqual(
+      solveContrast(seed, gray(128), 7, {
+        polarity: "lighter",
+        metric: apcaRawMetric,
+      }),
+    );
+  });
+
+  it("when reached, target <= ratio <= target × 1.02", () => {
+    let reachedCount = 0;
+    let unreachedCount = 0;
+    for (const seed of SEEDS) {
+      for (const bg of BACKGROUNDS) {
+        for (const target of WCAG_TARGETS) {
+          for (const polarity of POLARITIES) {
+            const where = `h${seed.h} c${seed.c} bg(${bg.r},${bg.g},${bg.b}) ${polarity} ${target}`;
+            const r = solveContrast(seed, bg, target, { polarity, metric: wcag2Metric });
+            const ratio = wcag2Ratio(oklchToRGBGamut(r.color), bg);
+            expect(r.lc, where).toBe(ratio);
+            expect(r.color.h, where).toBe(seed.h);
+            expect(r.color.c, where).toBeLessThanOrEqual(seed.c + 1e-9);
+
+            const bgL = rgbToOKLCH(bg).l;
+            if (polarity === "lighter") {
+              expect(r.color.l, where).toBeGreaterThanOrEqual(bgL - 1e-9);
+            } else {
+              expect(r.color.l, where).toBeLessThanOrEqual(bgL + 1e-9);
+            }
+
+            if (r.reached) {
+              reachedCount++;
+              expect(ratio, where).toBeGreaterThanOrEqual(target);
+              expect(ratio, where).toBeLessThanOrEqual(target * 1.02);
+            } else {
+              unreachedCount++;
+              expect(ratio, where).toBeLessThan(target);
+              expect(r.color.l, where).toBe(polarity === "lighter" ? 1 : 0);
+            }
+          }
+        }
+      }
+    }
+    expect(reachedCount).toBeGreaterThan(0);
+    expect(unreachedCount).toBeGreaterThan(0);
+  });
+
+  it("solved lightness is ordered by ratio within a polarity", () => {
+    const seed: OKLCH = { l: 0.6, c: 0.08, h: 220 };
+    for (const bg of [WHITE, BLACK, gray(200), gray(40)]) {
+      for (const polarity of POLARITIES) {
+        let prev = polarity === "lighter" ? -Infinity : Infinity;
+        for (const target of [1.5, 2, 3, 4.5, 7]) {
+          const r = solveContrast(seed, bg, target, { polarity, metric: wcag2Metric });
+          if (!r.reached) break;
+          if (polarity === "lighter") {
+            expect(r.color.l).toBeGreaterThanOrEqual(prev - 1e-9);
+          } else {
+            expect(r.color.l).toBeLessThanOrEqual(prev + 1e-9);
+          }
+          prev = r.color.l;
+        }
+      }
+    }
+  });
+
+  it("reports the extreme when the side cannot reach the ratio", () => {
+    const seed: OKLCH = { l: 0.5, c: 0.1, h: 120 };
+    const lighter = solveContrast(seed, WHITE, 3, {
+      polarity: "lighter",
+      metric: wcag2Metric,
+    });
+    expect(lighter.reached).toBe(false);
+    expect(lighter.color.l).toBe(1);
+    expect(lighter.lc).toBe(1);
+
+    const darker = solveContrast(seed, BLACK, 3, {
+      polarity: "darker",
+      metric: wcag2Metric,
+    });
+    expect(darker.reached).toBe(false);
+    expect(darker.color.l).toBe(0);
+    expect(darker.lc).toBe(1);
   });
 });
