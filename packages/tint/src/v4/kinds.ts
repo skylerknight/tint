@@ -54,6 +54,7 @@ function buildToken(
   if (options.lc !== undefined) token.lc = options.lc;
   if (options.ratio !== undefined) token.ratio = options.ratio;
   if (options.step !== undefined) token.step = options.step;
+  if (options.nudge !== undefined) token.nudge = options.nudge;
   return token;
 }
 

@@ -41,3 +41,40 @@ export type {
 
 export { surface, text, border, emphasis } from "./kinds.js";
 export { defineConfig } from "./define.js";
+export {
+  KINDS,
+  DEFAULT_ORDINAL,
+  DEFAULT_LEVEL_NAMES,
+  normalizeIssue,
+  joinPath,
+  isPlainObject,
+  isKind,
+  isOrdinal,
+  suggestName,
+  compileLevelTable,
+  compileLevels,
+  resolveLevel,
+} from "./levels.js";
+export type {
+  NormalizeIssue,
+  LevelTable,
+  LevelTableResult,
+  LevelTables,
+  CompileLevelsResult,
+  ResolveLevelResult,
+  StateSuggestions,
+} from "./levels.js";
+export {
+  ATOMIC_STATES,
+  PERSISTENT_STATES,
+  TEMPORARY_STATES,
+  DISABLED_STATE,
+  STATE_ALIASES,
+  STATE_APPLIES_TO,
+  CANONICAL_STATES,
+  canonicalStatesFor,
+  parseState,
+} from "./states.js";
+export type { CanonicalState, ParseStateResult } from "./states.js";
+export { normalizeToken } from "./normalize.js";
+export type { NormalizedToken, NormalizeResult, NormalizeOptions } from "./normalize.js";
