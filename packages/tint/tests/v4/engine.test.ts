@@ -23,7 +23,8 @@ const PALETTE = {
 /**
  * Rest tokens plus states, and text whose backdrop is the whole row set
  * (default, hover, pressed, selected). Targets stay reachable without the
- * label auto-nudge in §6.4, which this milestone does not run.
+ * label auto-nudge in §6.4. Info lints (duplicate colors, hue drift) may
+ * still be reported.
  */
 function sampleConfig(algorithm: ContrastAlgorithm) {
   return {
@@ -143,7 +144,10 @@ describe("generateV4", () => {
       const themes = generateV4(sampleConfig(algorithm));
       expect(themes.map((theme) => theme.name)).toEqual(["light", "dark"]);
       for (const theme of themes) {
-        expect(theme.diagnostics, `${algorithm}/${theme.name}`).toEqual([]);
+        const warnings = theme.diagnostics.filter(
+          (diagnostic) => diagnostic.severity !== "info",
+        );
+        expect(warnings, `${algorithm}/${theme.name}`).toEqual([]);
         expect(theme.palettes.map((palette) => palette.name)).toEqual(
           Object.keys(PALETTE),
         );
@@ -242,11 +246,13 @@ describe("generateV4", () => {
         expect(token(palette, "ink.lighter").color.oklch.l).toBeGreaterThan(ground);
         expect(token(palette, "ink.impossible").polarity).toBe("lighter");
         expect(token(palette, "ink.disabled").polarity).toBe("lighter");
-        const paths = theme.diagnostics.map((diagnostic) => diagnostic.path);
+        const contrast = theme.diagnostics.filter(
+          (diagnostic) => diagnostic.code === "contrast-unreachable",
+        );
+        const paths = contrast.map((diagnostic) => diagnostic.path);
         expect(paths.some((path) => path.includes("disabled"))).toBe(false);
         expect(paths).toContain(`neutral.ink.impossible`);
-        for (const diagnostic of theme.diagnostics) {
-          expect(diagnostic.code).toBe("contrast-unreachable");
+        for (const diagnostic of contrast) {
           expect(diagnostic.severity).toBe("warning");
         }
       }

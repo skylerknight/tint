@@ -62,6 +62,14 @@ export const WCAG2_EMPHASIS_RATIO = { 3: 3, 4: 4.5, 5: 7 } as const;
 export const EMPHASIS_TINT_STEPS = { 1: 1, 2: 2 } as const;
 
 /**
+ * How many levels auto-nudge may move an emphasis token to rescue a label
+ * (§6.4). Open question 6 asks whether +2 is the right cap; this is that cap.
+ * The search walks lightness in fine steps and stops at the contrast target
+ * of this many ordinals above the token (clamped to ordinal 5).
+ */
+export const NUDGE_MAX_LEVELS = 2;
+
+/**
  * Surface elevation relative to the page, in steps (§5). `0` is the page
  * ("page" / "page (offset)" in the spec tables). The OKLCH L size of one
  * step is a state concern (§4), not part of this table.

@@ -4,7 +4,8 @@
  * One {@link GenerationResultV4} per theme. Inside a theme, each palette
  * color is solved in backdrop order. Contrast targets use the polarity that
  * maximizes the minimum contrast across the backdrop set, then solve against
- * the worst member. Auto-nudge (§6.4) and `exact` (§6.5) are later steps.
+ * the worst member. Auto-nudge (§6.4) and `exact` (§6.5) run after that
+ * solve, then the §6.6 lints.
  */
 
 import type { OKLCH, RGB } from "../color/types.js";
@@ -19,6 +20,13 @@ import {
   type SetSolveOptions,
 } from "../contrast/solve.js";
 import { maxChromaForLs } from "../engine/generate.js";
+import {
+  colorOutOfGamutLint,
+  duplicateTokenLints,
+  expertValueLints,
+  hueIdentityLints,
+  type EngineDiagnosticV4,
+} from "./diagnostics.js";
 import { ConfigError } from "./errors.js";
 import { PAGE, type ResolvedToken } from "./graph.js";
 import {
@@ -28,6 +36,7 @@ import {
   surfaceStepSize,
   type SolverIntent,
 } from "./lower.js";
+import { applyNudgeAndExact } from "./nudge.js";
 import { resolveConfig, type ResolvedExpansion, type ResolvedTheme } from "./resolve.js";
 import type { CanonicalState } from "./states.js";
 import type {
@@ -77,21 +86,7 @@ export interface PaletteResultV4 {
   readonly tokens: readonly SolvedTokenV4[];
 }
 
-export interface EngineDiagnosticV4 {
-  readonly severity: "warning";
-  readonly code: "contrast-unreachable";
-  readonly path: string;
-  readonly message: string;
-  readonly hint: string;
-  readonly theme: string;
-  readonly palette: string;
-  readonly data: {
-    readonly target: number;
-    readonly achieved: number;
-    readonly polarity: Polarity;
-    readonly worst: string;
-  };
-}
+export type { EngineDiagnosticV4 } from "./diagnostics.js";
 
 export interface GenerationResultV4 {
   readonly name: string;
@@ -117,18 +112,70 @@ export function generateV4(input: unknown): GenerationResultV4[] {
 
   const algorithm = resolved.config.algorithm;
   const metric = algorithm === "wcag2" ? wcag2Metric : apcaMetric;
-  const results: GenerationResultV4[] = [];
+  const built: {
+    theme: ResolvedTheme;
+    palettes: PaletteResultV4[];
+    diagnostics: EngineDiagnosticV4[];
+  }[] = [];
 
   for (const theme of resolved.config.themes) {
     const palettes: PaletteResultV4[] = [];
     const diagnostics: EngineDiagnosticV4[] = [];
+    const expertSeen = new Set<string>();
     for (const expansion of resolved.config.expansions) {
       if (expansion.theme !== theme.name) continue;
-      palettes.push(
-        solvePalette(expansion, theme, algorithm, metric, config.states, diagnostics),
+      const solved = solvePalette(
+        expansion,
+        theme,
+        algorithm,
+        metric,
+        config.states,
+        diagnostics,
+      );
+      const finished = applyNudgeAndExact({
+        expansion,
+        palette: solved,
+        theme: theme.name,
+        algorithm,
+        metric,
+        ...(config.states !== undefined ? { states: config.states } : {}),
+        diagnostics,
+      });
+      palettes.push(finished);
+      const gamut = colorOutOfGamutLint(
+        theme.name,
+        expansion.palette,
+        expansion.color,
+        finished.seed.hex,
+      );
+      if (gamut !== undefined) diagnostics.push(gamut);
+      diagnostics.push(
+        ...expertValueLints(
+          theme.name,
+          expansion.palette,
+          expansion.tokens.map((token) => ({
+            id: token.id,
+            ...(token.value.lc !== undefined ? { lc: token.value.lc } : {}),
+            ...(token.value.ratio !== undefined ? { ratio: token.value.ratio } : {}),
+            ...(token.value.step !== undefined ? { step: token.value.step } : {}),
+          })),
+          expertSeen,
+        ),
+        ...hueIdentityLints(theme.name, finished),
       );
     }
-    results.push(themeResult(theme, algorithm, palettes, diagnostics));
+    built.push({ theme, palettes, diagnostics });
+  }
+
+  const duplicates = duplicateTokenLints(
+    built.map((item) => ({ name: item.theme.name, palettes: item.palettes })),
+  );
+  const results: GenerationResultV4[] = [];
+  for (const item of built) {
+    for (const lint of duplicates) {
+      if (lint.theme === item.theme.name) item.diagnostics.push(lint);
+    }
+    results.push(themeResult(item.theme, algorithm, item.palettes, item.diagnostics));
   }
   return results;
 }
