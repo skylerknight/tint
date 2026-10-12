@@ -13,6 +13,8 @@ export {
   apcaRawMetric,
   wcag2Metric,
   solveContrast,
+  solveAgainstSet,
   maxContrast,
   preferredPolarity,
 } from "./solve.js";
+export type { SetSolveOptions, SetSolveResult } from "./solve.js";

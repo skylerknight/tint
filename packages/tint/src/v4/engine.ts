@@ -2,9 +2,9 @@
  * v4 palette generation (docs/v4-spec.md §4, §5, §6.2).
  *
  * One {@link GenerationResultV4} per theme. Inside a theme, each palette
- * color is solved in backdrop order. Contrast targets are solved against the
- * backdrop host (one color). Worst-case sets are a follow-up. Auto-nudge
- * (§6.4) and `exact` (§6.5) are later steps.
+ * color is solved in backdrop order. Contrast targets use the polarity that
+ * maximizes the minimum contrast across the backdrop set, then solve against
+ * the worst member. Auto-nudge (§6.4) and `exact` (§6.5) are later steps.
  */
 
 import type { OKLCH, RGB } from "../color/types.js";
@@ -12,7 +12,12 @@ import { rgbToOKLCH } from "../color/convert.js";
 import { oklchToRGBGamut, toGamut } from "../color/gamut.js";
 import { parseColor, rgbToHex } from "../color/parse.js";
 import type { Metric, Polarity } from "../contrast/types.js";
-import { apcaMetric, solveContrast, wcag2Metric } from "../contrast/solve.js";
+import {
+  apcaMetric,
+  solveAgainstSet,
+  wcag2Metric,
+  type SetSolveOptions,
+} from "../contrast/solve.js";
 import { maxChromaForLs } from "../engine/generate.js";
 import { ConfigError } from "./errors.js";
 import { PAGE, type ResolvedToken } from "./graph.js";
@@ -226,58 +231,20 @@ function realize(
     });
   }
 
-  // One backdrop: the `on` host, or the only member when `on` is omitted.
-  const hostKey = hostId(token);
-  const host = colorAt(colors, hostKey);
   const target = intent.mode === "max" ? Number.POSITIVE_INFINITY : intent.target;
-  const solved = solveOne(intent.seed, host.rgb, target, metric, intent.direction);
+  const options: SetSolveOptions = { metric };
+  if (intent.direction !== undefined) options.polarity = intent.direction;
+  const solved = solveAgainstSet(intent.seed, rgbs, target, options);
   const color = publish(solved.color);
-  const achieved = metric.measure(color.rgb, host.rgb);
-  const reached = intent.mode === "max" ? true : achieved + 1e-6 >= intent.target;
-  return finish(token, intent.mode, color, achieved, {
-    target: intent.mode === "max" ? achieved : intent.target,
+  const across = minContrast(metric, color.rgb, rgbs);
+  const worst = backs[across.index];
+  const reached = intent.mode === "max" ? true : across.min + 1e-6 >= intent.target;
+  return finish(token, intent.mode, color, across.min, {
+    target: intent.mode === "max" ? across.min : intent.target,
     polarity: solved.polarity,
     reached,
-    worst: hostKey,
+    ...(worst !== undefined ? { worst } : {}),
   });
-}
-
-/**
- * Solve against one backdrop. Polarity maximizes contrast at the extreme.
- * A locked `direction` does not fall back to the other side (§6.2).
- */
-function solveOne(
-  seed: OKLCH,
-  background: RGB,
-  target: number,
-  metric: Metric,
-  direction: Polarity | undefined,
-): { color: OKLCH; polarity: Polarity } {
-  const polarity = direction ?? polarityFor(seed, background, metric);
-  let solved = solveContrast(seed, background, target, { polarity, metric });
-  if (!solved.reached && direction === undefined) {
-    const opposite: Polarity = polarity === "darker" ? "lighter" : "darker";
-    const alternative = solveContrast(seed, background, target, {
-      polarity: opposite,
-      metric,
-    });
-    if (alternative.reached || alternative.lc > solved.lc) {
-      return { color: alternative.color, polarity: opposite };
-    }
-  }
-  return { color: solved.color, polarity };
-}
-
-function polarityFor(seed: OKLCH, background: RGB, metric: Metric): Polarity {
-  const darker = solveContrast(seed, background, Number.POSITIVE_INFINITY, {
-    polarity: "darker",
-    metric,
-  }).lc;
-  const lighter = solveContrast(seed, background, Number.POSITIVE_INFINITY, {
-    polarity: "lighter",
-    metric,
-  }).lc;
-  return darker >= lighter ? "darker" : "lighter";
 }
 
 function finish(
