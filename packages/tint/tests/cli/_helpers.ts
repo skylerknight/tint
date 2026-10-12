@@ -44,39 +44,56 @@ export function capture(prefix = "tint-cli-"): Capture {
   };
 }
 
-/** Clean two-theme config with no diagnostics. */
-export const CLEAN_TS = `import { defineConfig } from "@skylerknight/tint";
-const tokens = {
-  surface: { $role: "surface", DEFAULT: { ls: 1 }, raised: { ls: 2, $reference: true } },
-  text: { $on: "surface", $role: "text", heading: { lc: 90 }, body: { lc: 75 } },
-  border: { $on: "surface", $role: "border", DEFAULT: { lc: 25 } },
-} as const;
-export default defineConfig([
-  { name: "light", mode: "light", colors: { base: "#ffffff", brand: "#2563eb" }, tokens },
-  { name: "dark", mode: "dark", selector: ".dark", prefersColorScheme: "dark",
-    colors: { base: "#1c1c1f", brand: "#60a5fa" }, tokens },
-]);
+/** Clean two-theme v4 config with no warnings. */
+export const CLEAN_TS = `import { border, defineConfig, surface, text } from "@skylerknight/tint";
+
+export default defineConfig({
+  palette: {
+    neutral: "#71717a",
+    brand: "#2563eb",
+  },
+  themes: {
+    light: { mode: "light" },
+    dark: {
+      mode: "dark",
+      selector: ".dark",
+      media: true,
+      palette: { brand: "#60a5fa" },
+    },
+  },
+  tokens: {
+    surface: { DEFAULT: surface() },
+    text: { strong: text("strong"), body: text() },
+    border: { firm: border("firm") },
+  },
+});
 `;
 
-/** Single-theme JSON config that emits a `role-contrast-low` warning (text lc 20 < 45). */
+/** Single-theme config whose palette color is outside sRGB. */
 export const WARNING_JSON = JSON.stringify({
-  name: "light",
-  mode: "light",
-  colors: { base: "#ffffff" },
+  palette: { neutral: "oklch(0.7 0.4 30)" },
   tokens: {
-    surface: { $role: "surface", DEFAULT: { ls: 1 } },
-    text: { $on: "surface", $role: "text", body: { lc: 20 } },
+    surface: { DEFAULT: { kind: "surface" } },
   },
 });
 
-/** Single-theme JSON config with output settings and no diagnostics. */
+/** Single-theme JSON config with output settings and no warnings. */
 export const CLEAN_JSON_WITH_OUTPUT = JSON.stringify({
+  palette: { neutral: "#ffffff", brand: "#2563eb" },
+  tokens: {
+    surface: { DEFAULT: { kind: "surface" } },
+    text: { body: { kind: "text" } },
+  },
+  output: { path: "./generated", formats: ["dtcg", "flat"] },
+});
+
+/** A v3 theme object. `tint check` must refuse it with the migration hint. */
+export const V3_JSON = JSON.stringify({
   name: "light",
   mode: "light",
-  colors: { base: "#ffffff", brand: "#2563eb" },
+  colors: { base: "#ffffff", brand: "#7c3aed" },
   tokens: {
-    surface: { $role: "surface", DEFAULT: { ls: 1 } },
-    text: { $on: "surface", $role: "text", body: { lc: 75 } },
+    surface: { DEFAULT: { ls: 1 } },
+    text: { $on: "surface", body: { lc: 75 } },
   },
-  output: { path: "./generated", formats: ["json", "flat"] },
 });

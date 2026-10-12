@@ -17,16 +17,20 @@ import tintPostCSS, { tint } from "../../src/postcss/index.js";
 import type { TintPostCSSOptions } from "../../src/postcss/index.js";
 
 const TOKENS = `export const tokens = {
-  surface: { DEFAULT: { ls: 1 }, raised: { ls: 2 } },
-  text: { $on: "surface", heading: { lc: 90 }, body: { lc: 75 } },
-  action: { $on: "surface", DEFAULT: { lc: 60 } },
+  surface: { DEFAULT: { kind: "surface" }, raised: { kind: "surface", level: "raised" } },
+  text: { strong: { kind: "text", level: "strong" }, body: { kind: "text" } },
+  action: { DEFAULT: { kind: "emphasis" } },
 };`;
 
 const CONFIG = `import { tokens } from "./tokens";
-export default [
-  { name: "light", mode: "light", colors: { base: "#ffffff", brand: "#3b82f6" }, tokens },
-  { name: "dark", mode: "dark", colors: { base: "#000000", brand: "#3b82f6" }, tokens },
-];`;
+export default {
+  palette: { neutral: "#ffffff", brand: "#3b82f6" },
+  themes: {
+    light: { mode: "light" },
+    dark: { mode: "dark" },
+  },
+  tokens,
+};`;
 
 let dir: string;
 let from: string;
@@ -73,8 +77,8 @@ describe("tint PostCSS plugin", () => {
 
     expect(result.css).not.toContain("@tint");
     expect(result.css).toContain("@theme static");
-    expect(result.css).toContain("--base-surface:");
-    expect(result.css).toContain("--brand-text-heading:");
+    expect(result.css).toContain("--neutral-surface:");
+    expect(result.css).toContain("--brand-text-strong:");
     expect(result.css).toContain("@utility tint-brand");
     expect(result.css).toContain(".app { color: red; }");
     expect(result.warnings()).toHaveLength(0);
@@ -112,19 +116,18 @@ describe("tint PostCSS plugin", () => {
     writeFixture(
       CONFIG,
       `export const tokens = {
-        surface: { DEFAULT: { ls: 1 } },
-        action: { $on: "surface", DEFAULT: { lc: 60 } },
-        label: { $on: "action", DEFAULT: { lc: 100 } },
+        surface: { DEFAULT: { kind: "surface" } },
+        ink: { impossible: { kind: "text", direction: "lighter", lc: 108 } },
       };`,
     );
     const result = await run(`@tint "./tint.config.ts";`);
 
     const warnings = result.warnings();
     expect(warnings.length).toBeGreaterThan(0);
-    const unreachable = warnings.find((w) => /base\.label\.DEFAULT/.test(w.text));
+    const unreachable = warnings.find((w) => /neutral\.ink\.impossible/.test(w.text));
     expect(unreachable).toBeDefined();
-    expect(unreachable!.text).toMatch(/^\[tint\] base\.label\.DEFAULT: /);
-    expect(unreachable!.text).toMatch(/Lc 100/);
+    expect(unreachable!.text).toMatch(/^\[tint\] neutral\.ink\.impossible: /);
+    expect(unreachable!.text).toMatch(/Lc 108/);
     expect(unreachable!.plugin).toBe("postcss-tint");
     expect(unreachable!.node?.type).toBe("atrule");
     expect(result.css).toContain("@theme static");
@@ -138,9 +141,9 @@ describe("tint PostCSS plugin", () => {
     const contents = readFileSync(intellisenseFile(), "utf8");
     expect(contents).toContain("@import 'tailwindcss';");
     expect(contents).toContain("@theme {");
-    expect(contents).toMatch(/--color-base-surface: #[0-9a-f]{6};/);
+    expect(contents).toMatch(/--color-surface: #[0-9a-f]{6};/);
     expect(contents).toContain("/* Unprefixed colors (for tint-* utility classes) */");
-    expect(contents).toMatch(/--color-text-heading: #[0-9a-f]{6};/);
+    expect(contents).toMatch(/--color-text-strong: #[0-9a-f]{6};/);
     expect(contents).not.toContain("var(");
   });
 
@@ -215,7 +218,7 @@ describe("tint PostCSS plugin", () => {
     mkdirSync(join(dir, "other"));
     writeFileSync(
       join(dir, "other", "tint.config.ts"),
-      `export default { name: "mono", mode: "light", colors: { base: "#fff" }, tokens: { surface: { DEFAULT: { ls: 1 } } } };`,
+      `export default { palette: { neutral: "#fff" }, tokens: { surface: { DEFAULT: { kind: "surface" } } } };`,
     );
     const result = await run(
       `@tint "./tint.config.ts";\n@tint "./other/tint.config.ts";`,
@@ -228,32 +231,29 @@ describe("tint PostCSS plugin", () => {
     expect(deps).toContain(join(dir, "other", "tint.config.ts"));
   });
 
-  it("emits a plain @theme and no tint IntelliSense file with generateTintUtilities: false", async () => {
+  it("omits tint utilities and the IntelliSense file when tintUtilities is false", async () => {
     writeFixture();
     const result = await run(`@tint "./tint.config.ts";`, {
-      generateTintUtilities: false,
+      tintUtilities: false,
     });
 
     expect(result.css).not.toContain("@tint");
-    expect(result.css).toContain("@theme {");
-    expect(result.css).not.toContain("@theme static");
+    expect(result.css).toContain("@theme static");
     expect(result.css).not.toContain("@utility tint-");
-    expect(result.css).toContain("--base-surface:");
+    expect(result.css).toContain("--neutral-surface:");
     expect(existsSync(intellisenseFile())).toBe(false);
   });
 
-  it("forwards formatter options such as defaultPalette", async () => {
+  it("forwards formatter options such as format", async () => {
     writeFixture();
-    const result = await run(`@tint "./tint.config.ts";`, { defaultPalette: "brand" });
+    const result = await run(`@tint "./tint.config.ts";`, { format: "hex" });
 
-    expect(result.css).toContain("@utility tint-base");
-    expect(result.css).not.toContain("@utility tint-brand");
-    expect(result.css).toContain("--text-heading: var(--brand-text-heading);");
+    expect(result.css).toMatch(/--neutral-surface: #[0-9a-f]{6};/);
+    expect(result.css).toContain("@utility tint-brand");
 
     const contents = readFileSync(intellisenseFile(), "utf8");
-    expect(contents).toContain("--color-text-heading:");
-    const brandHeading = /--color-brand-text-heading: (#[0-9a-f]{6});/.exec(contents)![1];
-    expect(contents).toContain(`--color-text-heading: ${brandHeading};`);
+    expect(contents).toMatch(/--color-surface: #[0-9a-f]{6};/);
+    expect(contents).not.toContain("var(");
   });
 
   it("defaults root to process.cwd()", async () => {

@@ -26,7 +26,7 @@ describe("tint build", () => {
     expect(readdirSync(join(c.dir, "tint", "dark"))).toEqual(["tokens.css"]);
     const light = readFileSync(join(c.dir, "tint", "light", "tokens.css"), "utf8");
     expect(light).toContain(":root {");
-    expect(light).toContain("--brand-text-heading:");
+    expect(light).toContain("--brand-text-strong:");
     const dark = readFileSync(join(c.dir, "tint", "dark", "tokens.css"), "utf8");
     expect(dark).toContain("@media (prefers-color-scheme: dark)");
     expect(dark).toContain(".dark {");
@@ -40,27 +40,27 @@ describe("tint build", () => {
   it("honours --formats and --out", async () => {
     c.write("tint.config.ts", CLEAN_TS);
     expect(
-      await c.run(["build", "--formats", "css,json,tailwind,flat", "-o", "out/tokens"]),
+      await c.run(["build", "--formats", "css,dtcg,tailwind,flat", "-o", "out/tokens"]),
     ).toBe(0);
 
     const files = readdirSync(join(c.dir, "out", "tokens", "light")).sort();
     expect(files).toEqual([
       "tailwind.css",
       "tokens.css",
+      "tokens.dtcg.json",
       "tokens.flat.json",
-      "tokens.json",
     ]);
 
     const json = JSON.parse(
-      readFileSync(join(c.dir, "out/tokens/light/tokens.json"), "utf8"),
+      readFileSync(join(c.dir, "out/tokens/light/tokens.dtcg.json"), "utf8"),
     );
-    expect(json.brand.text.heading.$type).toBe("color");
+    expect(json.brand.text.strong.$type).toBe("color");
     const flat = JSON.parse(
       readFileSync(join(c.dir, "out/tokens/light/tokens.flat.json"), "utf8"),
     );
-    expect(flat["brand.text.heading"]).toMatch(/^#[0-9a-f]{6}$/);
+    expect(flat["brand.text.strong"]).toMatch(/^oklch\(/);
     const tw = readFileSync(join(c.dir, "out/tokens/light/tailwind.css"), "utf8");
-    expect(tw).toContain("@theme {");
+    expect(tw).toContain("@theme static {");
     expect(c.out()).toContain("Wrote 8 files to out/tokens");
   });
 
@@ -68,8 +68,8 @@ describe("tint build", () => {
     c.write("tint.config.json", CLEAN_JSON_WITH_OUTPUT);
     expect(await c.run(["build"])).toBe(0);
     expect(readdirSync(join(c.dir, "generated", "light")).sort()).toEqual([
+      "tokens.dtcg.json",
       "tokens.flat.json",
-      "tokens.json",
     ]);
     expect(existsSync(join(c.dir, "tint"))).toBe(false);
   });
@@ -92,7 +92,7 @@ describe("tint build", () => {
     c.write("tint.config.ts", CLEAN_TS);
     expect(await c.run(["build", "-f", "css,scss"])).toBe(1);
     expect(c.err()).toContain('Unknown format "scss"');
-    expect(c.err()).toContain("css, json, tailwind, flat");
+    expect(c.err()).toContain("css, tailwind, dtcg, flat");
     expect(existsSync(join(c.dir, "tint"))).toBe(false);
   });
 
@@ -111,7 +111,8 @@ describe("tint build", () => {
   it("prints diagnostics as warn lines and still exits 0", async () => {
     c.write("tint.config.json", WARNING_JSON);
     expect(await c.run(["build"])).toBe(0);
-    expect(c.err()).toMatch(/^warn base\.text\.body: /m);
+    expect(c.err()).toMatch(/^warn neutral: /m);
+    expect(c.err()).toContain("outside sRGB");
     expect(c.out()).toContain("1 warning");
   });
 

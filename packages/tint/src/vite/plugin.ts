@@ -1,14 +1,14 @@
 import { mkdirSync, utimesSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import type { Logger, Plugin, ResolvedConfig, ViteDevServer } from "vite";
-import { generate } from "../engine/generate.js";
-import type { GenerationResult } from "../engine/types.js";
 import { findDefaultConfig, loadConfig, tintCacheDir } from "../loader/index.js";
-import { toTailwindIntelliSense } from "../output/intellisense.js";
-import { toCSSWithTailwindAndTint } from "../output/tailwind.js";
-import type { TintUtilitiesOptions } from "../output/tailwind.js";
+import { generateV4 } from "../v4/engine.js";
+import type { GenerationResultV4 } from "../v4/engine.js";
+import { toTailwindIntelliSense } from "../v4/intellisense.js";
+import { toCSSWithTailwind } from "../v4/output/tailwind.js";
+import type { TailwindOptions } from "../v4/output/tailwind.js";
 
-export interface TintVitePluginOptions extends TintUtilitiesOptions {
+export interface TintVitePluginOptions extends TailwindOptions {
   /** Write `node_modules/.tint/intellisense.css`. Default true. */
   intellisense?: boolean;
 }
@@ -22,19 +22,20 @@ const INTELLISENSE_IMPORT = "@import 'tailwindcss';";
 /** How many times a load is retried when its inputs change while it is in flight. */
 const MAX_LOAD_ATTEMPTS = 3;
 
-const UTILITY_OPTION_KEYS = [
+const TAILWIND_OPTION_KEYS = [
+  "format",
   "indent",
-  "simplifyNames",
-  "generateShortcuts",
-  "generateTintUtilities",
-  "defaultPalette",
-  "includeOKLCH",
-] as const satisfies readonly (keyof TintUtilitiesOptions)[];
+  "comments",
+  "selector",
+  "aliases",
+  "tintUtilities",
+  "shortcuts",
+] as const satisfies readonly (keyof TailwindOptions)[];
 
 interface CacheEntry {
   css: string;
   intellisense: string;
-  results: GenerationResult[];
+  results: GenerationResultV4[];
   /** Absolute paths of every file bundled into the config (including itself). */
   dependencies: string[];
 }
@@ -60,12 +61,12 @@ const silentLogger: Pick<Logger, "info" | "warn" | "error"> = {
 };
 
 /** Keep only the known formatter options (drops `intellisense` and undefined values). */
-function pickUtilityOptions(options: TintVitePluginOptions): TintUtilitiesOptions {
+function pickTailwindOptions(options: TintVitePluginOptions): TailwindOptions {
   const picked: Record<string, unknown> = {};
-  for (const key of UTILITY_OPTION_KEYS) {
+  for (const key of TAILWIND_OPTION_KEYS) {
     if (options[key] !== undefined) picked[key] = options[key];
   }
-  return picked as TintUtilitiesOptions;
+  return picked as TailwindOptions;
 }
 
 function isCSSRequest(id: string): boolean {
@@ -82,11 +83,7 @@ function errorMessage(error: unknown): string {
 }
 
 export function tint(options: TintVitePluginOptions = {}): Plugin {
-  const tintOptions = pickUtilityOptions(options);
-  const intellisenseOptions: TintUtilitiesOptions = {
-    ...tintOptions,
-    generateTintUtilities: options.generateTintUtilities !== false,
-  };
+  const tintOptions = pickTailwindOptions(options);
   const writeIntelliSense = options.intellisense !== false;
 
   let root = process.cwd();
@@ -110,11 +107,12 @@ export function tint(options: TintVitePluginOptions = {}): Plugin {
   /** The first config loaded through an `@tint` directive (serves plain `virtual:tint`). */
   let firstConfigPath: string | undefined;
 
-  function logDiagnostics(configPath: string, results: GenerationResult[]): void {
+  function logDiagnostics(configPath: string, results: GenerationResultV4[]): void {
     const seen = new Set<string>();
     const label = relative(root, configPath) || configPath;
     for (const result of results) {
       for (const diagnostic of result.diagnostics) {
+        if (diagnostic.severity === "info") continue;
         if (seen.has(diagnostic.message)) continue;
         seen.add(diagnostic.message);
         logger.warn(`[tint] ${label}: ${diagnostic.message}`);
@@ -124,10 +122,10 @@ export function tint(options: TintVitePluginOptions = {}): Plugin {
 
   async function loadAndGenerate(configPath: string): Promise<CacheEntry> {
     const loaded = await loadConfig({ root, configPath });
-    const results = generate(loaded.configs);
+    const results = generateV4(loaded.config);
     const entry: CacheEntry = {
-      css: toCSSWithTailwindAndTint(results, tintOptions),
-      intellisense: toTailwindIntelliSense(results, intellisenseOptions),
+      css: toCSSWithTailwind(results, tintOptions),
+      intellisense: toTailwindIntelliSense(results),
       results,
       dependencies: loaded.dependencies,
     };

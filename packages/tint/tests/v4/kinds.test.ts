@@ -96,9 +96,9 @@ describe("kind functions", () => {
     expect(emphasis()).not.toBe(emphasis());
   });
 
-  it("is not on the v3 public entry", () => {
-    expect(publicApi).not.toHaveProperty("emphasis");
-    expect(publicApi).not.toHaveProperty("surface");
+  it("is on the public entry", () => {
+    expect(publicApi.emphasis).toBe(emphasis);
+    expect(publicApi.surface).toBe(surface);
     expect(publicApi).not.toHaveProperty("V4_SCAFFOLD");
   });
 });

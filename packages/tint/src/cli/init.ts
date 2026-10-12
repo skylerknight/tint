@@ -77,7 +77,7 @@ export async function init(io: IO, flags: InitFlags): Promise<number> {
   io.out(`${paint.green(io.color)("✓")} Created ${CONFIG_FILE_NAME}`);
   io.out("");
   io.out("Next steps:");
-  io.out(`  1. Tweak the seed colors and tokens in ${CONFIG_FILE_NAME}`);
+  io.out(`  1. Tweak the palette colors and tokens in ${CONFIG_FILE_NAME}`);
   io.out("  2. Run `tint check` to validate and review contrast warnings");
   io.out("  3. Run `tint build` to write ./tint/<theme>/tokens.css");
   io.out("  4. Run `tint inspect` to see the full contrast audit");
@@ -86,78 +86,84 @@ export async function init(io: IO, flags: InitFlags): Promise<number> {
 
 export function renderConfig(options: { brand: string; dark: boolean }): string {
   const { brand, dark } = options;
-  const light = `{
-    name: "light",
-    mode: "light",
-    colors: lightColors,
-    tokens,
-  }`;
-  const darkTheme = `{
-    name: "dark",
-    mode: "dark",
-    // Applied under .dark and automatically when the OS prefers dark.
-    selector: ".dark",
-    prefersColorScheme: "dark",
-    colors: darkColors,
-    tokens,
+  const themes = dark
+    ? `{
+    light: { mode: "light", selector: ".light", media: true },
+    dark: {
+      mode: "dark",
+      selector: ".dark",
+      media: true,
+      palette: { brand: "#a78bfa" },
+    },
+  }`
+    : `{
+    light: { mode: "light", selector: ".light", media: true },
   }`;
 
-  const seeds = dark
-    ? `// Seed colors. Every seed gets the full token structure below, so \`brand\`,
-// \`error\` and \`success\` all produce surface.*, text.*, action.* … and a
-// \`tint-error\` class can swap a whole component's palette.
-const lightColors = {
-  base: "#ffffff",
-  brand: "${brand}",
-  success: "#16a34a",
-  warning: "#d97706",
-  error: "#dc2626",
-};
+  return `import { border, defineConfig, emphasis, surface, text } from "@skylerknight/tint";
 
-const darkColors = {
-  base: "#1c1c1f",
-  brand: "${brand}",
-  success: "#4ade80",
-  warning: "#fbbf24",
-  error: "#f87171",
-};`
-    : `// Seed colors. Every seed gets the full token structure below, so \`brand\`,
-// \`error\` and \`success\` all produce surface.*, text.*, action.* … and a
-// \`tint-error\` class can swap a whole component's palette.
-const lightColors = {
-  base: "#ffffff",
-  brand: "${brand}",
-  success: "#16a34a",
-  warning: "#d97706",
-  error: "#dc2626",
-};`;
+// v4 starter (docs/v4-spec.md §8, without the light-hc theme).
+// Every palette color gets the same tokens. \`tint-danger\` re-skins a subtree.
+export default defineConfig({
+  contrast: { algorithm: "apca", level: "standard" },
 
-  const exported = dark
-    ? `export default defineConfig([
-  ${light},
-  ${darkTheme},
-]);`
-    : `export default defineConfig(${light});`;
+  palette: {
+    neutral: "#71717a",
+    brand: { color: "${brand}", exact: true },
+    danger: "#dc2626",
+    warning: { color: "#d97706", tune: { action: emphasis("bold") } },
+  },
 
-  return `import { defineConfig } from "@skylerknight/tint";
+  themes: ${themes},
 
-${seeds}
+  tokens: {
+    surface: {
+      sunken: surface("sunken"),
+      DEFAULT: surface(),
+      raised: surface("raised"),
+      floating: surface("floating"),
+    },
 
-// Token structure. Two kinds of variants:
-//   - \`ls\` (lightness steps): offsets from the reference surface, for layering.
-//   - \`lc\` (APCA contrast, 0–108): tint solves a color that reaches that contrast
-//     against the \`$on\` reference, so light and dark modes need no separate values.
-// \`$reference: true\` marks the variant other groups mean when they say \`$on: "group"\`.
-// \`$decorative: true\` skips the accessibility minimums for that variant or group.
-const tokens = {
-  surface: { $role: "surface", well: { ls: 0 }, DEFAULT: { ls: 1 }, raised: { ls: 2, $reference: true }, highlight: { ls: 4 } },
-  text: { $on: "surface", $role: "text", heading: { lc: 90 }, body: { lc: 75 }, muted: { lc: 50 }, placeholder: { lc: 40, $decorative: true } },
-  border: { $on: "surface", $role: "border", $decorative: true, DEFAULT: { lc: 25 }, subtle: { ls: 3 }, strong: { lc: 40 } },
-  action: { $on: "surface", $role: "action", DEFAULT: { lc: 60, $reference: true }, hover: { lc: 68 }, active: { lc: 52 }, soft: { ls: 3 }, "soft-hover": { ls: 4 } },
-  on: { $role: "text", action: { lc: 60, $on: "action" }, "action-soft": { lc: 75, $on: "action.soft" } },
-  ring: { $on: "surface", $role: "border", DEFAULT: { lc: 65 } },
-} as const;
+    action: {
+      DEFAULT: emphasis(),
+      hover: emphasis({ state: "hover" }),
+      pressed: emphasis({ state: "pressed" }),
+      disabled: emphasis({ state: "disabled" }),
+      on: text({ on: "action" }),
+      "on-disabled": text({ state: "disabled", on: "action" }),
+    },
 
-${exported}
+    soft: {
+      DEFAULT: emphasis("subtle"),
+      hover: emphasis("subtle", { state: "hover" }),
+      pressed: emphasis("subtle", { state: "pressed" }),
+      on: text({ on: "soft" }),
+    },
+
+    border: {
+      hairline: border("hairline"),
+      DEFAULT: border(),
+      firm: border("firm"),
+      focus: border("heavy", { on: "action" }),
+    },
+
+    text: {
+      DEFAULT: text(),
+      strong: text("strong"),
+      muted: text("muted"),
+      faint: text("faint"),
+      disabled: text({ state: "disabled" }),
+      link: text({ chroma: 1.2 }),
+    },
+
+    row: {
+      DEFAULT: surface(),
+      hover: surface({ state: "hover" }),
+      selected: surface({ state: "selected" }),
+      "selected-hover": surface({ state: "selected-hover" }),
+      on: text({ on: "row" }),
+    },
+  },
+});
 `;
 }

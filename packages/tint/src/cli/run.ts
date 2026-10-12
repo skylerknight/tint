@@ -40,10 +40,10 @@ export function readVersion(): string {
   return "unknown";
 }
 
-export const USAGE = `tint — APCA-driven design tokens
+export const USAGE = `tint — accessible color tokens
 
 Usage:
-  tint build   [-c|--config <path>] [-o|--out <dir>] [-f|--formats css,json,tailwind,flat]
+  tint build   [-c|--config <path>] [-o|--out <dir>] [-f|--formats css,tailwind,dtcg,flat]
                [--tailwind-tint] [--quiet]
   tint check   [-c|--config <path>] [--strict]
   tint inspect [-c|--config <path>] [--palette <name>] [--theme <name>] [--json]
@@ -52,13 +52,13 @@ Usage:
   tint --version | -v
 
 Commands:
-  build     Generate token files into <out>/<theme>/ (tokens.css, tokens.json,
+  build     Generate token files into <out>/<theme>/ (tokens.css, tokens.dtcg.json,
             tailwind.css, tokens.flat.json). --tailwind-tint writes one <out>/tailwind.css
             with the full tint utility system across every theme instead.
-  check     Validate the config and generate; prints diagnostics. Exit 1 on errors,
+  check     Validate the config and generate; prints warnings. Exit 1 on errors,
             or on warnings when --strict is given.
   inspect   Print the contrast audit table for each theme (--json for raw data).
-  init      Create tint.config.ts (interactive unless --yes).
+  init      Create a v4 tint.config.ts (interactive unless --yes).
 
 Config lookup: --config, else the first of tint.config.ts, tint.config.mts,
 tint.config.js, tint.config.mjs, tint.config.json in the current directory.
@@ -70,7 +70,7 @@ const COMMAND_HELP: Record<Command, string> = {
 
   -c, --config <path>     Config file (default: auto-detected tint.config.*)
   -o, --out <dir>         Output directory (default: config.output.path or ./tint)
-  -f, --formats <list>    Comma-separated: css, json, tailwind, flat (default: css)
+  -f, --formats <list>    Comma-separated: css, tailwind, dtcg, flat (default: css)
       --tailwind-tint     Write a single <out>/tailwind.css with tint utilities
       --quiet             Only print errors
   -h, --help              Show this help`,
@@ -89,7 +89,7 @@ const COMMAND_HELP: Record<Command, string> = {
   init: `Usage: tint init [options]
 
       --dark              Include a dark theme
-      --brand <hex>       Brand seed color (e.g. #2563eb)
+      --brand <hex>       Brand palette color (e.g. #2563eb)
   -y, --yes               Skip prompts and accept defaults
   -h, --help              Show this help`,
 };

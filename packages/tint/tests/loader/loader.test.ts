@@ -9,10 +9,9 @@ import {
 } from "../../src/loader/index.js";
 
 const minimal = `{
-  name: "light",
-  mode: "light",
-  colors: { base: "#ffffff" },
-  tokens: { surface: { DEFAULT: { ls: 1 } }, text: { $on: "surface", body: { lc: 75 } } },
+  palette: { neutral: "#ffffff" },
+  themes: { light: { mode: "light" } },
+  tokens: { surface: { DEFAULT: { kind: "surface" } } },
 }`;
 
 let dir: string;
@@ -28,36 +27,35 @@ describe("loadConfig", () => {
     writeFileSync(
       join(dir, "tint.config.json"),
       JSON.stringify({
-        name: "light",
-        mode: "light",
-        colors: { base: "#fff" },
-        tokens: { surface: { DEFAULT: { ls: 1 } } },
+        palette: { neutral: "#fff" },
+        themes: { light: { mode: "light" } },
+        tokens: { surface: { DEFAULT: { kind: "surface" } } },
       }),
     );
     const loaded = await loadConfig({ root: dir, configPath: "tint.config.json" });
-    expect(loaded.configs).toHaveLength(1);
-    expect(loaded.configs[0]!.name).toBe("light");
+    expect(loaded.config.themes?.light?.mode).toBe("light");
+    expect(loaded.config.palette.neutral).toBe("#fff");
     expect(loaded.dependencies).toEqual([join(dir, "tint.config.json")]);
   });
 
   it("loads an ESM .mjs config via native import", async () => {
     writeFileSync(join(dir, "tint.config.mjs"), `export default ${minimal};`);
     const loaded = await loadConfig({ root: dir, configPath: "tint.config.mjs" });
-    expect(loaded.configs[0]!.mode).toBe("light");
+    expect(loaded.config.themes?.light?.mode).toBe("light");
   });
 
   it("loads a TypeScript config with imports via esbuild and reports dependencies", async () => {
     mkdirSync(join(dir, "theme"));
     writeFileSync(
       join(dir, "theme", "tokens.ts"),
-      `export const tokens = { surface: { DEFAULT: { ls: 1 } } } as const;`,
+      `export const tokens = { surface: { DEFAULT: { kind: "surface" } } } as const;`,
     );
     writeFileSync(
       join(dir, "tint.config.ts"),
-      `import { tokens } from "./theme/tokens";\nconst name: string = "light";\nexport default [{ name, mode: "light", colors: { base: "#fff" }, tokens }, { name: "dark", mode: "dark", colors: { base: "#000" }, tokens }];`,
+      `import { tokens } from "./theme/tokens";\nexport default { palette: { neutral: "#fff" }, themes: { light: { mode: "light" }, dark: { mode: "dark" } }, tokens };`,
     );
     const loaded = await loadConfig({ root: dir, configPath: "tint.config.ts" });
-    expect(loaded.configs.map((c) => c.name)).toEqual(["light", "dark"]);
+    expect(Object.keys(loaded.config.themes ?? {})).toEqual(["light", "dark"]);
     expect(loaded.dependencies).toContain(join(dir, "tint.config.ts"));
     expect(loaded.dependencies).toContain(join(dir, "theme", "tokens.ts"));
   });
@@ -65,7 +63,7 @@ describe("loadConfig", () => {
   it("accepts a named config export", async () => {
     writeFileSync(join(dir, "tint.config.mjs"), `export const config = ${minimal};`);
     const loaded = await loadConfig({ root: dir, configPath: "tint.config.mjs" });
-    expect(loaded.configs[0]!.name).toBe("light");
+    expect(loaded.config.themes?.light?.mode).toBe("light");
   });
 
   it("reports missing files, missing exports, and invalid configs clearly", async () => {
@@ -78,7 +76,7 @@ describe("loadConfig", () => {
     );
     writeFileSync(
       join(dir, "bad.mjs"),
-      `export default { name: "x", mode: "sideways", colors: {}, tokens: {} };`,
+      `export default { palette: { neutral: "#fff" }, tokens: { surface: { DEFAULT: { kind: "nope" } } } };`,
     );
     await expect(loadConfig({ root: dir, configPath: "bad.mjs" })).rejects.toThrow(
       /Invalid tint config in .*bad\.mjs/,
@@ -89,14 +87,24 @@ describe("loadConfig", () => {
     );
   });
 
+  it("points a v3-shaped config at the migration table", async () => {
+    writeFileSync(
+      join(dir, "v3.mjs"),
+      `export default { name: "light", mode: "light", colors: { base: "#fff" }, tokens: { surface: { DEFAULT: { ls: 1 } } } };`,
+    );
+    await expect(loadConfig({ root: dir, configPath: "v3.mjs" })).rejects.toThrow(
+      /migration table/,
+    );
+  });
+
   it("picks up changes to the same file across loads", async () => {
     const file = join(dir, "tint.config.ts");
     writeFileSync(file, `export default ${minimal};`);
     const first = await loadConfig({ root: dir, configPath: file });
-    writeFileSync(file, `export default ${minimal.replace('"light"', '"changed"')};`);
+    writeFileSync(file, `export default ${minimal.replace("#ffffff", "#000000")};`);
     const second = await loadConfig({ root: dir, configPath: file });
-    expect(first.configs[0]!.name).toBe("light");
-    expect(second.configs[0]!.name).toBe("changed");
+    expect(first.config.palette.neutral).toBe("#ffffff");
+    expect(second.config.palette.neutral).toBe("#000000");
   });
 });
 
@@ -104,16 +112,16 @@ describe("loadConfig — dependency edits", () => {
   it("reflects changes to an imported file even when the config itself is untouched", async () => {
     mkdirSync(join(dir, "theme"));
     const dep = join(dir, "theme", "name.ts");
-    writeFileSync(dep, `export const name = "first";`);
+    writeFileSync(dep, `export const color = "#111111";`);
     writeFileSync(
       join(dir, "tint.config.ts"),
-      `import { name } from "./theme/name";\nexport default { name, mode: "light", colors: { base: "#fff" }, tokens: { surface: { DEFAULT: { ls: 1 } } } };`,
+      `import { color } from "./theme/name";\nexport default { palette: { neutral: color }, tokens: { surface: { DEFAULT: { kind: "surface" } } } };`,
     );
     const first = await loadConfig({ root: dir, configPath: "tint.config.ts" });
-    writeFileSync(dep, `export const name = "second";`);
+    writeFileSync(dep, `export const color = "#222222";`);
     const second = await loadConfig({ root: dir, configPath: "tint.config.ts" });
-    expect(first.configs[0]!.name).toBe("first");
-    expect(second.configs[0]!.name).toBe("second");
+    expect(first.config.palette.neutral).toBe("#111111");
+    expect(second.config.palette.neutral).toBe("#222222");
   });
 });
 
@@ -127,45 +135,45 @@ describe("findDefaultConfig", () => {
 });
 
 describe("loadConfig — bundling details", () => {
-  const base = `{ mode: "light", colors: { base: "#fff" }, tokens: { surface: { DEFAULT: { ls: 1 } } } }`;
+  const base = `{ palette: { neutral: "#fff" }, tokens: { surface: { DEFAULT: { kind: "surface" } } } }`;
 
   it("pins import.meta.url and __dirname to the real config location", async () => {
     mkdirSync(join(dir, "data"));
-    writeFileSync(join(dir, "data", "name.json"), JSON.stringify({ name: "fromjson" }));
+    writeFileSync(join(dir, "data", "name.json"), JSON.stringify({ color: "#abcabc" }));
     writeFileSync(
       join(dir, "tint.config.ts"),
       `import { readFileSync } from "node:fs";\nimport { join } from "node:path";\n` +
         `const a = JSON.parse(readFileSync(new URL("./data/name.json", import.meta.url), "utf8"));\n` +
         `const b = JSON.parse(readFileSync(join(__dirname, "data", "name.json"), "utf8"));\n` +
-        `if (a.name !== b.name) throw new Error("mismatch");\n` +
-        `export default { name: a.name, ...${base} };`,
+        `if (a.color !== b.color) throw new Error("mismatch");\n` +
+        `export default { palette: { neutral: a.color }, tokens: { surface: { DEFAULT: { kind: "surface" } } } };`,
     );
     const loaded = await loadConfig({ root: dir, configPath: "tint.config.ts" });
-    expect(loaded.configs[0]!.name).toBe("fromjson");
+    expect(loaded.config.palette.neutral).toBe("#abcabc");
     expect(loaded.dependencies.every((d) => d.startsWith("/"))).toBe(true);
     expect(loaded.dependencies.some((d) => d.includes("tint-stub"))).toBe(false);
   });
 
-  it("rejects duplicate theme names", async () => {
+  it("rejects a v3 theme array with the migration hint", async () => {
     writeFileSync(
       join(dir, "tint.config.mjs"),
       `export default [{ name: "same", ...${base} }, { name: "same", ...${base} }];`,
     );
     await expect(
       loadConfig({ root: dir, configPath: "tint.config.mjs" }),
-    ).rejects.toThrow(/two themes named "same"/);
+    ).rejects.toThrow(/v3 config array/);
+    await expect(
+      loadConfig({ root: dir, configPath: "tint.config.mjs" }),
+    ).rejects.toThrow(/migration table/);
   });
 
   it("accepts a relative root", async () => {
-    writeFileSync(
-      join(dir, "tint.config.ts"),
-      `export default { name: "rel", ...${base} };`,
-    );
+    writeFileSync(join(dir, "tint.config.ts"), `export default ${base};`);
     const previous = process.cwd();
     process.chdir(dir);
     try {
       const loaded = await loadConfig({ root: ".", configPath: "tint.config.ts" });
-      expect(loaded.configs[0]!.name).toBe("rel");
+      expect(loaded.config.palette.neutral).toBe("#fff");
     } finally {
       process.chdir(previous);
     }
@@ -174,38 +182,41 @@ describe("loadConfig — bundling details", () => {
   it("unwraps CommonJS named and default exports", async () => {
     writeFileSync(
       join(dir, "named.cjs"),
-      `exports.config = { name: "named", ...${base} };`,
+      `exports.config = { palette: { neutral: "#111111" }, tokens: { surface: { DEFAULT: { kind: "surface" } } } };`,
     );
     writeFileSync(
       join(dir, "def.cjs"),
-      `module.exports = { default: { name: "def", ...${base} } };`,
+      `module.exports = { default: { palette: { neutral: "#222222" }, tokens: { surface: { DEFAULT: { kind: "surface" } } } } };`,
     );
     writeFileSync(
       join(dir, "plain.cjs"),
-      `module.exports = { name: "plain", ...${base} };`,
+      `module.exports = { palette: { neutral: "#333333" }, tokens: { surface: { DEFAULT: { kind: "surface" } } } };`,
     );
     expect(
-      (await loadConfig({ root: dir, configPath: "named.cjs" })).configs[0]!.name,
-    ).toBe("named");
+      (await loadConfig({ root: dir, configPath: "named.cjs" })).config.palette.neutral,
+    ).toBe("#111111");
     expect(
-      (await loadConfig({ root: dir, configPath: "def.cjs" })).configs[0]!.name,
-    ).toBe("def");
+      (await loadConfig({ root: dir, configPath: "def.cjs" })).config.palette.neutral,
+    ).toBe("#222222");
     expect(
-      (await loadConfig({ root: dir, configPath: "plain.cjs" })).configs[0]!.name,
-    ).toBe("plain");
+      (await loadConfig({ root: dir, configPath: "plain.cjs" })).config.palette.neutral,
+    ).toBe("#333333");
   });
 
   it("stubs @skylerknight/tint when it is not resolvable, and otherwise uses the real package", async () => {
     writeFileSync(
       join(dir, "tint.config.ts"),
-      `import { defineConfig } from "@skylerknight/tint";\nexport default defineConfig({ name: "stubbed", ...${base} });`,
+      `import { defineConfig, surface } from "@skylerknight/tint";\nexport default defineConfig({ palette: { neutral: "#abcdef" }, tokens: { surface: { DEFAULT: surface() } } });`,
     );
     const stubbed = await loadConfig({ root: dir, configPath: "tint.config.ts" });
-    expect(stubbed.configs[0]!.name).toBe("stubbed");
+    expect(stubbed.config.palette.neutral).toBe("#abcdef");
+    expect(stubbed.config.tokens.surface?.DEFAULT).toEqual({ kind: "surface" });
 
-    // The playground resolves the real (built) package, which is kept external.
+    // The playground resolves the real (built) package when dist exists, and the
+    // stub otherwise. Either way the file is a v4 config.
     const playground = join(import.meta.dirname, "../../../../examples/vite-playground");
     const real = await loadConfig({ root: playground, configPath: "tint.config.ts" });
-    expect(real.configs.map((c) => c.name)).toEqual(["light", "dark"]);
+    expect(Object.keys(real.config.themes ?? {})).toEqual(["light", "dark"]);
+    expect(real.config.palette.neutral).toBe("#71717a");
   });
 });
