@@ -1,4 +1,4 @@
-export type { Polarity, SolveOptions, SolveResult } from "./types.js";
+export type { Metric, Polarity, SolveOptions, SolveResult } from "./types.js";
 export {
   sRGBtoY,
   calcAPCA,
@@ -7,4 +7,12 @@ export {
   meetsContrast,
   APCA_THRESHOLDS,
 } from "./apca.js";
-export { solveContrast, maxContrast, preferredPolarity } from "./solve.js";
+export { relativeLuminance, wcag2Ratio, WCAG2_RELATIVE_TOLERANCE } from "./wcag2.js";
+export {
+  apcaMetric,
+  apcaRawMetric,
+  wcag2Metric,
+  solveContrast,
+  maxContrast,
+  preferredPolarity,
+} from "./solve.js";
