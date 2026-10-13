@@ -14,7 +14,15 @@ export default defineConfig({
   themes: {
     light: { mode: "light", selector: ".light", media: true },
     dark: { mode: "dark", selector: ".dark", media: true, palette: { brand: "#a78bfa" } },
-    "light-hc": { mode: "light", extends: "light", media: "(prefers-contrast: more)", contrast: { level: "more" } },
+    // `.light-hc` is its own selector. extends would otherwise copy `.light`
+    // and a second unconditional `.light` block would replace the light theme.
+    "light-hc": {
+      mode: "light",
+      extends: "light",
+      selector: ".light-hc",
+      media: "(prefers-contrast: more)",
+      contrast: { level: "more" },
+    },
   },
 
   tokens: {

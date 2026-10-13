@@ -156,7 +156,7 @@
 }
 
 @media (prefers-color-scheme: light) {
-  :root:not(.dark):not(.light) {
+  :root:not(.dark):not(.light-hc) {
     /* neutral palette */
     --neutral-surface-sunken: oklch(92.00% 0.0138 285.94);
     --neutral-surface: oklch(96.00% 0.0138 285.94);
@@ -472,7 +472,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not(.light) {
+  :root:not(.light):not(.light-hc) {
     /* neutral palette */
     --neutral-surface-sunken: oklch(9.00% 0.0138 285.94);
     --neutral-surface: oklch(15.00% 0.0138 285.94);
@@ -630,7 +630,7 @@
   }
 }
 
-.light {
+.light-hc {
   /* neutral palette */
   --neutral-surface-sunken: oklch(94.00% 0.0138 285.94);
   --neutral-surface: oklch(98.00% 0.0098 285.94);

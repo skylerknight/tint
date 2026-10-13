@@ -51,6 +51,27 @@ function occurrences(css: string, name: string): number {
   return css.split(`${name}:`).length - 1;
 }
 
+/** First `name: value` declaration, without the trailing semicolon. */
+function firstDeclaration(css: string, name: string): string {
+  const needle = `${name}:`;
+  const start = css.indexOf(needle);
+  if (start < 0) throw new Error(`missing ${name}`);
+  const end = css.indexOf(";", start);
+  if (end < 0) throw new Error(`unclosed ${name}`);
+  return css.slice(start, end);
+}
+
+/** Body of the first top-level `selector { ... }` rule. */
+function ruleBody(css: string, selector: string): string {
+  const marker = `${selector} {`;
+  const start = css.indexOf(marker);
+  if (start < 0) throw new Error(`missing ${selector}`);
+  const rest = css.slice(start + marker.length);
+  const end = rest.indexOf("\n}");
+  if (end < 0) throw new Error(`unclosed ${selector}`);
+  return rest.slice(0, end);
+}
+
 describe("spec example golden output", () => {
   let fromTs: GenerationResultV4[] = [];
   let fromJson: GenerationResultV4[] = [];
@@ -147,19 +168,36 @@ describe("spec example golden output", () => {
     expect(css).not.toContain("@utility tint-neutral");
   });
 
-  it("scopes themes the way the engine resolves extends", () => {
+  it("scopes .light to the standard theme and .light-hc to the contrast theme", () => {
     const css = toCSS(fromTs);
-    // light-hc extends light and inherits `.light`, so the light scheme block
-    // excludes that sibling selector as well as `.dark`.
+    const light = fromTs.find((theme) => theme.name === "light");
+    const hc = fromTs.find((theme) => theme.name === "light-hc");
+    expect(light?.selector).toBe(".light");
+    expect(hc?.selector).toBe(".light-hc");
+
+    // Sibling classes are still excluded. `.light` is not one of them.
     expect(css).toContain(
-      "@media (prefers-color-scheme: light) {\n  :root:not(.dark):not(.light) {",
+      "@media (prefers-color-scheme: light) {\n  :root:not(.dark):not(.light-hc) {",
     );
-    expect(css).toContain("@media (prefers-color-scheme: dark) {\n  :root:not(.light) {");
-    // light-hc keeps the inherited `.light` block beside the contrast query.
-    expect(css).toContain(".light {");
+    expect(css).toContain(
+      "@media (prefers-color-scheme: dark) {\n  :root:not(.light):not(.light-hc) {",
+    );
     expect(css).toContain(
       "@media (prefers-contrast: more) {\n  :root:not(.light):not(.dark) {",
     );
+    expect(css.match(/(^|\n)\.light \{/g)).toHaveLength(1);
+    expect(css.match(/(^|\n)\.light-hc \{/g)).toHaveLength(1);
+
+    if (light === undefined || hc === undefined) {
+      throw new Error("missing light or light-hc theme");
+    }
+    const lightDecl = firstDeclaration(toCSS(light), "--neutral-text");
+    const hcDecl = firstDeclaration(toCSS(hc), "--neutral-text");
+    expect(lightDecl).not.toBe(hcDecl);
+    expect(ruleBody(css, ".light")).toContain(lightDecl);
+    expect(ruleBody(css, ".light")).not.toContain(hcDecl);
+    expect(ruleBody(css, ".light-hc")).toContain(hcDecl);
+    expect(ruleBody(css, ".light-hc")).not.toContain(lightDecl);
   });
 
   it("keeps the §8 warnings that --strict reports", () => {
