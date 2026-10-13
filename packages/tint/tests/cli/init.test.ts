@@ -24,7 +24,8 @@ describe("tint init", () => {
     expect(source).toContain('selector: ".dark"');
     expect(source).toContain("media: true");
     expect(source).not.toContain('"light-hc"');
-    expect(source).toContain('surface("sunken")');
+    expect(source).toContain("surface(0)");
+    expect(source).toContain("disabled(emphasis(8))");
     expect(c.out()).toContain("Next steps");
 
     const loaded = await loadConfig({ root: c.dir, configPath: path });

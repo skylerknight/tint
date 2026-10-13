@@ -32,8 +32,7 @@ import {
 } from "./lower.js";
 import type { NormalizedToken } from "./normalize.js";
 import type { ResolvedExpansion } from "./resolve.js";
-import { contrastTarget, shiftOrdinal } from "./targets.js";
-import type { ContrastAlgorithm, LevelOrdinal, StateSteps } from "./types.js";
+import type { ContrastAlgorithm, StateSteps } from "./types.js";
 
 /**
  * One fine step (§6.4). The spec does not give the size. 0.005 OKLCH L is
@@ -273,18 +272,18 @@ interface Family {
 function emphasisFamilies(tokens: readonly SolvedTokenV4[]): Family[] {
   const groups = new Map<string, SolvedTokenV4[]>();
   for (const token of tokens) {
-    if (token.kind !== "emphasis" || token.states.includes("disabled")) continue;
-    const key = `${token.group}\0${token.ordinal}`;
+    if (token.kind !== "emphasis" || isDisabledToken(token)) continue;
+    const key = token.group;
     const list = groups.get(key);
     if (list === undefined) groups.set(key, [token]);
     else list.push(token);
   }
   const texts = tokens.filter(
-    (token) => token.kind === "text" && !token.states.includes("disabled"),
+    (token) => token.kind === "text" && !isDisabledToken(token),
   );
   const families: Family[] = [];
   for (const members of groups.values()) {
-    const rest = members.find((member) => member.states.length === 0) ?? members[0];
+    const rest = members.find((member) => member.name === "DEFAULT") ?? members[0];
     if (rest === undefined) continue;
     const ids = new Set(members.map((member) => member.id));
     const labels = texts.filter((token) => token.backdrop.some((id) => ids.has(id)));
@@ -296,21 +295,28 @@ function emphasisFamilies(tokens: readonly SolvedTokenV4[]): Family[] {
 
 function nudgeBudget(
   rest: SolvedTokenV4,
-  value: NormalizedToken | undefined,
+  _value: NormalizedToken | undefined,
   input: PostSolveInput,
 ): { contrast?: number; lightness?: number } {
-  const looked = shiftOrdinal(rest.ordinal, {
-    contrastLevel: input.expansion.contrastLevel,
-    ...(value?.contrast !== undefined ? { contrast: value.contrast } : {}),
-  });
-  const cell = contrastTarget(
-    input.algorithm,
-    "emphasis",
-    asOrdinal(looked + NUDGE_MAX_LEVELS),
-  );
-  if (cell.type === "contrast") return { contrast: cell.value };
-  if (cell.type === "max") return {};
+  if (rest.mode === "contrast" && rest.target !== undefined) {
+    return input.algorithm === "apca"
+      ? { contrast: rest.target + NUDGE_MAX_LEVELS * APCA_STATE_DELTA }
+      : { contrast: rest.target * WCAG_STATE_RATIO ** NUDGE_MAX_LEVELS };
+  }
   return { lightness: NUDGE_MAX_LEVELS * input.tintStep };
+}
+
+function isDisabledToken(token: {
+  name: string;
+  states: readonly string[];
+  disabled?: boolean;
+}): boolean {
+  return (
+    token.disabled === true ||
+    token.states.includes("disabled") ||
+    token.name === "disabled" ||
+    token.name.endsWith("-disabled")
+  );
 }
 
 function shiftFamily(
@@ -390,20 +396,6 @@ function firstFailure(
 ): PairFailure | undefined {
   const snapped = candidates.get(target.id);
   if (snapped === undefined) return undefined;
-  const direction = sources.get(target.id)?.value.direction;
-  if (direction !== undefined) {
-    const ids = backdropIds(target);
-    const hostId = ids[0] ?? PAGE;
-    const host = candidates.get(hostId);
-    if (host !== undefined) {
-      const wrong =
-        (direction === "lighter" && snapped.oklch.l < host.oklch.l - 1e-6) ||
-        (direction === "darker" && snapped.oklch.l > host.oklch.l + 1e-6);
-      if (wrong && target.target !== undefined) {
-        return { pair: [target.id, hostId], target: target.target, achieved: 0 };
-      }
-    }
-  }
   if (target.mode === "contrast" && target.target !== undefined) {
     const across = against(metric, snapped.rgb, target, candidates);
     if (across.min + 1e-6 < target.target) {
@@ -616,14 +608,6 @@ function publish(color: OKLCH): GeneratedColorV4 {
   const mapped = toGamut(color);
   const rgb = oklchToRGBGamut(mapped);
   return { hex: rgbToHex(rgb), rgb, oklch: mapped };
-}
-
-function asOrdinal(value: number): LevelOrdinal {
-  if (value <= 1) return 1;
-  if (value >= 5) return 5;
-  if (value === 2) return 2;
-  if (value === 3) return 3;
-  return 4;
 }
 
 function unitOf(algorithm: ContrastAlgorithm): "Lc" | "ratio" {

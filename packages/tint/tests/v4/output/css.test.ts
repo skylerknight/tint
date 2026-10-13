@@ -267,13 +267,13 @@ describe("generateV4 themes", () => {
       },
     },
     tokens: {
-      tint: { ink: text("strong") },
+      tint: { ink: text(4) },
       action: {
-        DEFAULT: emphasis(),
-        hover: emphasis({ state: "hover" }),
+        DEFAULT: emphasis(4),
+        hover: emphasis(5),
       },
-      text: { strong: text("strong") },
-      border: { firm: border("firm") },
+      text: { strong: text(4) },
+      border: { firm: border(4) },
     },
   };
 

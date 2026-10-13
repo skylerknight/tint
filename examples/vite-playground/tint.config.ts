@@ -1,11 +1,19 @@
-import { defineConfig, border, emphasis, surface, text } from "@skylerknight/tint";
+import {
+  border,
+  defineConfig,
+  disabled,
+  emphasis,
+  surface,
+  text,
+} from "@skylerknight/tint";
 
 /**
- * v3 playground, migrated by hand with docs/v4-spec.md §10.
+ * 0–10 prototype.
  *
- * `colors.base` is the default palette (`neutral`). Dark seeds are theme
- * palette deltas. `ls` steps become elevation levels, `lc` shortcuts become
- * levels, and the separate `on` group moves inside each fill.
+ * Every kind is one contrast curve. `surface(0)` is the page, `text(5)` is
+ * body text, and soft buttons are a surface plus a label — not emphasis.
+ * Hover may step down (less contrast, lighter on a light page) or up.
+ * `disabled()` mutes a token in place.
  */
 export default defineConfig({
   contrast: { algorithm: "apca", level: "standard" },
@@ -36,50 +44,64 @@ export default defineConfig({
     },
   },
 
+  overrides: {
+    "warning,error": {
+      action: { DEFAULT: emphasis(8.5) },
+    },
+  },
+
   tokens: {
     surface: {
-      // ls 0..n → elevation. `selection` is the selected state of the page.
-      well: surface("sunken"),
-      DEFAULT: surface(),
-      raised: surface("raised"),
-      lowlight: surface("flat"),
-      highlight: surface("floating"),
-      selection: surface({ state: "selected" }),
+      DEFAULT: surface(0),
+      sunken: surface(4),
+      raised: surface(7),
+      overlay: surface(10),
     },
 
     text: {
-      // lc 90 / heading → strong. lc 75 / body. lc 50 / muted. lc 40 / placeholder → faint.
-      strong: text("strong"),
-      body: text(),
-      muted: text("muted"),
-      faint: text("faint"),
+      faint: text(1),
+      muted: text(3),
+      body: text(5),
+      strong: text(8),
     },
 
     border: {
-      // lc 25 → soft. subtle (ls, decorative) → hairline. lc 40 → default.
-      // The v3 ring (lc 65) is a firm border used as the focus ring.
-      subtle: border("hairline"),
-      DEFAULT: border("soft"),
-      strong: border(),
-      focus: border("firm"),
+      subtle: border(1),
+      DEFAULT: border(3),
+      strong: border(7),
+      focus: border(8),
     },
 
     action: {
-      // lc 60 → emphasis default. hover / active → states. `on.action` moves here.
-      DEFAULT: emphasis(),
-      hover: emphasis({ state: "hover" }),
-      pressed: emphasis({ state: "pressed" }),
-      disabled: emphasis({ state: "disabled" }),
-      on: text({ on: "action" }),
-      "on-disabled": text({ state: "disabled", on: "action" }),
+      DEFAULT: emphasis(8),
+      hover: emphasis(7),
+      pressed: emphasis(9),
+      disabled: disabled(emphasis(8)),
+      on: text(5, { on: "action" }),
+      "on-disabled": disabled(text(5, { on: "action.disabled" })),
     },
 
     soft: {
-      // action.soft / soft-hover / soft-active → emphasis subtle and its states.
-      DEFAULT: emphasis("subtle"),
-      hover: emphasis("subtle", { state: "hover" }),
-      pressed: emphasis("subtle", { state: "pressed" }),
-      on: text({ on: "soft" }),
+      DEFAULT: surface(5),
+      hover: surface(6),
+      pressed: surface(3),
+      disabled: disabled(surface(5)),
+      on: text(5, { on: "soft" }),
+      "on-disabled": disabled(text(5, { on: "soft.disabled" })),
+    },
+
+    ramp: {
+      n0: emphasis(0),
+      n1: emphasis(1),
+      n2: emphasis(2),
+      n3: emphasis(3),
+      n4: emphasis(4),
+      n5: emphasis(5),
+      n6: emphasis(6),
+      n7: emphasis(7),
+      n8: emphasis(8),
+      n9: emphasis(9),
+      n10: emphasis(10),
     },
   },
 });

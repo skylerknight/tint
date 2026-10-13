@@ -13,15 +13,15 @@ import type { OKLCH, RGB } from "../color/types.js";
 import { maxChromaForLs } from "../engine/generate.js";
 import type { Polarity } from "../contrast/types.js";
 import { preferredPolarity } from "../contrast/solve.js";
+import { GLOBAL_CONTRAST_SHIFT } from "./constants.js";
+import { contrastAt } from "./ladders.js";
 import type { CanonicalState } from "./states.js";
-import { contrastTarget, shiftOrdinal, type ContrastShift } from "./targets.js";
 import type {
   ContrastAlgorithm,
   ContrastLevel,
   Direction,
   Hue,
   Kind,
-  LevelOrdinal,
   Mode,
   StateSteps,
 } from "./types.js";
@@ -50,6 +50,12 @@ export const SELECTED_CHROMA = 1.5;
 export const DISABLED_CHROMA = 0.3;
 
 /**
+ * How far a disabled color moves toward its backdrop, in OKLCH lightness.
+ * Small on purpose: the scale position stays, and the color stays solid.
+ */
+export const DISABLED_APPROACH = 0.06;
+
+/**
  * Dark page lightness. Matches the v3 dark foundation offset so the page sits
  * off black. Spec Q1 / Q7 leave the baseline open; see {@link pageLightness}.
  */
@@ -67,6 +73,8 @@ const DEFAULT_STATE_COUNT = {
 export interface LowerContext {
   algorithm: ContrastAlgorithm;
   contrastLevel: ContrastLevel;
+  /** Theme mode. Emphasis and surface units differ by mode. */
+  mode: Mode;
   /** Palette hue and chroma. Lightness is solved later. */
   seed: OKLCH;
   /** Resolved size of one surface step for this theme's mode. */
@@ -105,7 +113,7 @@ interface Draft {
   chroma: number;
   hue?: Hue;
   direction?: Direction;
-  ordinal: LevelOrdinal;
+  scale: number;
   seed: OKLCH;
 }
 
@@ -143,15 +151,48 @@ export function lowerToken(
   ctx: LowerContext,
   honorOptions: boolean,
 ): SolverIntent {
-  const shift = contrastShift(token, ctx, honorOptions);
-  const ordinal = shiftOrdinal(token.ordinal, shift);
-  const draft = fromCell(token.kind, ordinal, ctx);
+  const scale = honorOptions ? shiftedScale(token, ctx) : token.scale;
+  const draft = fromScale(token.kind, scale, ctx);
   if (honorOptions) applyOptions(draft, token);
-  if (honorOptions && token.step !== undefined) applyStep(draft, token, ctx);
-  for (const state of token.states) applyState(draft, state, token, ctx, shift);
   if (honorOptions) applyContrastBypass(draft, token, ctx);
   draft.seed = paintSeed(ctx.seed, draft, token.kind);
   return freeze(draft, token);
+}
+
+/**
+ * `contrast.level` still shifts text and border scales (`more` +1, `max` +2).
+ * Surface and emphasis scales are literal step counts and are not shifted.
+ */
+function shiftedScale(token: NormalizedToken, ctx: LowerContext): number {
+  if (token.kind !== "text" && token.kind !== "border") return token.scale;
+  return token.scale + GLOBAL_CONTRAST_SHIFT[ctx.contrastLevel];
+}
+
+function fromScale(kind: Kind, scale: number, ctx: LowerContext): Draft {
+  return {
+    mode: "contrast",
+    target: contrastAt(kind, ctx.algorithm, ctx.mode, scale),
+    elevation: 0,
+    away: 0,
+    stepSize: kind === "surface" ? ctx.surfaceStep : ctx.tintStep,
+    chroma: 1,
+    scale,
+    seed: ctx.seed,
+  };
+}
+
+/**
+ * Desaturate `color` and step it toward `backdropL` without crossing it.
+ * The caller keeps the token's scale. The result has no alpha.
+ */
+export function muteDisabled(color: OKLCH, backdropL: number): OKLCH {
+  const distance = backdropL - color.l;
+  const step = Math.min(DISABLED_APPROACH, Math.abs(distance));
+  return {
+    l: clamp01(color.l + Math.sign(distance) * step),
+    c: Math.max(0, color.c * DISABLED_CHROMA),
+    h: color.h,
+  };
 }
 
 /**
@@ -183,101 +224,9 @@ export function realizeLightness(
   return lightness;
 }
 
-function contrastShift(
-  token: NormalizedToken,
-  ctx: LowerContext,
-  honorOptions: boolean,
-): ContrastShift {
-  if (honorOptions && token.contrast !== undefined) {
-    return { contrastLevel: ctx.contrastLevel, contrast: token.contrast };
-  }
-  return { contrastLevel: ctx.contrastLevel };
-}
-
-function fromCell(kind: Kind, ordinal: LevelOrdinal, ctx: LowerContext): Draft {
-  // `ordinal` is already shifted. Looking the cell up with `contrastLevel`
-  // again would shift a second time.
-  const cell = contrastTarget(ctx.algorithm, kind, ordinal);
-  const draft: Draft = {
-    mode: "lightness",
-    target: 0,
-    elevation: 0,
-    away: 0,
-    stepSize: kind === "surface" ? ctx.surfaceStep : ctx.tintStep,
-    chroma: 1,
-    ordinal,
-    seed: ctx.seed,
-  };
-  if (cell.type === "contrast") {
-    draft.mode = "contrast";
-    draft.target = cell.value;
-  } else if (cell.type === "max") {
-    draft.mode = "max";
-  } else if (cell.type === "tint") {
-    draft.away = cell.steps;
-    draft.stepSize = ctx.tintStep;
-  } else {
-    draft.elevation = cell.offset;
-    draft.stepSize = ctx.surfaceStep;
-  }
-  return draft;
-}
-
 function applyOptions(draft: Draft, token: NormalizedToken): void {
   if (token.chroma !== undefined) draft.chroma = token.chroma;
   if (token.hue !== undefined) draft.hue = token.hue;
-  if (token.direction !== undefined) draft.direction = token.direction;
-}
-
-/** `step` replaces the level cell. Later states still add (§2.4, §5). */
-function applyStep(draft: Draft, token: NormalizedToken, ctx: LowerContext): void {
-  const step = token.step;
-  if (step === undefined) return;
-  draft.mode = "lightness";
-  if (token.kind === "surface") {
-    draft.elevation = step;
-    draft.away = 0;
-    draft.stepSize = ctx.surfaceStep;
-    return;
-  }
-  draft.elevation = 0;
-  draft.away = Math.abs(step);
-  draft.stepSize = ctx.tintStep;
-  if (step < 0 && draft.direction === undefined) draft.direction = "darker";
-}
-
-function applyState(
-  draft: Draft,
-  state: CanonicalState,
-  token: NormalizedToken,
-  ctx: LowerContext,
-  shift: ContrastShift,
-): void {
-  const kind = token.kind;
-  if (state === "disabled") {
-    draft.mode = "contrast";
-    draft.target =
-      ctx.algorithm === "apca" ? DISABLED_TARGET.apca : DISABLED_TARGET.wcag2;
-    draft.elevation = 0;
-    draft.away = 0;
-    draft.chroma *= DISABLED_CHROMA;
-    return;
-  }
-  // "at least default": raise the pre-shift ordinal to 3, then shift once.
-  if (state === "checked") {
-    const raised = shiftOrdinal(token.ordinal < 3 ? 3 : token.ordinal, shift);
-    if (raised !== draft.ordinal) {
-      const promoted = fromCell(kind, raised, ctx);
-      draft.mode = promoted.mode;
-      draft.target = promoted.target;
-      draft.elevation = promoted.elevation;
-      draft.away = promoted.away;
-      draft.stepSize = promoted.stepSize;
-      draft.ordinal = promoted.ordinal;
-    }
-  }
-  if (state === "selected") draft.chroma *= SELECTED_CHROMA;
-  addSteps(draft, stateStepCount(kind, state, ctx.states), ctx);
 }
 
 /**
@@ -338,10 +287,7 @@ export function stateStepCount(
 function paintSeed(palette: OKLCH, draft: Draft, kind: Kind): OKLCH {
   let chroma = Math.max(0, palette.c * draft.chroma);
   if (kind === "surface") {
-    chroma = Math.min(
-      chroma,
-      maxChromaForLs(Math.abs(draft.elevation) + Math.abs(draft.away)),
-    );
+    chroma = Math.min(chroma, maxChromaForLs(Math.abs(draft.scale)));
   }
   return {
     l: palette.l,
@@ -377,12 +323,8 @@ function freeze(draft: Draft, token: NormalizedToken): SolverIntent {
 }
 
 function reports(token: NormalizedToken, draft: Draft): boolean {
-  if (token.states.includes("disabled")) return false;
-  if (draft.mode !== "contrast") return false;
-  if (token.kind === "border" && draft.ordinal <= 2) return false;
-  if (token.kind === "surface") return false;
-  if (token.kind === "emphasis" && draft.ordinal <= 2) return false;
-  return true;
+  if (token.disabled === true) return false;
+  return draft.mode === "contrast";
 }
 
 function clamp01(value: number): number {
