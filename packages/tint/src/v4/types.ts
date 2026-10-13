@@ -88,12 +88,13 @@ export interface TokenOptions {
 /**
  * A token: its kind, a numeric scale, and {@link TokenOptions}.
  *
- * The scale is 0–10. Decimals are real steps. The unit depends on the kind.
- * See `ladders.ts`.
+ * `emphasis`, `text`, and `border` are 0–10 contrast steps. `surface` is
+ * signed lightness steps from the page, −10..10. Decimals are real steps.
+ * See `ladders.ts` and `lower.ts`.
  */
 export interface Token extends TokenOptions {
   kind: Kind;
-  /** `surface(0)`, `text(5)`, `emphasis(8.5)`. Decimals are allowed. */
+  /** `surface(-1)`, `text(5)`, `emphasis(8.5)`. Decimals are allowed. */
   scale: number;
   /**
    * Set by `disabled.emphasis(n)` and the other `disabled.<kind>(n)` constructors.

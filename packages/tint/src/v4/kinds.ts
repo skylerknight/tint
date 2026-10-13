@@ -1,9 +1,11 @@
 /**
- * Kind functions for the 0–10 scale.
+ * Kind functions for the unified scale.
  *
  * `surface(0)`, `text(5)`, `border(4.5)`, `emphasis(8)`.
- * The number is the whole scale. Higher means more contrast against the backdrop.
- * There are no level names and no `state`. Hover and pressed are other numbers.
+ * `emphasis`, `text`, and `border` are contrast steps on 0–10. Higher means
+ * more contrast against the backdrop. `surface` is signed lightness steps
+ * from the page, −10..10. There are no level names and no `state`. Hover and
+ * pressed are other numbers.
  * Options are `{ on?, chroma?, hue?, lc?, ratio?, nudge? }`.
  * `disabled.emphasis(n)` and the other `disabled.<kind>(n)` build that kind at
  * `n`, then the engine mutes it. There is no `disabled(token)` wrapper.
@@ -60,9 +62,10 @@ function kindFunction<K extends Kind>(kind: K): KindFn<K> {
 }
 
 /**
- * Contrast against the page, on the same 0–10 curve as the other kinds.
- * `surface(0)` matches the page. One unit is +3 Lc in light, +4 Lc in dark,
- * and ×2^0.1 on the WCAG ratio (1:1 at 0, 2:1 at 10).
+ * Signed lightness steps from the page.
+ * `0` is the page, positive is raised, negative is sunken.
+ * One step is 0.02 in light mode and 0.03 in dark mode. Decimals are real steps.
+ * Valid range is −10..10.
  */
 export const surface = kindFunction("surface");
 

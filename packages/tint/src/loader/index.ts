@@ -222,6 +222,8 @@ async function loadWithEsbuild(
  * Stand-in for `@skylerknight/tint` when the package cannot be resolved.
  * Kind functions match the v4 return shape so the loaded object validates.
  * Validation still happens in the loader, against the real validator.
+ * `emphasis`, `text`, and `border` scales are 0..10 contrast steps.
+ * `surface` is −10..10, signed lightness steps from the page (0 is the page).
  */
 const TINT_STUB = `function __tintKind(kind) {
   return function (scale, options) {

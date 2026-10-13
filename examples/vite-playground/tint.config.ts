@@ -8,12 +8,16 @@ import {
 } from "@skylerknight/tint";
 
 /**
- * 0–10 prototype.
+ * Unified prototype.
  *
- * Every kind is one contrast curve. `surface(0)` is the page, `text(5)` is
- * body text, and soft buttons are a surface plus a label — not emphasis.
- * Hover may step down (less contrast, lighter on a light page) or up.
- * `disabled.emphasis(n)` resolves that kind at n, then mutes it.
+ * Emphasis, text, and border stay on the 0–10 contrast curve.
+ * Surface is signed lightness steps from the page: 0 is the page, positive
+ * is raised, negative is sunken. One step is 0.02 in light and 0.03 in dark.
+ *
+ * The light page is lightness 92, not the mode shorthand 96. At 96, surface(2)
+ * is already white, so surface(3) and surface(4) would clip to the same color.
+ * 92 leaves those soft steps 0.02 apart (surface(4) lands on white).
+ * Soft fills are surfaces; the label is text(5) on that surface.
  */
 export default defineConfig({
   contrast: { algorithm: "apca", level: "standard" },
@@ -28,7 +32,7 @@ export default defineConfig({
   },
 
   themes: {
-    light: { mode: "light", selector: ".light", media: true },
+    light: { mode: "light", lightness: 92, selector: ".light", media: true },
     dark: {
       mode: "dark",
       selector: ".dark",
@@ -52,10 +56,10 @@ export default defineConfig({
 
   tokens: {
     surface: {
+      sunken: surface(-1),
       DEFAULT: surface(0),
-      sunken: surface(4),
-      raised: surface(7),
-      overlay: surface(10),
+      raised: surface(1),
+      overlay: surface(2),
     },
 
     text: {
@@ -82,10 +86,10 @@ export default defineConfig({
     },
 
     soft: {
-      DEFAULT: surface(5),
-      hover: surface(6),
-      pressed: surface(3),
-      disabled: disabled.surface(5),
+      DEFAULT: surface(2),
+      hover: surface(3),
+      pressed: surface(4),
+      disabled: disabled.surface(2),
       on: text(5, { on: "soft" }),
       "on-disabled": disabled.text(5, { on: "soft.disabled" }),
     },

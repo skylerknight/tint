@@ -229,7 +229,7 @@
           "enum": ["surface", "text", "border", "emphasis"]
         },
         "scale": {
-          "description": "Position on the shared 0–10 scale. Higher is more contrast against the backdrop. Decimals interpolate (APCA in Lc, WCAG by ratio). text(5) is body text. surface(0) matches the page.",
+          "description": "Numeric scale. emphasis, text, and border are contrast steps from 0 to 10 (higher is more contrast; decimals interpolate, APCA in Lc and WCAG by ratio; text(5) is body text). surface is signed lightness steps from the page, -10 to 10 (0 is the page, positive is raised, negative is sunken; one step is 0.02 in light and 0.03 in dark). Decimals are real steps.",
           "type": "number"
         },
         "disabled": {
@@ -273,7 +273,37 @@
         }
       },
       "required": ["kind", "scale"],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "surface"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "scale": {
+                "type": "number",
+                "minimum": -10,
+                "maximum": 10
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "scale": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10
+              }
+            }
+          }
+        }
+      ]
     },
     "tokenOptions": {
       "title": "TokenOptions",

@@ -1,11 +1,13 @@
 /**
  * Token normalization for the numeric-scale prototype.
  *
- * A token is `{ kind, scale, ...options }`. `scale` is a finite number.
+ * A token is `{ kind, scale, ...options }`. `scale` is a finite number in range:
+ * 0..10 for emphasis, text, and border, and −10..10 for surface.
  * Level names, `state`, `contrast`, `step`, and `direction` are rejected
  * with a pointer at the replacement. This function does not throw.
  */
 
+import { SCALE_MAX, SCALE_MIN, SURFACE_SCALE_MAX, SURFACE_SCALE_MIN } from "./ladders.js";
 import {
   isKind,
   isPlainObject,
@@ -39,9 +41,9 @@ const REMOVED: Readonly<Record<string, string>> = {
   state:
     "States were removed. Add another token with its own scale (hover: emphasis(5)).",
   contrast: "The contrast nudge was removed. Change the scale instead.",
-  step: "The step option was removed. The scale is the contrast position.",
+  step: "The step option was removed. The scale is the position.",
   direction:
-    "direction was removed. Higher scale is more contrast, on the backdrop's preferred side.",
+    "direction was removed. Higher emphasis, text, and border scales are more contrast. Higher surface scales are lighter.",
   $role: "Configs are explicit. There is no $role. The token's kind is the role.",
 };
 
@@ -113,7 +115,17 @@ export function normalizeToken(
       ),
     );
   } else if (typeof token.scale === "number" && Number.isFinite(token.scale)) {
-    scale = token.scale;
+    const bounds = scaleBounds(kind);
+    if (token.scale < bounds.min || token.scale > bounds.max) {
+      issues.push(
+        normalizeIssue(
+          joinPath(path, "scale"),
+          scaleRangeMessage(kind, token.scale, bounds),
+        ),
+      );
+    } else {
+      scale = token.scale;
+    }
   } else {
     issues.push(normalizeIssue(joinPath(path, "scale"), "Expected a finite number."));
   }
@@ -124,6 +136,23 @@ export function normalizeToken(
   const normalized: NormalizedToken = { kind, scale, states: [] };
   assignOptions(normalized, extra);
   return { ok: true, token: normalized };
+}
+
+function scaleBounds(kind: Kind): { min: number; max: number } {
+  if (kind === "surface") return { min: SURFACE_SCALE_MIN, max: SURFACE_SCALE_MAX };
+  return { min: SCALE_MIN, max: SCALE_MAX };
+}
+
+function scaleRangeMessage(
+  kind: Kind,
+  scale: number,
+  bounds: { min: number; max: number },
+): string {
+  const range = `${bounds.min}..${bounds.max}`;
+  if (kind === "surface") {
+    return `scale ${scale} is outside ${range}. surface(n) is signed lightness steps from the page: 0 is the page, positive is raised, negative is sunken.`;
+  }
+  return `scale ${scale} is outside ${range}. ${kind}(n) is a contrast step from ${SCALE_MIN} to ${SCALE_MAX}. Higher n is more contrast against the backdrop.`;
 }
 
 function kindIssue(path: string, kind: unknown): NormalizeIssue {

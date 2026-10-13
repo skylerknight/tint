@@ -1,19 +1,30 @@
 /**
- * Unified 0–10 scale (proto/scale-0-10).
+ * Unified scale (proto/unified).
  *
- * Each kind is one pure function of n. Higher n is more contrast against the
- * token's backdrop. Decimals interpolate: APCA in a straight line, WCAG by
- * ratio. Nothing inside a kind switches to a tint, a softness branch, or the
- * other polarity. The solver stays on the backdrop's preferred side, so the
- * lightness move never reverses as n grows.
+ * `emphasis`, `text`, and `border` are pure functions of a 0–10 contrast
+ * scale. Higher n is more contrast against the token's backdrop. Decimals
+ * interpolate: APCA in a straight line, WCAG by ratio. Nothing inside those
+ * kinds switches to a tint or the other polarity. The solver stays on the
+ * backdrop's preferred side, so the lightness move never reverses as n grows.
  *
- * `text(5)` is body text (APCA Lc 75, WCAG 4.5:1). `surface(0)` matches the page.
+ * `surface` is not on that curve. It is signed lightness steps from the page
+ * (−10..10). See {@link SURFACE_STEP} in `lower.ts`. `surface(0)` is the page.
+ *
+ * `text(5)` is body text (APCA Lc 75, WCAG 4.5:1).
  */
 
 import type { ContrastAlgorithm, Kind, Mode } from "./types.js";
 
+/** Inclusive range for `emphasis`, `text`, and `border`. */
 export const SCALE_MIN = 0;
 export const SCALE_MAX = 10;
+
+/**
+ * Inclusive range for `surface`.
+ * Negative is sunken, 0 is the page, positive is raised.
+ */
+export const SURFACE_SCALE_MIN = -10;
+export const SURFACE_SCALE_MAX = 10;
 
 /** `text(5)` / the body-text stop. Below this, text lints. */
 export const TEXT_BODY_SCALE = 5;
@@ -51,14 +62,6 @@ export const EMPHASIS_APCA_UNIT = { light: 9, dark: 10 } as const;
  */
 export const EMPHASIS_WCAG_AT_10 = 7;
 export const EMPHASIS_WCAG_UNIT = 7 ** 0.1;
-
-/**
- * Surface is the same shape of curve, with a smaller step, measured against
- * the page. Light +3 Lc, dark +4 Lc. WCAG runs from 1:1 at 0 to 2:1 at 10.
- */
-export const SURFACE_APCA_UNIT = { light: 3, dark: 4 } as const;
-export const SURFACE_WCAG_AT_10 = 2;
-export const SURFACE_WCAG_UNIT = 2 ** 0.1;
 
 /**
  * Emphasis at or above this scale is held to non-text 3:1.
@@ -110,23 +113,16 @@ export function emphasisTarget(
   return EMPHASIS_WCAG_AT_10 ** (scale / SCALE_MAX);
 }
 
-export function surfaceTarget(
-  algorithm: ContrastAlgorithm,
-  mode: Mode,
-  scale: number,
-): number {
-  if (algorithm === "apca") return Math.max(0, SURFACE_APCA_UNIT[mode] * scale);
-  return SURFACE_WCAG_AT_10 ** (scale / SCALE_MAX);
-}
-
-/** Contrast target for one kind. Surface and emphasis take the theme mode. */
+/**
+ * Contrast target for emphasis, text, or border.
+ * Surface is a lightness step, not a contrast target.
+ */
 export function contrastAt(
-  kind: Kind,
+  kind: Exclude<Kind, "surface">,
   algorithm: ContrastAlgorithm,
   mode: Mode,
   scale: number,
 ): number {
-  if (kind === "surface") return surfaceTarget(algorithm, mode, scale);
   if (kind === "emphasis") return emphasisTarget(algorithm, mode, scale);
   if (kind === "border") return borderTarget(algorithm, scale);
   return textTarget(algorithm, scale);

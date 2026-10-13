@@ -224,4 +224,32 @@ describe("loadConfig — bundling details", () => {
       on: "action",
     });
   });
+
+  it("rejects an out-of-range scale from the stub with a clear message", async () => {
+    writeFileSync(
+      join(dir, "tint.config.ts"),
+      `import { defineConfig, emphasis, surface } from "@skylerknight/tint";
+export default defineConfig({
+  palette: { neutral: "#abcdef" },
+  tokens: {
+    action: { DEFAULT: emphasis(11) },
+    surface: { DEFAULT: surface(-11) },
+  },
+});`,
+    );
+    await expect(loadConfig({ root: dir, configPath: "tint.config.ts" })).rejects.toThrow(
+      /scale 11 is outside 0\.\.10/,
+    );
+    writeFileSync(
+      join(dir, "tint.config.ts"),
+      `import { defineConfig, surface } from "@skylerknight/tint";
+export default defineConfig({
+  palette: { neutral: "#abcdef" },
+  tokens: { surface: { DEFAULT: surface(-11) } },
+});`,
+    );
+    await expect(loadConfig({ root: dir, configPath: "tint.config.ts" })).rejects.toThrow(
+      /scale -11 is outside -10\.\.10/,
+    );
+  });
 });

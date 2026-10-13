@@ -19,6 +19,12 @@ import {
   MIN_ORDINAL,
   TOKEN_CONTRAST_SHIFT,
 } from "../src/v4/constants.js";
+import {
+  SCALE_MAX,
+  SCALE_MIN,
+  SURFACE_SCALE_MAX,
+  SURFACE_SCALE_MIN,
+} from "../src/v4/ladders.js";
 import { DEFAULT_LEVEL_NAMES, KINDS } from "../src/v4/levels.js";
 import { HUE_SHIFT_PATTERN } from "../src/v4/normalize.js";
 import {
@@ -105,6 +111,7 @@ interface Schema {
   allOf?: readonly Schema[];
   if?: Schema;
   then?: Schema;
+  else?: Schema;
   not?: Schema;
 }
 
@@ -204,10 +211,37 @@ function stateDescription(): string {
 function scaleSchema(): Schema {
   return {
     description:
-      "Position on the shared 0–10 scale. Higher is more contrast against the backdrop. " +
-      "Decimals interpolate (APCA in Lc, WCAG by ratio). " +
-      "text(5) is body text. surface(0) matches the page.",
+      "Numeric scale. emphasis, text, and border are contrast steps from " +
+      `${SCALE_MIN} to ${SCALE_MAX} (higher is more contrast; decimals interpolate, APCA in Lc and WCAG by ratio; text(5) is body text). ` +
+      "surface is signed lightness steps from the page, " +
+      `${SURFACE_SCALE_MIN} to ${SURFACE_SCALE_MAX} ` +
+      "(0 is the page, positive is raised, negative is sunken; one step is 0.02 in light and 0.03 in dark). " +
+      "Decimals are real steps.",
     type: "number",
+  };
+}
+
+/** Bounds depend on kind. Surface is signed; the other kinds are 0..10. */
+function scaleBoundsSchema(): Schema {
+  return {
+    if: {
+      properties: { kind: { const: "surface" } },
+      required: ["kind"],
+    },
+    then: {
+      properties: {
+        scale: {
+          type: "number",
+          minimum: SURFACE_SCALE_MIN,
+          maximum: SURFACE_SCALE_MAX,
+        },
+      },
+    },
+    else: {
+      properties: {
+        scale: { type: "number", minimum: SCALE_MIN, maximum: SCALE_MAX },
+      },
+    },
   };
 }
 
@@ -261,6 +295,7 @@ function tokenSchema(): Schema {
     },
     required: ["kind", "scale"],
     additionalProperties: false,
+    allOf: [scaleBoundsSchema()],
   };
 }
 

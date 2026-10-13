@@ -1,10 +1,14 @@
 /**
- * Lower a normalized token into a solver intent (docs/v4-spec.md §4, §5, §6.2).
+ * Lower a normalized token into a solver intent.
  *
- * Surfaces become elevation steps from an anchor. Emphasis 1–2 become tint
- * steps from the backdrop. Emphasis 3–5, text, and border become a metric
- * target from `targets.ts`. States then fold left to right. `lc` / `ratio` /
- * `step` / `direction` / `chroma` / `hue` override that result.
+ * `surface(n)` is signed lightness steps from the page (`elevation`).
+ * One step is {@link SURFACE_STEP}: 0.02 in light, 0.03 in dark. Positive is
+ * raised (lighter), negative is sunken, and 0 matches the page. Decimals are
+ * real steps. This is not a contrast solve, so small steps are not clipped
+ * by APCA.
+ *
+ * `emphasis`, `text`, and `border` are contrast targets from `ladders.ts`.
+ * `lc` / `ratio` replace that target. Disabled tokens are solved, then muted.
  *
  * This module does not read backdrop colors. The engine supplies the anchor.
  */
@@ -169,12 +173,24 @@ function shiftedScale(token: NormalizedToken, ctx: LowerContext): number {
 }
 
 function fromScale(kind: Kind, scale: number, ctx: LowerContext): Draft {
+  if (kind === "surface") {
+    return {
+      mode: "lightness",
+      target: 0,
+      elevation: scale,
+      away: 0,
+      stepSize: ctx.surfaceStep,
+      chroma: 1,
+      scale,
+      seed: ctx.seed,
+    };
+  }
   return {
     mode: "contrast",
     target: contrastAt(kind, ctx.algorithm, ctx.mode, scale),
     elevation: 0,
     away: 0,
-    stepSize: kind === "surface" ? ctx.surfaceStep : ctx.tintStep,
+    stepSize: ctx.tintStep,
     chroma: 1,
     scale,
     seed: ctx.seed,

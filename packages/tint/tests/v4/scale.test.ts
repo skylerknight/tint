@@ -8,18 +8,23 @@ import {
   BORDER_WCAG_UNIT,
   EMPHASIS_APCA_UNIT,
   EMPHASIS_WCAG_UNIT,
+  SCALE_MAX,
+  SCALE_MIN,
   SOLID_EMPHASIS_SCALE,
-  SURFACE_APCA_UNIT,
+  SURFACE_DISTINCT_DELTA,
+  SURFACE_SCALE_MAX,
+  SURFACE_SCALE_MIN,
   TEXT_APCA_UNIT,
   TEXT_BODY_SCALE,
   TEXT_WCAG_UNIT,
   borderTarget,
   emphasisTarget,
-  surfaceTarget,
   textTarget,
 } from "../../src/v4/ladders.js";
+import { SURFACE_STEP } from "../../src/v4/lower.js";
 import { resolveConfig } from "../../src/v4/resolve.js";
 import { defineConfig } from "../../src/v4/define.js";
+import { validateConfig } from "../../src/v4/validate.js";
 import type { ContrastAlgorithm, Kind, Mode } from "../../src/v4/types.js";
 
 function approx(value: number, expected: number, digits = 4): void {
@@ -42,8 +47,6 @@ describe("contrast ladders", () => {
     expect(emphasisTarget("apca", "dark", 10)).toBe(100);
     expect(emphasisTarget("wcag2", "light", 0)).toBeCloseTo(1, 8);
     expect(emphasisTarget("wcag2", "dark", 10)).toBeCloseTo(7, 8);
-    expect(surfaceTarget("apca", "light", 0)).toBe(0);
-    expect(surfaceTarget("wcag2", "light", 10)).toBeCloseTo(2, 8);
   });
 
   it("gives each kind a constant unit", () => {
@@ -62,10 +65,6 @@ describe("contrast ladders", () => {
     approx(
       emphasisTarget("wcag2", "light", 8) / emphasisTarget("wcag2", "light", 7),
       EMPHASIS_WCAG_UNIT,
-    );
-    approx(
-      surfaceTarget("apca", "dark", 4) - surfaceTarget("apca", "dark", 3),
-      SURFACE_APCA_UNIT.dark,
     );
   });
 
@@ -89,16 +88,12 @@ describe("contrast ladders", () => {
       borderTarget("apca", 2.5),
       (borderTarget("apca", 2) + borderTarget("apca", 3)) / 2,
     );
-    approx(
-      surfaceTarget("wcag2", "dark", 3.5),
-      Math.sqrt(surfaceTarget("wcag2", "dark", 3) * surfaceTarget("wcag2", "dark", 4)),
-    );
   });
 
   it("is strictly monotonic for every kind, in both algorithms and both modes", () => {
     const algorithms: ContrastAlgorithm[] = ["apca", "wcag2"];
     const modes: Mode[] = ["light", "dark"];
-    const kinds: Kind[] = ["surface", "text", "border", "emphasis"];
+    const kinds: Exclude<Kind, "surface">[] = ["text", "border", "emphasis"];
     for (const algorithm of algorithms) {
       for (const mode of modes) {
         for (const kind of kinds) {
@@ -144,7 +139,7 @@ describe("solved scales", () => {
       const palette = theme.palettes[0];
       if (palette === undefined) throw new Error("missing palette");
       const sign = theme.mode === "light" ? -1 : 1;
-      for (const kind of ["surface", "text", "border", "emphasis"] as const) {
+      for (const kind of ["text", "border", "emphasis"] as const) {
         const colors = STEPS.map((scale) => {
           const token = palette.tokens.find(
             (entry) => entry.id === `${kind}.${stepName(scale)}`,
@@ -445,7 +440,7 @@ describe("kind lints", () => {
         palette: { neutral: "#ffffff" },
         themes: { light: { mode: "light" } },
         tokens: {
-          surface: { DEFAULT: surface(4), same: surface(4), raised: surface(8) },
+          surface: { DEFAULT: surface(1), same: surface(1), raised: surface(-1) },
         },
       }),
     );
@@ -458,13 +453,200 @@ describe("kind lints", () => {
   });
 });
 
+describe("surface lightness steps", () => {
+  const integers: number[] = [];
+  for (let n = SURFACE_SCALE_MIN; n <= SURFACE_SCALE_MAX; n += 1) integers.push(n);
+  const samples = [-1.5, -0.5, 0.5, 1.5];
+
+  const themes = generate(
+    defineConfig({
+      palette: { neutral: "#ffffff", brand: "#7c3aed" },
+      themes: {
+        light: { mode: "light" },
+        dark: { mode: "dark" },
+        // Same headroom the playground uses so soft 2/3/4 stay apart.
+        lifted: { lightness: 92 },
+      },
+      tokens: {
+        surface: Object.fromEntries(
+          [...integers, ...samples].map((scale) => [stepName(scale), surface(scale)]),
+        ),
+        soft: {
+          DEFAULT: surface(2),
+          hover: surface(3),
+          pressed: surface(4),
+          disabled: disabled.surface(2),
+        },
+      },
+    }),
+  );
+
+  it("steps from the page by 0.02 in light and 0.03 in dark", () => {
+    for (const theme of themes) {
+      if (theme.name === "lifted") continue;
+      const step = SURFACE_STEP[theme.mode];
+      for (const palette of theme.palettes) {
+        const pageL = palette.page.oklch.l;
+        for (const scale of [-2, -1, 0, 1, 2, -0.5, 0.5, 1.5]) {
+          const token = palette.tokens.find(
+            (entry) => entry.id === `surface.${stepName(scale)}`,
+          );
+          expect(token?.mode, `${theme.name} ${scale}`).toBe("lightness");
+          expect(
+            token?.color.oklch.l,
+            `${theme.name} ${palette.name} ${scale}`,
+          ).toBeCloseTo(clamp01(pageL + scale * step), 4);
+        }
+      }
+    }
+  });
+
+  it("gives every unclipped step its own color in both modes", () => {
+    for (const theme of themes) {
+      if (theme.name === "lifted") continue;
+      const step = SURFACE_STEP[theme.mode];
+      for (const palette of theme.palettes) {
+        const pageL = palette.page.oklch.l;
+        for (let i = 1; i < integers.length; i++) {
+          const prevScale = integers[i - 1] ?? 0;
+          const nextScale = integers[i] ?? 0;
+          const prevL = clamp01(pageL + prevScale * step);
+          const nextL = clamp01(pageL + nextScale * step);
+          if (Math.abs(nextL - prevL) + 1e-9 < SURFACE_DISTINCT_DELTA) continue;
+          const prev = palette.tokens.find(
+            (entry) => entry.id === `surface.${stepName(prevScale)}`,
+          );
+          const next = palette.tokens.find(
+            (entry) => entry.id === `surface.${stepName(nextScale)}`,
+          );
+          const label = `${theme.mode} ${palette.name} ${prevScale} vs ${nextScale}`;
+          const delta = Math.abs((next?.color.oklch.l ?? 0) - (prev?.color.oklch.l ?? 0));
+          expect(delta, label).toBeGreaterThanOrEqual(SURFACE_DISTINCT_DELTA - 1e-6);
+          // 8-bit sRGB crushes the first few hundredths of OKLCH lightness to
+          // black. Steps that actually leave that floor must differ as hex.
+          const floor = Math.min(prev?.color.oklch.l ?? 0, next?.color.oklch.l ?? 0);
+          if (floor >= 0.05 && nextL < 1) {
+            expect(next?.color.hex, label).not.toBe(prev?.color.hex);
+          }
+        }
+        const shown = [-1, 0, 1, 2].map(
+          (scale) =>
+            palette.tokens.find((entry) => entry.id === `surface.${stepName(scale)}`)
+              ?.color.hex,
+        );
+        expect(new Set(shown).size, `${theme.mode} ${palette.name} -1..2`).toBe(4);
+      }
+    }
+  });
+
+  it("places a decimal surface between its integer neighbors", () => {
+    const light = themes.find((theme) => theme.name === "light");
+    const palette = light?.palettes.find((entry) => entry.name === "neutral");
+    const at = (scale: number) =>
+      palette?.tokens.find((entry) => entry.id === `surface.${stepName(scale)}`)?.color
+        .oklch.l ?? 0;
+    expect(at(0.5)).toBeGreaterThan(at(0));
+    expect(at(0.5)).toBeLessThan(at(1));
+    expect(at(-0.5)).toBeLessThan(at(0));
+    expect(at(-0.5)).toBeGreaterThan(at(-1));
+  });
+
+  it("keeps soft surface(2), surface(3), and surface(4) distinct when the page has room", () => {
+    for (const name of ["lifted", "dark"] as const) {
+      const theme = themes.find((entry) => entry.name === name);
+      for (const palette of theme?.palettes ?? []) {
+        const hex = (id: string) =>
+          palette.tokens.find((entry) => entry.id === id)?.color.hex;
+        const rest = hex("soft.DEFAULT");
+        const hover = hex("soft.hover");
+        const pressed = hex("soft.pressed");
+        expect(rest, `${name} ${palette.name}`).toBeDefined();
+        expect(new Set([rest, hover, pressed]).size, `${name} ${palette.name}`).toBe(3);
+      }
+    }
+  });
+});
+
+describe("scale range", () => {
+  function issuesFor(token: { kind: string; scale: number }) {
+    const result = validateConfig({
+      palette: { neutral: "#ffffff" },
+      tokens: { sample: { DEFAULT: token } },
+    });
+    return result.ok ? [] : result.issues;
+  }
+
+  it("accepts the ends of each range, including decimals", () => {
+    for (const token of [
+      { kind: "emphasis", scale: SCALE_MIN },
+      { kind: "text", scale: SCALE_MAX },
+      { kind: "border", scale: 4.5 },
+      { kind: "surface", scale: SURFACE_SCALE_MIN },
+      { kind: "surface", scale: 0 },
+      { kind: "surface", scale: SURFACE_SCALE_MAX },
+      { kind: "surface", scale: -1.5 },
+    ]) {
+      expect(issuesFor(token), JSON.stringify(token)).toEqual([]);
+    }
+  });
+
+  it("rejects emphasis, text, and border outside 0..10", () => {
+    for (const kind of ["emphasis", "text", "border"] as const) {
+      for (const scale of [-0.1, -1, 10.1, 11]) {
+        const issues = issuesFor({ kind, scale });
+        expect(issues.length, `${kind}(${scale})`).toBeGreaterThan(0);
+        const scaleIssue = issues.find((issue) => issue.path.endsWith(".scale"));
+        expect(scaleIssue?.message, `${kind}(${scale})`).toContain(
+          `outside ${SCALE_MIN}..${SCALE_MAX}`,
+        );
+        expect(scaleIssue?.message).toContain(kind);
+      }
+    }
+  });
+
+  it("rejects surface outside -10..10", () => {
+    for (const scale of [-10.1, -11, 10.1, 11]) {
+      const issues = issuesFor({ kind: "surface", scale });
+      const scaleIssue = issues.find((issue) => issue.path.endsWith(".scale"));
+      expect(scaleIssue?.message, `surface(${scale})`).toContain(
+        `outside ${SURFACE_SCALE_MIN}..${SURFACE_SCALE_MAX}`,
+      );
+      expect(scaleIssue?.message).toContain("signed lightness");
+    }
+  });
+
+  it("fails generation with that message", () => {
+    expect(() =>
+      generate(
+        defineConfig({
+          palette: { neutral: "#ffffff" },
+          tokens: { action: { DEFAULT: emphasis(11) } },
+        }),
+      ),
+    ).toThrow(/emphasis\(n\) is a contrast step from 0 to 10/);
+    expect(() =>
+      generate(
+        defineConfig({
+          palette: { neutral: "#ffffff" },
+          tokens: { surface: { DEFAULT: surface(-11) } },
+        }),
+      ),
+    ).toThrow(/surface\(n\) is signed lightness steps from the page/);
+  });
+});
+
+function clamp01(value: number): number {
+  if (value <= 0) return 0;
+  if (value >= 1) return 1;
+  return value;
+}
+
 function targetOf(
-  kind: Kind,
+  kind: Exclude<Kind, "surface">,
   algorithm: ContrastAlgorithm,
   mode: Mode,
   scale: number,
 ): number {
-  if (kind === "surface") return surfaceTarget(algorithm, mode, scale);
   if (kind === "emphasis") return emphasisTarget(algorithm, mode, scale);
   if (kind === "border") return borderTarget(algorithm, scale);
   return textTarget(algorithm, scale);

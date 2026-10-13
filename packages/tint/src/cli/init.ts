@@ -123,9 +123,9 @@ export default defineConfig({
   tokens: {
     surface: {
       DEFAULT: surface(0),
-      sunken: surface(2),
-      raised: surface(3),
-      floating: surface(5),
+      sunken: surface(-1),
+      raised: surface(1),
+      overlay: surface(2),
     },
 
     action: {
@@ -137,11 +137,14 @@ export default defineConfig({
       "on-disabled": disabled.text(5, { on: "action.disabled" }),
     },
 
+    // Raised steps stay inside the light page (L 0.96, step 0.02) through surface(2).
     soft: {
-      DEFAULT: surface(4),
-      hover: surface(5),
-      pressed: surface(6),
+      DEFAULT: surface(1),
+      hover: surface(1.5),
+      pressed: surface(2),
+      disabled: disabled.surface(1),
       on: text(5, { on: "soft" }),
+      "on-disabled": disabled.text(5, { on: "soft.disabled" }),
     },
 
     border: {
@@ -161,8 +164,8 @@ export default defineConfig({
 
     row: {
       DEFAULT: surface(0),
-      hover: surface(2),
-      selected: surface(4, { chroma: 1.5 }),
+      hover: surface(-1),
+      selected: surface(1, { chroma: 1.5 }),
       on: text(5, { on: "row" }),
     },
   },

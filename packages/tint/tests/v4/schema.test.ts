@@ -64,4 +64,36 @@ describe("v4 JSON Schema (numeric scale)", () => {
     expect(validate(base({ themes: { hot: { lightness: 140 } } }))).toBe(false);
     expect(validate(base({ themes: { bare: {} } }))).toBe(false);
   });
+
+  it("accepts a negative surface scale and rejects scales outside the kind range", () => {
+    expect(
+      validate(
+        base({
+          tokens: {
+            surface: { sunken: { kind: "surface", scale: -1 } },
+            text: { edge: { kind: "text", scale: 0 } },
+            emphasis: { solid: { kind: "emphasis", scale: 10 } },
+          },
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      validate(base({ tokens: { text: { DEFAULT: { kind: "text", scale: -1 } } } })),
+    ).toBe(false);
+    expect(
+      validate(
+        base({ tokens: { action: { DEFAULT: { kind: "emphasis", scale: 11 } } } }),
+      ),
+    ).toBe(false);
+    expect(
+      validate(
+        base({ tokens: { surface: { DEFAULT: { kind: "surface", scale: -11 } } } }),
+      ),
+    ).toBe(false);
+    expect(
+      validate(
+        base({ tokens: { surface: { DEFAULT: { kind: "surface", scale: 10.5 } } } }),
+      ),
+    ).toBe(false);
+  });
 });
