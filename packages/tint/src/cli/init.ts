@@ -117,7 +117,7 @@ export default defineConfig({
   themes: ${themes},
 
   overrides: {
-    "warning": { action: { DEFAULT: emphasis(16) } },
+    "warning": { action: { DEFAULT: emphasis(4) } },
   },
 
   tokens: {
@@ -129,18 +129,18 @@ export default defineConfig({
     },
 
     action: {
-      DEFAULT: emphasis(15),
-      hover: emphasis(16.5),
-      pressed: emphasis(18),
-      disabled: emphasis(3.5, { chroma: 0.3 }),
+      DEFAULT: emphasis(3),
+      hover: emphasis(3.5),
+      pressed: emphasis(4),
+      disabled: emphasis(2, { chroma: 0.3, lc: 15 }),
       on: text(3, { on: "action" }),
-      "on-disabled": text(-1, { on: "action.disabled" }),
+      "on-disabled": text(-1, { on: "action.disabled", chroma: 0.3 }),
     },
 
     soft: {
       DEFAULT: emphasis(2),
-      hover: emphasis(3),
-      pressed: emphasis(4),
+      hover: emphasis(2.1),
+      pressed: emphasis(2.15),
       on: text(3, { on: "soft" }),
     },
 

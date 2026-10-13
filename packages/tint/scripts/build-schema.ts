@@ -204,8 +204,9 @@ function stateDescription(): string {
 function scaleSchema(): Schema {
   return {
     description:
-      "Numeric scale. surface is signed lightness steps from the page, " +
-      "emphasis is lightness steps away from the backdrop, " +
+      "Numeric scale. surface is signed lightness steps from the page. " +
+      "emphasis 1–2 are lightness tint steps, emphasis 3–5 are a contrast ladder, " +
+      "and values between 2 and 3 blend the two. " +
       "text and border are contrast-ladder steps. Decimals interpolate.",
     type: "number",
   };

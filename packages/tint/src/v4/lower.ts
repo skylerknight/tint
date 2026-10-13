@@ -2,9 +2,9 @@
  * Lower a normalized token into a solver intent (docs/v4-spec.md §4, §5, §6.2).
  *
  * Surfaces become elevation steps from an anchor. Emphasis 1–2 become tint
- * steps from the backdrop. Emphasis 3–5, text, and border become a metric
- * target from `targets.ts`. States then fold left to right. `lc` / `ratio` /
- * `step` / `direction` / `chroma` / `hue` override that result.
+ * steps from the backdrop. Emphasis 3–5 become a contrast target from
+ * `ladders.ts`. Scales between those blend at realize time. Text and border
+ * are contrast ladders. `lc` / `ratio` / `chroma` / `hue` override that result.
  *
  * This module does not read backdrop colors. The engine supplies the anchor.
  */
@@ -14,7 +14,12 @@ import { maxChromaForLs } from "../engine/generate.js";
 import type { Polarity } from "../contrast/types.js";
 import { preferredPolarity } from "../contrast/solve.js";
 import { GLOBAL_CONTRAST_SHIFT } from "./constants.js";
-import { contrastAt } from "./ladders.js";
+import {
+  EMPHASIS_SOLID_MIN,
+  EMPHASIS_TINT_MAX,
+  contrastAt,
+  emphasisContrast,
+} from "./ladders.js";
 import type { CanonicalState } from "./states.js";
 import type {
   ContrastAlgorithm,
@@ -73,6 +78,8 @@ export interface LowerContext {
   surfaceStep: number;
   /** Resolved size of one emphasis tint step for this theme's mode. */
   tintStep: number;
+  /** Theme polarity. Picks the emphasis contrast row. */
+  mode: Mode;
   states?: StateSteps;
 }
 
@@ -89,6 +96,14 @@ export interface SolverIntent {
   readonly stepSize: number;
   readonly seed: OKLCH;
   readonly direction?: Direction;
+  /**
+   * 0..1 blend from the tint at {@link EMPHASIS_TINT_MAX} toward a contrast
+   * solve at `blendTarget` (the emphasis(3) rung). Set only for scales in
+   * (2, 3). The engine lerps lightness; this module does not see the backdrop.
+   */
+  readonly blend?: number;
+  /** Contrast target of the solid end of a blend. */
+  readonly blendTarget?: number;
   /**
    * When false, a missed contrast target is not a `contrast-unreachable`
    * diagnostic. Disabled tokens, border 1–2, surfaces, tints, and `max`.
@@ -107,6 +122,8 @@ interface Draft {
   direction?: Direction;
   scale: number;
   seed: OKLCH;
+  blend?: number;
+  blendTarget?: number;
 }
 
 /**
@@ -177,8 +194,20 @@ function fromScale(kind: Kind, scale: number, ctx: LowerContext): Draft {
     return draft;
   }
   if (kind === "emphasis") {
-    draft.away = scale;
+    if (scale <= EMPHASIS_TINT_MAX) {
+      draft.away = scale;
+      draft.stepSize = ctx.tintStep;
+      return draft;
+    }
+    if (scale >= EMPHASIS_SOLID_MIN) {
+      draft.mode = "contrast";
+      draft.target = emphasisContrast(ctx.algorithm, ctx.mode, scale);
+      return draft;
+    }
+    draft.away = EMPHASIS_TINT_MAX;
     draft.stepSize = ctx.tintStep;
+    draft.blend = scale - EMPHASIS_TINT_MAX;
+    draft.blendTarget = emphasisContrast(ctx.algorithm, ctx.mode, EMPHASIS_SOLID_MIN);
     return draft;
   }
   const target = contrastAt(kind, ctx.algorithm, scale);
@@ -313,8 +342,14 @@ function freeze(draft: Draft, token: NormalizedToken): SolverIntent {
     seed: draft.seed,
     report: reports(token, draft),
   };
-  if (draft.direction !== undefined) return { ...intent, direction: draft.direction };
-  return intent;
+  const withBlend =
+    draft.mode === "lightness" &&
+    draft.blend !== undefined &&
+    draft.blendTarget !== undefined
+      ? { ...intent, blend: draft.blend, blendTarget: draft.blendTarget }
+      : intent;
+  if (draft.direction !== undefined) return { ...withBlend, direction: draft.direction };
+  return withBlend;
 }
 
 function reports(_token: NormalizedToken, draft: Draft): boolean {

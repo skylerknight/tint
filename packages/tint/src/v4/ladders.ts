@@ -6,9 +6,10 @@
  * continue the end segment (APCA linear, WCAG geometric).
  *
  * Text 3 is body text. Border 4 is the WCAG non-text 3:1 rung.
+ * Emphasis 1–2 are tint steps; emphasis 3–5 are {@link EMPHASIS_LADDER}.
  */
 
-import type { ContrastAlgorithm, Kind } from "./types.js";
+import type { ContrastAlgorithm, Kind, Mode } from "./types.js";
 
 /** APCA |Lc| and WCAG ratio for `text(1)` … `text(5)`. */
 export const TEXT_LADDER = {
@@ -26,11 +27,42 @@ export const BORDER_LADDER = {
 export const TEXT_BODY_SCALE = 3;
 
 /**
+ * Emphasis at or below this scale is a lightness tint.
+ * One step is {@link TINT_STEP} in `lower.ts` (mode-aware).
+ */
+export const EMPHASIS_TINT_MAX = 2;
+
+/**
+ * Emphasis at or above this scale is a solid fill on {@link EMPHASIS_LADDER}.
+ * Scales between {@link EMPHASIS_TINT_MAX} and this blend lightness.
+ */
+export const EMPHASIS_SOLID_MIN = 3;
+
+/**
+ * Fill-vs-backdrop contrast for `emphasis(3)` … `emphasis(5)`.
+ *
+ * APCA is mode-aware. A light page needs only ~Lc 62 before white text can
+ * hit body contrast (Lc 75); a dark page needs ~Lc 75 before black text can.
+ * The same number cannot do both: Lc 60–72 sits in APCA's mid-tone dead zone
+ * on a dark page (label tops out near Lc 65). WCAG 4.5:1 has no such gap, so
+ * both modes share the old solid rungs (3 / 4.5 / 7).
+ *
+ * Stops are scales 3, 4, 5. Decimals interpolate (APCA linear, WCAG geometric).
+ * Past 5 the last segment continues.
+ */
+export const EMPHASIS_LADDER = {
+  apca: {
+    light: [62, 74, 90],
+    dark: [75, 87, 100],
+  },
+  wcag2: [3, 4.5, 7],
+} as const;
+
+/**
  * Emphasis at or above this scale is treated as a solid control fill.
  * Below it, the token is a tint and is not held to non-text 3:1.
- * Soft buttons in the playground sit at 2–4; solid actions sit near 15.
  */
-export const SOLID_EMPHASIS_SCALE = 8;
+export const SOLID_EMPHASIS_SCALE = EMPHASIS_SOLID_MIN;
 
 /** WCAG non-text contrast for UI components (SC 1.4.11). */
 export const NON_TEXT_RATIO = 3;
@@ -112,6 +144,16 @@ export function contrastAt(
 ): number | undefined {
   if (kind !== "text" && kind !== "border") return undefined;
   return ladderValue(ladderFor(kind, algorithm), scale, algorithm === "wcag2");
+}
+
+/** Contrast target for a solid emphasis scale (3 and up). */
+export function emphasisContrast(
+  algorithm: ContrastAlgorithm,
+  mode: Mode,
+  scale: number,
+): number {
+  const stops = algorithm === "apca" ? EMPHASIS_LADDER.apca[mode] : EMPHASIS_LADDER.wcag2;
+  return ladderValue(stops, scale - (EMPHASIS_SOLID_MIN - 1), algorithm === "wcag2");
 }
 
 function extrapolate(a: number, b: number, t: number, geometric: boolean): number {
