@@ -185,8 +185,8 @@ describe("generated DTCG", () => {
     const [lightTheme] = generateV4({
       palette: { neutral: "#71717a", brand: "#7c3aed" },
       tokens: {
-        tint: { ink: text() },
-        action: { DEFAULT: text() },
+        tint: { ink: text(3) },
+        action: { DEFAULT: text(3) },
       },
     });
     if (lightTheme === undefined) throw new Error("missing theme");

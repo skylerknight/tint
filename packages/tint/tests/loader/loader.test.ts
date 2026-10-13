@@ -11,7 +11,7 @@ import {
 const minimal = `{
   palette: { neutral: "#ffffff" },
   themes: { light: { mode: "light" } },
-  tokens: { surface: { DEFAULT: { kind: "surface" } } },
+  tokens: { surface: { DEFAULT: { kind: "surface", scale: 0 } } },
 }`;
 
 let dir: string;
@@ -29,7 +29,7 @@ describe("loadConfig", () => {
       JSON.stringify({
         palette: { neutral: "#fff" },
         themes: { light: { mode: "light" } },
-        tokens: { surface: { DEFAULT: { kind: "surface" } } },
+        tokens: { surface: { DEFAULT: { kind: "surface", scale: 0 } } },
       }),
     );
     const loaded = await loadConfig({ root: dir, configPath: "tint.config.json" });
@@ -48,7 +48,7 @@ describe("loadConfig", () => {
     mkdirSync(join(dir, "theme"));
     writeFileSync(
       join(dir, "theme", "tokens.ts"),
-      `export const tokens = { surface: { DEFAULT: { kind: "surface" } } } as const;`,
+      `export const tokens = { surface: { DEFAULT: { kind: "surface", scale: 0 } } } as const;`,
     );
     writeFileSync(
       join(dir, "tint.config.ts"),
@@ -115,7 +115,7 @@ describe("loadConfig — dependency edits", () => {
     writeFileSync(dep, `export const color = "#111111";`);
     writeFileSync(
       join(dir, "tint.config.ts"),
-      `import { color } from "./theme/name";\nexport default { palette: { neutral: color }, tokens: { surface: { DEFAULT: { kind: "surface" } } } };`,
+      `import { color } from "./theme/name";\nexport default { palette: { neutral: color }, tokens: { surface: { DEFAULT: { kind: "surface", scale: 0 } } } };`,
     );
     const first = await loadConfig({ root: dir, configPath: "tint.config.ts" });
     writeFileSync(dep, `export const color = "#222222";`);
@@ -135,7 +135,7 @@ describe("findDefaultConfig", () => {
 });
 
 describe("loadConfig — bundling details", () => {
-  const base = `{ palette: { neutral: "#fff" }, tokens: { surface: { DEFAULT: { kind: "surface" } } } }`;
+  const base = `{ palette: { neutral: "#fff" }, tokens: { surface: { DEFAULT: { kind: "surface", scale: 0 } } } }`;
 
   it("pins import.meta.url and __dirname to the real config location", async () => {
     mkdirSync(join(dir, "data"));
@@ -146,7 +146,7 @@ describe("loadConfig — bundling details", () => {
         `const a = JSON.parse(readFileSync(new URL("./data/name.json", import.meta.url), "utf8"));\n` +
         `const b = JSON.parse(readFileSync(join(__dirname, "data", "name.json"), "utf8"));\n` +
         `if (a.color !== b.color) throw new Error("mismatch");\n` +
-        `export default { palette: { neutral: a.color }, tokens: { surface: { DEFAULT: { kind: "surface" } } } };`,
+        `export default { palette: { neutral: a.color }, tokens: { surface: { DEFAULT: { kind: "surface", scale: 0 } } } };`,
     );
     const loaded = await loadConfig({ root: dir, configPath: "tint.config.ts" });
     expect(loaded.config.palette.neutral).toBe("#abcabc");
@@ -182,15 +182,15 @@ describe("loadConfig — bundling details", () => {
   it("unwraps CommonJS named and default exports", async () => {
     writeFileSync(
       join(dir, "named.cjs"),
-      `exports.config = { palette: { neutral: "#111111" }, tokens: { surface: { DEFAULT: { kind: "surface" } } } };`,
+      `exports.config = { palette: { neutral: "#111111" }, tokens: { surface: { DEFAULT: { kind: "surface", scale: 0 } } } };`,
     );
     writeFileSync(
       join(dir, "def.cjs"),
-      `module.exports = { default: { palette: { neutral: "#222222" }, tokens: { surface: { DEFAULT: { kind: "surface" } } } } };`,
+      `module.exports = { default: { palette: { neutral: "#222222" }, tokens: { surface: { DEFAULT: { kind: "surface", scale: 0 } } } } };`,
     );
     writeFileSync(
       join(dir, "plain.cjs"),
-      `module.exports = { palette: { neutral: "#333333" }, tokens: { surface: { DEFAULT: { kind: "surface" } } } };`,
+      `module.exports = { palette: { neutral: "#333333" }, tokens: { surface: { DEFAULT: { kind: "surface", scale: 0 } } } };`,
     );
     expect(
       (await loadConfig({ root: dir, configPath: "named.cjs" })).config.palette.neutral,
@@ -206,11 +206,11 @@ describe("loadConfig — bundling details", () => {
   it("stubs @skylerknight/tint when it is not resolvable, and otherwise uses the real package", async () => {
     writeFileSync(
       join(dir, "tint.config.ts"),
-      `import { defineConfig, surface } from "@skylerknight/tint";\nexport default defineConfig({ palette: { neutral: "#abcdef" }, tokens: { surface: { DEFAULT: surface() } } });`,
+      `import { defineConfig, surface } from "@skylerknight/tint";\nexport default defineConfig({ palette: { neutral: "#abcdef" }, tokens: { surface: { DEFAULT: surface(0) } } });`,
     );
     const stubbed = await loadConfig({ root: dir, configPath: "tint.config.ts" });
     expect(stubbed.config.palette.neutral).toBe("#abcdef");
-    expect(stubbed.config.tokens.surface?.DEFAULT).toEqual({ kind: "surface" });
+    expect(stubbed.config.tokens.surface?.DEFAULT).toEqual({ kind: "surface", scale: 0 });
 
     // The playground resolves the real (built) package when dist exists, and the
     // stub otherwise. Either way the file is a v4 config.
@@ -218,6 +218,10 @@ describe("loadConfig — bundling details", () => {
     const real = await loadConfig({ root: playground, configPath: "tint.config.ts" });
     expect(Object.keys(real.config.themes ?? {})).toEqual(["light", "dark"]);
     expect(real.config.palette.neutral).toBe("#ffffff");
-    expect(real.config.tokens.action?.on).toEqual({ kind: "text", on: "action" });
+    expect(real.config.tokens.action?.on).toEqual({
+      kind: "text",
+      scale: 3,
+      on: "action",
+    });
   });
 });

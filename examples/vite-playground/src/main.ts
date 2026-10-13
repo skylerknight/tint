@@ -41,19 +41,26 @@ const card = (tint: string) => `
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <header class="mb-6 flex items-center justify-between">
-    <h1 class="text-strong text-2xl font-bold">tint playground</h1>
+    <div>
+      <h1 class="text-strong text-2xl font-bold">tint playground</h1>
+      <p class="text-faint text-xs">numeric-scale prototype — scales, not level names</p>
+    </div>
     <button id="toggle" class="rounded-md border border-strong px-3 py-1.5 text-body hover:bg-surface-highlight">Toggle dark</button>
   </header>
   <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">${Object.keys(palettes).map(card).join("")}</div>
   <pre class="mt-8 overflow-auto rounded-lg bg-surface-well p-4 text-xs text-muted">${themes
-    .map((t) => `${t.name}: ${t.palettes.length} palettes, ${t.diagnostics.length} diagnostics`)
+    .map(
+      (t) =>
+        `${t.name}: ${t.palettes.length} palettes, ${t.diagnostics.length} diagnostics`,
+    )
     .join("\n")}</pre>`;
 
 // Without a class the OS preference decides; a class forces a mode either way.
 const html = document.documentElement;
 const isDark = () =>
   html.classList.contains("dark") ||
-  (!html.classList.contains("light") && matchMedia("(prefers-color-scheme: dark)").matches);
+  (!html.classList.contains("light") &&
+    matchMedia("(prefers-color-scheme: dark)").matches);
 
 document.querySelector("#toggle")!.addEventListener("click", () => {
   const dark = isDark();

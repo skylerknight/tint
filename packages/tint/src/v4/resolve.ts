@@ -17,6 +17,7 @@ import {
 } from "./graph.js";
 import { isPlainObject, joinPath, suggestName, type NormalizeIssue } from "./levels.js";
 import { normalizeToken, type NormalizedToken } from "./normalize.js";
+import { MODE_PAGE_LIGHTNESS, POLARITY_SPLIT } from "./ladders.js";
 import type { ContrastAlgorithm, ContrastLevel, LevelNames, Mode } from "./types.js";
 
 const TUNE_RE = /^[a-zA-Z][a-zA-Z0-9_-]*(?:\.(?:\*|[a-zA-Z][a-zA-Z0-9_-]*))?$/;
@@ -35,7 +36,10 @@ export interface ResolvedPaletteColor {
 /** One theme after `extends` is flattened. */
 export interface ResolvedTheme {
   readonly name: string;
+  /** Effective mode. Drives step size and `prefers-color-scheme`. */
   readonly mode: Mode;
+  /** Page lightness, 0..100. `mode` alone maps to 96 (light) or 15 (dark). */
+  readonly lightness: number;
   readonly selector: string;
   /** Present when the theme or an ancestor set `media`. */
   readonly media?: boolean | string;
@@ -43,6 +47,11 @@ export interface ResolvedTheme {
   readonly contrastLevel: ContrastLevel;
   /** The parent named in `extends`, when that parent exists. */
   readonly extends?: string;
+  /**
+   * Set when this theme declares both `mode` and `lightness` and they disagree.
+   * Lightness wins; the engine warns.
+   */
+  readonly authoredMode?: Mode;
 }
 
 /** One theme × palette color, ready for the solver. */
@@ -91,11 +100,18 @@ interface PaletteEntry {
 interface RawTheme {
   name: string;
   mode?: Mode;
+  lightness?: number;
   selector?: string;
   media?: boolean | string;
   contrastLevel?: ContrastLevel;
   extends?: string;
   palette: Record<string, unknown>;
+}
+
+interface OverrideLayer {
+  path: string;
+  names: readonly string[];
+  tune: Record<string, unknown>;
 }
 
 interface Slot {
@@ -141,6 +157,11 @@ export function resolveConfig(input: unknown): ResolveResult {
   const palette = readPalette(input.palette, push);
   const themes = readThemes(input.themes, palette, contrast.level, push);
   const template = readTemplate(input.tokens, levels, push);
+  const overrides = readOverrides(
+    input.overrides,
+    palette.map((color) => color.name),
+    push,
+  );
 
   const expansions: ResolvedExpansion[] = [];
   for (const theme of themes.resolved) {
@@ -149,6 +170,10 @@ export function resolveConfig(input: unknown): ResolveResult {
       const slots = cloneSlots(template);
       for (const layer of tuneLayers(color, chain)) {
         applyTune(slots, layer, levels, push);
+      }
+      for (const layer of overrides) {
+        if (!layer.names.includes(color.name)) continue;
+        applyTune(slots, { path: layer.path, tune: layer.tune }, levels, push);
       }
       const authored: AuthoredToken[] = [];
       for (const slot of slots) {
@@ -400,13 +425,13 @@ function readThemes(
     if (theme === undefined) continue;
     const chain = ancestorChain(name, raw, cycles);
     const merged = mergeTheme(name, chain, globalLevel);
-    if (merged.mode === undefined) {
+    if (merged.mode === undefined && merged.lightness === undefined) {
       push(
         issue({
-          path: joinPath(joinPath("themes", name), "mode"),
-          message: `Theme "${name}" is missing mode.`,
-          expected: '"light" or "dark"',
-          hint: "Set mode, or set extends to a theme that has one.",
+          path: joinPath(joinPath("themes", name), "lightness"),
+          message: `Theme "${name}" is missing lightness.`,
+          expected: "lightness 0..100, or mode light/dark",
+          hint: 'Set lightness, mode ("light" is 96, "dark" is 15), or extends a theme that has one.',
         }),
       );
       continue;
@@ -473,6 +498,26 @@ function readTheme(
   if (present(theme, "mode")) {
     if (isMode(theme.mode)) raw.mode = theme.mode;
     else push(enumIssue(joinPath(path, "mode"), theme.mode, MODES, "Theme mode"));
+  }
+  if (present(theme, "lightness")) {
+    const lightness = theme.lightness;
+    if (
+      typeof lightness === "number" &&
+      Number.isFinite(lightness) &&
+      lightness >= 0 &&
+      lightness <= 100
+    ) {
+      raw.lightness = lightness;
+    } else {
+      push(
+        issue({
+          path: joinPath(path, "lightness"),
+          message: "Expected page lightness from 0 to 100.",
+          expected: "a number from 0 to 100",
+          hint: 'mode: "light" is 96. mode: "dark" is 15.',
+        }),
+      );
+    }
   }
   if (present(theme, "selector") && typeof theme.selector === "string") {
     raw.selector = theme.selector;
@@ -575,10 +620,13 @@ function ancestorChain(
 interface MergedTheme {
   name: string;
   mode?: Mode;
+  lightness?: number;
   selector: string;
   media?: boolean | string;
   contrastLevel: ContrastLevel;
   extends?: string;
+  /** Leaf declared both, and the inferred polarity disagrees with mode. */
+  authoredMode?: Mode;
 }
 
 function mergeTheme(
@@ -589,34 +637,155 @@ function mergeTheme(
   const merged: MergedTheme = { name, selector: ":root", contrastLevel: globalLevel };
   for (const theme of chain) {
     if (theme.mode !== undefined) merged.mode = theme.mode;
+    if (theme.lightness !== undefined) merged.lightness = theme.lightness;
     if (theme.selector !== undefined) merged.selector = theme.selector;
     if (theme.media !== undefined) merged.media = theme.media;
     if (theme.contrastLevel !== undefined) merged.contrastLevel = theme.contrastLevel;
   }
   const leaf = chain[chain.length - 1];
   if (leaf?.extends !== undefined) merged.extends = leaf.extends;
+  if (
+    leaf?.mode !== undefined &&
+    leaf.lightness !== undefined &&
+    modeFromLightness(leaf.lightness) !== leaf.mode
+  ) {
+    merged.authoredMode = leaf.mode;
+  }
   return merged;
+}
+
+function modeFromLightness(lightness: number): Mode {
+  return lightness >= POLARITY_SPLIT ? "light" : "dark";
 }
 
 function publishTheme(
   theme: MergedTheme | RawTheme,
   globalLevel: ContrastLevel,
 ): ResolvedTheme {
-  const mode = theme.mode ?? "light";
+  const lightness =
+    theme.lightness ??
+    (theme.mode === "dark" ? MODE_PAGE_LIGHTNESS.dark : MODE_PAGE_LIGHTNESS.light);
+  const mode =
+    theme.lightness !== undefined
+      ? modeFromLightness(theme.lightness)
+      : (theme.mode ?? "light");
   const selector =
     "selector" in theme && theme.selector !== undefined ? theme.selector : ":root";
   const contrastLevel =
     "contrastLevel" in theme && theme.contrastLevel !== undefined
       ? theme.contrastLevel
       : globalLevel;
-  const resolved: ResolvedTheme = { name: theme.name, mode, selector, contrastLevel };
+  const resolved: ResolvedTheme = {
+    name: theme.name,
+    mode,
+    lightness,
+    selector,
+    contrastLevel,
+  };
+  const withConflict =
+    "authoredMode" in theme && theme.authoredMode !== undefined
+      ? { ...resolved, authoredMode: theme.authoredMode }
+      : resolved;
   if (theme.media !== undefined) {
-    const withMedia: ResolvedTheme = { ...resolved, media: theme.media };
+    const withMedia: ResolvedTheme = { ...withConflict, media: theme.media };
     if (theme.extends !== undefined) return { ...withMedia, extends: theme.extends };
     return withMedia;
   }
-  if (theme.extends !== undefined) return { ...resolved, extends: theme.extends };
-  return resolved;
+  if (theme.extends !== undefined) return { ...withConflict, extends: theme.extends };
+  return withConflict;
+}
+
+const PALETTE_KEY_RE = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
+
+function readOverrides(
+  value: unknown,
+  palette: readonly string[],
+  push: (issue: ConfigIssue) => void,
+): OverrideLayer[] {
+  if (value === undefined) return [];
+  if (!isPlainObject(value)) {
+    push(
+      issue({
+        path: "overrides",
+        message: "Expected an overrides map.",
+        expected: 'palette keys, or comma-separated keys such as "warning,info"',
+        hint: "Each value is a partial token tree. A token with kind replaces; options merge.",
+      }),
+    );
+    return [];
+  }
+  const layers: OverrideLayer[] = [];
+  for (const [key, body] of Object.entries(value)) {
+    const path = joinPath("overrides", key);
+    const names = key
+      .split(",")
+      .map((part) => part.trim())
+      .filter((part) => part !== "");
+    if (names.length === 0 || names.some((name) => !PALETTE_KEY_RE.test(name))) {
+      push(
+        issue({
+          path,
+          message: `Override key "${key}" must be palette names separated by commas.`,
+          expected: '"brand" or "warning,info"',
+          hint: "Spaces around commas are fine.",
+        }),
+      );
+      continue;
+    }
+    const unknown = names.filter((name) => !palette.includes(name));
+    if (unknown.length > 0) {
+      push(
+        issue({
+          path,
+          message: `Unknown palette ${unknown.map((name) => `"${name}"`).join(", ")} in overrides.`,
+          expected: palette.join(", ") || "a palette color",
+          hint: "Override keys name colors from palette.",
+        }),
+      );
+      continue;
+    }
+    const tune = flattenOverride(body, path, push);
+    if (tune === undefined) continue;
+    layers.push({ path, names, tune });
+  }
+  return layers;
+}
+
+function flattenOverride(
+  value: unknown,
+  path: string,
+  push: (issue: ConfigIssue) => void,
+): Record<string, unknown> | undefined {
+  if (!isPlainObject(value)) {
+    push(
+      issue({
+        path,
+        message: "Expected token groups.",
+        expected: "{ action: { DEFAULT: emphasis(5) } }",
+        hint: "Overrides use the same group.token shape as tokens.",
+      }),
+    );
+    return undefined;
+  }
+  const tune: Record<string, unknown> = {};
+  for (const [group, body] of Object.entries(value)) {
+    const groupPath = joinPath(path, group);
+    if (!isPlainObject(body)) {
+      push(
+        issue({
+          path: groupPath,
+          message: "Expected tokens.",
+          expected: "an object of tokens",
+          hint: `Name a token, as in ${group}.DEFAULT.`,
+        }),
+      );
+      continue;
+    }
+    for (const [name, token] of Object.entries(body)) {
+      tune[`${group}.${name}`] = token;
+    }
+  }
+  return tune;
 }
 
 function readTemplate(
@@ -687,7 +856,7 @@ function cloneSlots(slots: readonly Slot[]): Slot[] {
 function cloneToken(token: NormalizedToken): NormalizedToken {
   const copy: NormalizedToken = {
     kind: token.kind,
-    ordinal: token.ordinal,
+    scale: token.scale,
     states: [...token.states],
   };
   copyOptions(copy, token);
@@ -696,13 +865,10 @@ function cloneToken(token: NormalizedToken): NormalizedToken {
 
 function copyOptions(target: NormalizedToken, source: NormalizedToken): void {
   if (source.on !== undefined) target.on = source.on;
-  if (source.contrast !== undefined) target.contrast = source.contrast;
-  if (source.direction !== undefined) target.direction = source.direction;
   if (source.chroma !== undefined) target.chroma = source.chroma;
   if (source.hue !== undefined) target.hue = source.hue;
   if (source.lc !== undefined) target.lc = source.lc;
   if (source.ratio !== undefined) target.ratio = source.ratio;
-  if (source.step !== undefined) target.step = source.step;
   if (source.nudge !== undefined) target.nudge = source.nudge;
 }
 
@@ -861,13 +1027,13 @@ function applyTuneValue(
   }
 
   const replacement = present(value, "kind");
-  if (!replacement && present(value, "level")) {
+  if (!replacement && present(value, "scale")) {
     push(
       issue({
-        path: joinPath(path, "level"),
-        message: "A tune merge cannot set level.",
-        expected: "a token with kind, or options without level",
-        hint: 'Pass a token such as emphasis("bold") to replace the target.',
+        path: joinPath(path, "scale"),
+        message: "A tune merge cannot set scale.",
+        expected: "a token with kind, or options without scale",
+        hint: "Pass a token such as emphasis(5) to replace the target.",
       }),
     );
   }
@@ -907,7 +1073,7 @@ function overlay(
   if (slot.value === undefined) return undefined;
   const raw = normalizedToRaw(slot.value);
   for (const [key, entry] of Object.entries(value)) {
-    if (key === "level") continue;
+    if (key === "scale") continue;
     raw[key] = entry;
   }
   return raw;
@@ -916,17 +1082,13 @@ function overlay(
 function normalizedToRaw(token: NormalizedToken): Record<string, unknown> {
   const raw: Record<string, unknown> = {
     kind: token.kind,
-    level: token.ordinal,
+    scale: token.scale,
   };
-  if (token.states.length > 0) raw.state = token.states.join("-");
   if (token.on !== undefined) raw.on = token.on;
-  if (token.contrast !== undefined) raw.contrast = token.contrast;
-  if (token.direction !== undefined) raw.direction = token.direction;
   if (token.chroma !== undefined) raw.chroma = token.chroma;
   if (token.hue !== undefined) raw.hue = token.hue;
   if (token.lc !== undefined) raw.lc = token.lc;
   if (token.ratio !== undefined) raw.ratio = token.ratio;
-  if (token.step !== undefined) raw.step = token.step;
   if (token.nudge !== undefined) raw.nudge = token.nudge;
   return raw;
 }

@@ -17,9 +17,9 @@ import tintPostCSS, { tint } from "../../src/postcss/index.js";
 import type { TintPostCSSOptions } from "../../src/postcss/index.js";
 
 const TOKENS = `export const tokens = {
-  surface: { DEFAULT: { kind: "surface" }, raised: { kind: "surface", level: "raised" } },
-  text: { strong: { kind: "text", level: "strong" }, body: { kind: "text" } },
-  action: { DEFAULT: { kind: "emphasis" } },
+  surface: { DEFAULT: { kind: "surface", scale: 0 }, raised: { kind: "surface", scale: 1 } },
+  text: { strong: { kind: "text", scale: 4 }, body: { kind: "text", scale: 3 } },
+  action: { DEFAULT: { kind: "emphasis", scale: 4 } },
 };`;
 
 const CONFIG = `import { tokens } from "./tokens";
@@ -116,8 +116,8 @@ describe("tint PostCSS plugin", () => {
     writeFixture(
       CONFIG,
       `export const tokens = {
-        surface: { DEFAULT: { kind: "surface" } },
-        ink: { impossible: { kind: "text", direction: "lighter", lc: 108 } },
+        surface: { DEFAULT: { kind: "surface", scale: 0 } },
+        ink: { impossible: { kind: "text", scale: 3, lc: 108 } },
       };`,
     );
     const result = await run(`@tint "./tint.config.ts";`);
@@ -218,7 +218,7 @@ describe("tint PostCSS plugin", () => {
     mkdirSync(join(dir, "other"));
     writeFileSync(
       join(dir, "other", "tint.config.ts"),
-      `export default { palette: { neutral: "#fff" }, tokens: { surface: { DEFAULT: { kind: "surface" } } } };`,
+      `export default { palette: { neutral: "#fff" }, tokens: { surface: { DEFAULT: { kind: "surface", scale: 0 } } } };`,
     );
     const result = await run(
       `@tint "./tint.config.ts";\n@tint "./other/tint.config.ts";`,
@@ -248,8 +248,8 @@ describe("tint PostCSS plugin", () => {
     writeFixture(`export default {
       palette: { neutral: "#ffffff", brand: "#3b82f6" },
       tokens: {
-        surface: { DEFAULT: { kind: "surface" } },
-        text: { strong: { kind: "text", level: "strong" } },
+        surface: { DEFAULT: { kind: "surface", scale: 0 } },
+        text: { strong: { kind: "text", scale: 4 } },
       },
       output: { prefix: "tint" },
     };`);

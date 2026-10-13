@@ -62,9 +62,9 @@ export default defineConfig({
     },
   },
   tokens: {
-    surface: { DEFAULT: surface() },
-    text: { strong: text("strong"), body: text() },
-    border: { firm: border("firm") },
+    surface: { DEFAULT: surface(0) },
+    text: { strong: text(4), body: text(3) },
+    border: { firm: border(4) },
   },
 });
 `;
@@ -73,7 +73,7 @@ export default defineConfig({
 export const WARNING_JSON = JSON.stringify({
   palette: { neutral: "oklch(0.7 0.4 30)" },
   tokens: {
-    surface: { DEFAULT: { kind: "surface" } },
+    surface: { DEFAULT: { kind: "surface", scale: 0 } },
   },
 });
 
@@ -81,8 +81,8 @@ export const WARNING_JSON = JSON.stringify({
 export const CLEAN_JSON_WITH_OUTPUT = JSON.stringify({
   palette: { neutral: "#ffffff", brand: "#2563eb" },
   tokens: {
-    surface: { DEFAULT: { kind: "surface" } },
-    text: { body: { kind: "text" } },
+    surface: { DEFAULT: { kind: "surface", scale: 0 } },
+    text: { body: { kind: "text", scale: 3 } },
   },
   output: { path: "./generated", formats: ["dtcg", "flat"] },
 });

@@ -28,8 +28,8 @@ vi.mock("../../src/loader/index.js", async (importOriginal) => {
 // ─────────────────────────────────────────────────────────────
 
 const TOKENS = `{
-  surface: { DEFAULT: { kind: "surface" } },
-  text: { body: { kind: "text" } },
+  surface: { DEFAULT: { kind: "surface", scale: 0 } },
+  text: { body: { kind: "text", scale: 3 } },
 }`;
 
 function configSource(brand = "#3366ff"): string {

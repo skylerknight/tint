@@ -1,12 +1,12 @@
 /**
- * Kind functions (docs/v4-spec.md §2.4, §3, §4).
+ * Kind functions for the numeric-scale prototype.
  *
- * Each call returns JSON-serializable data. Omitted arguments are omitted
- * from the object: `emphasis()` is `{ kind: "emphasis" }`, not level 3.
- * Names stay as written (`"bold"`, `"active"`, `"selected-hover"`).
+ * `surface(0)`, `text(3)`, `border(2.5)`, `emphasis(4)`.
+ * The number is the whole scale. There are no level names and no `state`.
+ * Options are `{ on?, chroma?, hue?, lc?, ratio?, nudge? }`.
  */
 
-import type { Kind, Level, Token, TokenOptions } from "./types.js";
+import type { Kind, Token, TokenOptions } from "./types.js";
 
 /** Flatten an intersection into one object type so equality checks see a single shape. */
 type Flat<T> = { -readonly [K in keyof T]: T[K] };
@@ -21,65 +21,63 @@ type OnlyTokenOptions<O> = O & {
 };
 
 interface KindFn<K extends Kind> {
-  (): { kind: K };
-  <const L extends Level>(level: L): Flat<{ kind: K; level: L }>;
-  <const O extends TokenOptions>(options: OnlyTokenOptions<O>): Flat<{ kind: K } & O>;
-  <const L extends Level, const O extends TokenOptions>(
-    level: L,
+  (scale: number): { kind: K; scale: number };
+  <const O extends TokenOptions>(
+    scale: number,
     options: OnlyTokenOptions<O>,
-  ): Flat<{ kind: K; level: L } & O>;
+  ): Flat<{ kind: K; scale: number } & O>;
 }
 
 function isOptions(value: unknown): value is TokenOptions {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function buildToken(
-  kind: Kind,
-  level: Level | undefined,
-  options: TokenOptions | undefined,
-): Token {
-  const token = { kind } as Token;
-  if (level !== undefined) token.level = level;
+function buildToken(kind: Kind, scale: number, options: TokenOptions | undefined): Token {
+  const token = { kind, scale } as Token;
   if (options === undefined) return token;
-
-  // Copy defined fields only. `exactOptionalPropertyTypes` rejects assigning
-  // the indexed union in one statement, and JSON drops undefined anyway.
-  if (options.state !== undefined) token.state = options.state;
   if (options.on !== undefined) token.on = options.on;
-  if (options.contrast !== undefined) token.contrast = options.contrast;
-  if (options.direction !== undefined) token.direction = options.direction;
   if (options.chroma !== undefined) token.chroma = options.chroma;
   if (options.hue !== undefined) token.hue = options.hue;
   if (options.lc !== undefined) token.lc = options.lc;
   if (options.ratio !== undefined) token.ratio = options.ratio;
-  if (options.step !== undefined) token.step = options.step;
   if (options.nudge !== undefined) token.nudge = options.nudge;
   return token;
 }
 
 function kindFunction<K extends Kind>(kind: K): KindFn<K> {
-  function create(levelOrOptions?: Level | TokenOptions, options?: TokenOptions): Token {
-    if (typeof levelOrOptions === "string" || typeof levelOrOptions === "number") {
-      return buildToken(kind, levelOrOptions, options);
+  function create(scale: number, options?: TokenOptions): Token {
+    if (isOptions(scale)) {
+      throw new TypeError(
+        `${kind}() takes a scale number first. Options are the second argument.`,
+      );
     }
-    if (isOptions(levelOrOptions)) return buildToken(kind, undefined, levelOrOptions);
-    return buildToken(kind, undefined, undefined);
+    return buildToken(kind, scale, options);
   }
   return create as KindFn<K>;
 }
 
-/** Elevation. Higher sits closer to the light in both modes (§3). Default level `base`. */
+/**
+ * Signed lightness steps from the page.
+ * `0` is the page, positive is raised, negative is sunken.
+ * One step is 0.02 in light mode and 0.03 in dark mode.
+ */
 export const surface = kindFunction("surface");
 
-/** Legibility against its backdrop (§3). Default level `body`. */
+/**
+ * Contrast-ladder steps against the backdrop.
+ * `text(3)` is body text (APCA Lc 75, WCAG 4.5:1).
+ */
 export const text = kindFunction("text");
 
-/** Definition (§3). Levels 1–2 are decorative. Default level `default`. */
+/**
+ * Contrast-ladder steps against the backdrop.
+ * `border(4)` is the non-text 3:1 rung on the WCAG table.
+ */
 export const border = kindFunction("border");
 
 /**
- * Prominence (§3). Levels 1–2 are tinted surfaces; 3–5 are solids.
- * Default level `default`.
+ * Lightness steps away from the backdrop (`on`, or the base surface).
+ * One step is 0.025 in light mode and 0.0375 in dark mode.
+ * Hover and pressed are other tokens (`emphasis(5)`, `emphasis(6)`), not states.
  */
 export const emphasis = kindFunction("emphasis");

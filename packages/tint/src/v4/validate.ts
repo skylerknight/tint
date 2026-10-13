@@ -34,15 +34,15 @@ const CONFIG_KEYS: readonly string[] = [
   "contrast",
   "palette",
   "themes",
-  "levels",
-  "states",
   "preset",
   "tokens",
+  "overrides",
   "output",
 ];
 const CONTRAST_KEYS: readonly string[] = ["algorithm", "level"];
 const THEME_KEYS: readonly string[] = [
   "mode",
+  "lightness",
   "selector",
   "media",
   "contrast",
@@ -72,16 +72,12 @@ const MODES: readonly string[] = ["light", "dark"];
 
 const TOKEN_FIELDS: readonly string[] = [
   "kind",
-  "level",
-  "state",
+  "scale",
   "on",
-  "contrast",
-  "direction",
   "chroma",
   "hue",
   "lc",
   "ratio",
-  "step",
   "nudge",
 ];
 
@@ -904,13 +900,13 @@ function checkTheme(
     }
   }
 
-  if (!hasExtends && !present(theme, "mode")) {
+  if (!hasExtends && !present(theme, "mode") && !present(theme, "lightness")) {
     ctx.push(
       issue({
-        path: joinPath(path, "mode"),
-        message: `Theme "${name}" is missing mode.`,
-        expected: '"light" or "dark"',
-        hint: "Set mode, or set extends to a theme that has one.",
+        path: joinPath(path, "lightness"),
+        message: `Theme "${name}" is missing lightness.`,
+        expected: "lightness 0..100, or mode light/dark",
+        hint: 'Set lightness, mode ("light" is 96, "dark" is 15), or extends a theme that has one.',
       }),
     );
   } else if (
@@ -918,6 +914,25 @@ function checkTheme(
     (typeof theme.mode !== "string" || !MODES.includes(theme.mode))
   ) {
     ctx.push(enumIssue(joinPath(path, "mode"), theme.mode, MODES, "Theme mode"));
+  }
+
+  if (present(theme, "lightness")) {
+    const lightness = theme.lightness;
+    if (
+      typeof lightness !== "number" ||
+      !Number.isFinite(lightness) ||
+      lightness < 0 ||
+      lightness > 100
+    ) {
+      ctx.push(
+        issue({
+          path: joinPath(path, "lightness"),
+          message: "Expected page lightness from 0 to 100.",
+          expected: "a number from 0 to 100",
+          hint: 'mode: "light" is 96. mode: "dark" is 15.',
+        }),
+      );
+    }
   }
 
   if (present(theme, "selector") && typeof theme.selector !== "string") {
@@ -1498,7 +1513,7 @@ function absorb(
         ...(suggestion !== undefined
           ? { didYouMean: suggestion, hint: `Did you mean "${suggestion}"?` }
           : {
-              hint: "Valid token fields are kind, level, state, on, contrast, direction, chroma, hue, lc, ratio, step, and nudge.",
+              hint: "Valid token fields are kind, scale, on, chroma, hue, lc, ratio, and nudge.",
             }),
       }),
     );

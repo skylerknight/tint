@@ -111,57 +111,59 @@ export default defineConfig({
     neutral: "#71717a",
     brand: { color: "${brand}", exact: true },
     danger: "#dc2626",
-    warning: { color: "#d97706", tune: { action: emphasis("bold") } },
+    warning: "#d97706",
   },
 
   themes: ${themes},
 
+  overrides: {
+    "warning": { action: { DEFAULT: emphasis(16) } },
+  },
+
   tokens: {
     surface: {
-      sunken: surface("sunken"),
-      DEFAULT: surface(),
-      raised: surface("raised"),
-      floating: surface("floating"),
+      sunken: surface(-2),
+      DEFAULT: surface(0),
+      raised: surface(1),
+      floating: surface(2),
     },
 
     action: {
-      DEFAULT: emphasis(),
-      hover: emphasis({ state: "hover" }),
-      pressed: emphasis({ state: "pressed" }),
-      disabled: emphasis({ state: "disabled" }),
-      on: text({ on: "action" }),
-      "on-disabled": text({ state: "disabled", on: "action" }),
+      DEFAULT: emphasis(15),
+      hover: emphasis(16.5),
+      pressed: emphasis(18),
+      disabled: emphasis(3.5, { chroma: 0.3 }),
+      on: text(3, { on: "action" }),
+      "on-disabled": text(-1, { on: "action.disabled" }),
     },
 
     soft: {
-      DEFAULT: emphasis("subtle"),
-      hover: emphasis("subtle", { state: "hover" }),
-      pressed: emphasis("subtle", { state: "pressed" }),
-      on: text({ on: "soft" }),
+      DEFAULT: emphasis(2),
+      hover: emphasis(3),
+      pressed: emphasis(4),
+      on: text(3, { on: "soft" }),
     },
 
     border: {
-      hairline: border("hairline"),
-      DEFAULT: border(),
-      firm: border("firm"),
-      focus: border("firm", { on: "action" }),
+      hairline: border(1),
+      DEFAULT: border(3),
+      firm: border(4),
+      focus: border(4, { on: "action" }),
     },
 
     text: {
-      DEFAULT: text(),
-      strong: text("strong"),
-      muted: text("muted"),
-      faint: text("faint"),
-      disabled: text({ state: "disabled" }),
-      link: text({ chroma: 1.2 }),
+      DEFAULT: text(3),
+      strong: text(4),
+      muted: text(2),
+      faint: text(1),
+      link: text(3, { chroma: 1.2 }),
     },
 
     row: {
-      DEFAULT: surface(),
-      hover: surface({ state: "hover" }),
-      selected: surface({ state: "selected" }),
-      "selected-hover": surface({ state: "selected-hover" }),
-      on: text({ on: "row" }),
+      DEFAULT: surface(0),
+      hover: surface(1),
+      selected: surface(2, { chroma: 1.5 }),
+      on: text(3, { on: "row" }),
     },
   },
 });
