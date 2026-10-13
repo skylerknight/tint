@@ -96,8 +96,9 @@ export interface Token extends TokenOptions {
   /** `surface(0)`, `text(5)`, `emphasis(8.5)`. Decimals are allowed. */
   scale: number;
   /**
-   * Set by {@link disabled}. The scale stays put; the engine mutes the color.
-   * JSON may set this directly. There is no `$role`.
+   * Set by `disabled.emphasis(n)` and the other `disabled.<kind>(n)` constructors.
+   * `n` is how strong the color would have been. The scale stays at `n`; the
+   * engine then mutes it. JSON may set this directly. There is no `$role`.
    */
   disabled?: boolean;
 }

@@ -132,9 +132,9 @@ export default defineConfig({
       DEFAULT: emphasis(8),
       hover: emphasis(7),
       pressed: emphasis(9),
-      disabled: disabled(emphasis(8)),
+      disabled: disabled.emphasis(8),
       on: text(5, { on: "action" }),
-      "on-disabled": disabled(text(5, { on: "action.disabled" })),
+      "on-disabled": disabled.text(5, { on: "action.disabled" }),
     },
 
     soft: {

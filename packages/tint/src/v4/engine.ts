@@ -68,7 +68,7 @@ export interface SolvedTokenV4 {
   /** Rounded scale, clamped to 1–5, for output metadata that still says level. */
   readonly ordinal: LevelOrdinal;
   readonly states: readonly CanonicalState[];
-  /** True when the token was wrapped in `disabled()`. The scale is unchanged. */
+  /** True when the token was built with `disabled.<kind>(n)`. The scale is unchanged. */
   readonly disabled?: boolean;
   /** Backdrop ids in graph order. {@link PAGE} is the theme page. */
   readonly backdrop: readonly string[];

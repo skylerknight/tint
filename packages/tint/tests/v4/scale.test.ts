@@ -191,7 +191,7 @@ describe("disabled treatment", () => {
           surface: { DEFAULT: surface(0) },
           action: {
             DEFAULT: emphasis(8, { nudge: false }),
-            disabled: disabled(emphasis(8, { nudge: false })),
+            disabled: disabled.emphasis(8, { nudge: false }),
           },
         },
       }),
@@ -225,7 +225,7 @@ describe("disabled treatment", () => {
           surface: { DEFAULT: surface(0) },
           action: {
             DEFAULT: emphasis(8),
-            disabled: disabled(emphasis(8)),
+            disabled: disabled.emphasis(8),
             on: text(5, { on: "action" }),
           },
         },

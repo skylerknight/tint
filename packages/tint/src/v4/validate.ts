@@ -1514,7 +1514,7 @@ function absorb(
         ...(suggestion !== undefined
           ? { didYouMean: suggestion, hint: `Did you mean "${suggestion}"?` }
           : {
-              hint: "Valid token fields are kind, scale, disabled, on, chroma, hue, lc, ratio, and nudge.",
+              hint: "Valid token fields are kind, scale, disabled, on, chroma, hue, lc, ratio, and nudge. disabled is the boolean set by disabled.<kind>(n).",
             }),
       }),
     );

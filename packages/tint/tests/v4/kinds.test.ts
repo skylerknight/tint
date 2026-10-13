@@ -29,13 +29,26 @@ describe("numeric kind functions", () => {
     expect(emphasis(4)).not.toBe(emphasis(4));
   });
 
-  it("disabled keeps the scale and marks the token", () => {
-    expect(disabled(emphasis(8))).toEqual({ kind: "emphasis", scale: 8, disabled: true });
-    expect(disabled(text(5, { on: "action.disabled" }), { chroma: 0.4 })).toEqual({
+  it("disabled.<kind>(n) keeps the scale and marks the token", () => {
+    expect(typeof disabled).toBe("object");
+    expect(disabled.emphasis(8)).toEqual({ kind: "emphasis", scale: 8, disabled: true });
+    expect(disabled.text(5, { on: "action.disabled", chroma: 0.4 })).toEqual({
       kind: "text",
       scale: 5,
       on: "action.disabled",
       chroma: 0.4,
+      disabled: true,
+    });
+    expect(disabled.surface(5, { nudge: false })).toEqual({
+      kind: "surface",
+      scale: 5,
+      nudge: false,
+      disabled: true,
+    });
+    expect(disabled.border(3, { hue: 20 })).toEqual({
+      kind: "border",
+      scale: 3,
+      hue: 20,
       disabled: true,
     });
   });

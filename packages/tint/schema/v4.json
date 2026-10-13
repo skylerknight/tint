@@ -233,7 +233,7 @@
           "type": "number"
         },
         "disabled": {
-          "description": "Mute this token in place. The scale does not change. Solid color, no alpha.",
+          "description": "Set by disabled.emphasis(n), disabled.text(n), disabled.surface(n), or disabled.border(n). n is how strong the color would have been. The scale does not change. The engine mutes it (chroma ×0.3, lightness at most 0.06 toward the backdrop). Solid color, no alpha.",
           "type": "boolean"
         },
         "on": {

@@ -13,7 +13,7 @@ import {
  * Every kind is one contrast curve. `surface(0)` is the page, `text(5)` is
  * body text, and soft buttons are a surface plus a label — not emphasis.
  * Hover may step down (less contrast, lighter on a light page) or up.
- * `disabled()` mutes a token in place.
+ * `disabled.emphasis(n)` resolves that kind at n, then mutes it.
  */
 export default defineConfig({
   contrast: { algorithm: "apca", level: "standard" },
@@ -76,18 +76,18 @@ export default defineConfig({
       DEFAULT: emphasis(8),
       hover: emphasis(7),
       pressed: emphasis(9),
-      disabled: disabled(emphasis(8)),
+      disabled: disabled.emphasis(8),
       on: text(5, { on: "action" }),
-      "on-disabled": disabled(text(5, { on: "action.disabled" })),
+      "on-disabled": disabled.text(5, { on: "action.disabled" }),
     },
 
     soft: {
       DEFAULT: surface(5),
       hover: surface(6),
       pressed: surface(3),
-      disabled: disabled(surface(5)),
+      disabled: disabled.surface(5),
       on: text(5, { on: "soft" }),
-      "on-disabled": disabled(text(5, { on: "soft.disabled" })),
+      "on-disabled": disabled.text(5, { on: "soft.disabled" }),
     },
 
     ramp: {

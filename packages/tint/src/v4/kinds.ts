@@ -5,7 +5,8 @@
  * The number is the whole scale. Higher means more contrast against the backdrop.
  * There are no level names and no `state`. Hover and pressed are other numbers.
  * Options are `{ on?, chroma?, hue?, lc?, ratio?, nudge? }`.
- * `disabled(token)` mutes a token without changing its scale.
+ * `disabled.emphasis(n)` and the other `disabled.<kind>(n)` build that kind at
+ * `n`, then the engine mutes it. There is no `disabled(token)` wrapper.
  */
 
 import type { Kind, Token, TokenOptions } from "./types.js";
@@ -88,25 +89,39 @@ export const border = kindFunction("border");
  */
 export const emphasis = kindFunction("emphasis");
 
-/**
- * Mute `token` without moving it on the scale.
- *
- * The engine desaturates the solved color and, when the color is not already
- * on its backdrop, steps lightness a short distance toward that backdrop.
- * The result is a solid color. `opts` may set `on`, `chroma`, `hue`, `lc`,
- * `ratio`, or `nudge`. They do not change `scale`.
- */
-export function disabled<const O extends TokenOptions>(
-  token: Token,
-  options?: OnlyTokenOptions<O>,
-): Flat<Token & { disabled: true }> {
-  const next = { ...token, disabled: true as const };
-  if (options === undefined) return next;
-  if (options.on !== undefined) next.on = options.on;
-  if (options.chroma !== undefined) next.chroma = options.chroma;
-  if (options.hue !== undefined) next.hue = options.hue;
-  if (options.lc !== undefined) next.lc = options.lc;
-  if (options.ratio !== undefined) next.ratio = options.ratio;
-  if (options.nudge !== undefined) next.nudge = options.nudge;
-  return next;
+interface DisabledFn<K extends Kind> {
+  (scale: number): { kind: K; scale: number; disabled: true };
+  <const O extends TokenOptions>(
+    scale: number,
+    options: OnlyTokenOptions<O>,
+  ): Flat<{ kind: K; scale: number; disabled: true } & O>;
 }
+
+function disabledKind<K extends Kind>(kind: K): DisabledFn<K> {
+  function create(scale: number, options?: TokenOptions): Token {
+    if (isOptions(scale)) {
+      throw new TypeError(
+        `disabled.${kind}() takes a scale number first. Options are the second argument.`,
+      );
+    }
+    const token = buildToken(kind, scale, options);
+    token.disabled = true;
+    return token;
+  }
+  return create as DisabledFn<K>;
+}
+
+/**
+ * Build a kind at scale `n` ("how strong it would have been"), then mark it
+ * for muting.
+ *
+ * The engine desaturates the solved color (chroma ×0.3) and steps lightness
+ * at most 0.06 toward the backdrop. The result is a solid color. The scale
+ * stays `n`. `opts` may set `on`, `chroma`, `hue`, `lc`, `ratio`, or `nudge`.
+ */
+export const disabled = {
+  emphasis: disabledKind("emphasis"),
+  text: disabledKind("text"),
+  surface: disabledKind("surface"),
+  border: disabledKind("border"),
+};

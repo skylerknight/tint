@@ -235,11 +235,20 @@ export const surface = __tintKind("surface");
 export const text = __tintKind("text");
 export const border = __tintKind("border");
 export const emphasis = __tintKind("emphasis");
-export function disabled(token, options) {
-  const next = Object.assign({}, token, { disabled: true });
-  if (options && typeof options === "object") Object.assign(next, options);
-  return next;
+function __tintDisabled(kind) {
+  return function (scale, options) {
+    const token = { kind: kind, scale: scale, disabled: true };
+    if (options && typeof options === "object") Object.assign(token, options);
+    token.disabled = true;
+    return token;
+  };
 }
+export const disabled = {
+  emphasis: __tintDisabled("emphasis"),
+  text: __tintDisabled("text"),
+  surface: __tintDisabled("surface"),
+  border: __tintDisabled("border"),
+};
 export default { defineConfig, surface, text, border, emphasis, disabled };
 `;
 
