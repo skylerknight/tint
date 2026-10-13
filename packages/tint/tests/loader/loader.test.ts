@@ -217,6 +217,7 @@ describe("loadConfig — bundling details", () => {
     const playground = join(import.meta.dirname, "../../../../examples/vite-playground");
     const real = await loadConfig({ root: playground, configPath: "tint.config.ts" });
     expect(Object.keys(real.config.themes ?? {})).toEqual(["light", "dark"]);
-    expect(real.config.palette.neutral).toBe("#71717a");
+    expect(real.config.palette.neutral).toBe("#ffffff");
+    expect(real.config.tokens.action?.on).toEqual({ kind: "text", on: "action" });
   });
 });

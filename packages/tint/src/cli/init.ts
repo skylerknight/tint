@@ -144,7 +144,7 @@ export default defineConfig({
       hairline: border("hairline"),
       DEFAULT: border(),
       firm: border("firm"),
-      focus: border("heavy", { on: "action" }),
+      focus: border("firm", { on: "action" }),
     },
 
     text: {

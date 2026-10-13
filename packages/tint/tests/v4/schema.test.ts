@@ -42,6 +42,7 @@ const SPEC_EXAMPLE = {
     "light-hc": {
       mode: "light",
       extends: "light",
+      selector: ".light-hc",
       media: "(prefers-contrast: more)",
       contrast: { level: "more" },
     },
@@ -71,7 +72,7 @@ const SPEC_EXAMPLE = {
       hairline: { kind: "border", level: "hairline" },
       DEFAULT: { kind: "border" },
       firm: { kind: "border", level: "firm" },
-      focus: { kind: "border", level: "heavy", on: "action" },
+      focus: { kind: "border", level: "firm", on: "action" },
     },
     text: {
       DEFAULT: { kind: "text" },

@@ -263,7 +263,10 @@ function tintStubPlugin(): import("esbuild").Plugin {
           pluginData: "tint-stub-probe",
         });
         if (probe.errors.length === 0 && probe.path) {
-          return { path: args.path, external: true };
+          // The bundle is imported from node_modules/.tint, which cannot see a
+          // package that only resolves from the config file. Keep the package
+          // external, but by its absolute path so Node can load it anyway.
+          return { path: probe.path, external: true };
         }
         return { path: args.path, namespace: "tint-stub" };
       });

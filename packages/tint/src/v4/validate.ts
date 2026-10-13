@@ -30,6 +30,7 @@ import {
 import type { Config, ContrastAlgorithm, Kind, LevelNames } from "./types.js";
 
 const CONFIG_KEYS: readonly string[] = [
+  "$schema",
   "contrast",
   "palette",
   "themes",
@@ -395,6 +396,19 @@ function checkTopLevel(input: Record<string, unknown>, push: Ctx["push"]): void 
   for (const key of Object.keys(input)) {
     if (CONFIG_KEYS.includes(key)) continue;
     push(unknownKey(key, key, CONFIG_KEYS));
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "$schema")) {
+    const schema = input["$schema"];
+    if (typeof schema !== "string" || schema.trim() === "") {
+      push(
+        issue({
+          path: "$schema",
+          message: "$schema must be a non-empty string.",
+          expected: "a schema URL",
+          hint: "Use https://unpkg.com/@skylerknight/tint/schema/v4.json.",
+        }),
+      );
+    }
   }
   if (!Object.prototype.hasOwnProperty.call(input, "palette")) {
     push(

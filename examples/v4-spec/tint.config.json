@@ -1,0 +1,72 @@
+{
+  "$schema": "https://unpkg.com/@skylerknight/tint/schema/v4.json",
+  "contrast": { "algorithm": "apca", "level": "standard" },
+  "palette": {
+    "neutral": "#71717a",
+    "brand": { "color": "#7c3aed", "exact": true },
+    "danger": "#dc2626",
+    "warning": {
+      "color": "#d97706",
+      "tune": { "action": { "kind": "emphasis", "level": "bold" } }
+    }
+  },
+  "themes": {
+    "light": { "mode": "light", "selector": ".light", "media": true },
+    "dark": {
+      "mode": "dark",
+      "selector": ".dark",
+      "media": true,
+      "palette": { "brand": "#a78bfa" }
+    },
+    "light-hc": {
+      "mode": "light",
+      "extends": "light",
+      "selector": ".light-hc",
+      "media": "(prefers-contrast: more)",
+      "contrast": { "level": "more" }
+    }
+  },
+  "tokens": {
+    "surface": {
+      "sunken": { "kind": "surface", "level": "sunken" },
+      "DEFAULT": { "kind": "surface" },
+      "raised": { "kind": "surface", "level": "raised" },
+      "floating": { "kind": "surface", "level": "floating" }
+    },
+    "action": {
+      "DEFAULT": { "kind": "emphasis" },
+      "hover": { "kind": "emphasis", "state": "hover" },
+      "pressed": { "kind": "emphasis", "state": "pressed" },
+      "disabled": { "kind": "emphasis", "state": "disabled" },
+      "on": { "kind": "text", "on": "action" },
+      "on-disabled": { "kind": "text", "state": "disabled", "on": "action" }
+    },
+    "soft": {
+      "DEFAULT": { "kind": "emphasis", "level": "subtle" },
+      "hover": { "kind": "emphasis", "level": "subtle", "state": "hover" },
+      "pressed": { "kind": "emphasis", "level": "subtle", "state": "pressed" },
+      "on": { "kind": "text", "on": "soft" }
+    },
+    "border": {
+      "hairline": { "kind": "border", "level": "hairline" },
+      "DEFAULT": { "kind": "border" },
+      "firm": { "kind": "border", "level": "firm" },
+      "focus": { "kind": "border", "level": "firm", "on": "action" }
+    },
+    "text": {
+      "DEFAULT": { "kind": "text" },
+      "strong": { "kind": "text", "level": "strong" },
+      "muted": { "kind": "text", "level": "muted" },
+      "faint": { "kind": "text", "level": "faint" },
+      "disabled": { "kind": "text", "state": "disabled" },
+      "link": { "kind": "text", "chroma": 1.2 }
+    },
+    "row": {
+      "DEFAULT": { "kind": "surface" },
+      "hover": { "kind": "surface", "state": "hover" },
+      "selected": { "kind": "surface", "state": "selected" },
+      "selected-hover": { "kind": "surface", "state": "selected-hover" },
+      "on": { "kind": "text", "on": "row" }
+    }
+  }
+}
