@@ -20,6 +20,7 @@ import {
   type SetSolveOptions,
 } from "../contrast/solve.js";
 import { maxChromaForLs } from "../engine/generate.js";
+import { kindLints, modeLightnessLint, pageLightnessLint } from "./a11y.js";
 import {
   colorOutOfGamutLint,
   duplicateTokenLints,
@@ -31,7 +32,6 @@ import { ConfigError } from "./errors.js";
 import { PAGE, type ResolvedToken } from "./graph.js";
 import {
   lowerToken,
-  pageLightness,
   realizeLightness,
   surfaceStepSize,
   tintStepSize,
@@ -46,7 +46,6 @@ import type {
   Kind,
   LevelOrdinal,
   Mode,
-  StateSteps,
 } from "./types.js";
 import { assertConfig } from "./validate.js";
 
@@ -62,6 +61,9 @@ export interface SolvedTokenV4 {
   readonly name: string;
   readonly generated: boolean;
   readonly kind: Kind;
+  /** Authored scale. Decimals stay as written. */
+  readonly scale: number;
+  /** Rounded scale, clamped to 1–5, for output metadata that still says level. */
   readonly ordinal: LevelOrdinal;
   readonly states: readonly CanonicalState[];
   /** Backdrop ids in graph order. {@link PAGE} is the theme page. */
@@ -125,22 +127,14 @@ export function generateV4(input: unknown): GenerationResultV4[] {
     const expertSeen = new Set<string>();
     for (const expansion of resolved.config.expansions) {
       if (expansion.theme !== theme.name) continue;
-      const solved = solvePalette(
-        expansion,
-        theme,
-        algorithm,
-        metric,
-        config.states,
-        diagnostics,
-      );
+      const solved = solvePalette(expansion, theme, algorithm, metric, diagnostics);
       const finished = applyNudgeAndExact({
         expansion,
         palette: solved,
         theme: theme.name,
         algorithm,
         metric,
-        tintStep: tintStepSize(theme.mode, config.states),
-        ...(config.states !== undefined ? { states: config.states } : {}),
+        tintStep: tintStepSize(theme.mode, undefined),
         diagnostics,
       });
       palettes.push(finished);
@@ -159,11 +153,30 @@ export function generateV4(input: unknown): GenerationResultV4[] {
             id: token.id,
             ...(token.value.lc !== undefined ? { lc: token.value.lc } : {}),
             ...(token.value.ratio !== undefined ? { ratio: token.value.ratio } : {}),
-            ...(token.value.step !== undefined ? { step: token.value.step } : {}),
           })),
           expertSeen,
         ),
         ...hueIdentityLints(theme.name, finished),
+      );
+      diagnostics.push(...kindLints(theme.name, algorithm, finished));
+    }
+    const paletteName = palettes[0]?.name ?? "*";
+    const page = pageLightnessLint({
+      theme: theme.name,
+      lightness: theme.lightness,
+      algorithm,
+      palette: paletteName,
+    });
+    if (page !== undefined) diagnostics.push(page);
+    if (theme.authoredMode !== undefined) {
+      diagnostics.push(
+        modeLightnessLint({
+          theme: theme.name,
+          lightness: theme.lightness,
+          mode: theme.mode,
+          authoredMode: theme.authoredMode,
+          palette: paletteName,
+        }),
       );
     }
     built.push({ theme, palettes, diagnostics });
@@ -206,14 +219,13 @@ function solvePalette(
   theme: ResolvedTheme,
   algorithm: ContrastAlgorithm,
   metric: Metric,
-  states: StateSteps | undefined,
   diagnostics: EngineDiagnosticV4[],
 ): PaletteResultV4 {
   const seed = publish(rgbToOKLCH(parseColor(expansion.color)));
-  const step = surfaceStepSize(theme.mode, states);
-  const tint = tintStepSize(theme.mode, states);
+  const step = surfaceStepSize(theme.mode, undefined);
+  const tint = tintStepSize(theme.mode, undefined);
   const page = publish({
-    l: pageLightness(theme.mode, step),
+    l: clamp01(theme.lightness / 100),
     c: Math.min(seed.oklch.c, maxChromaForLs(0)),
     h: seed.oklch.h,
   });
@@ -228,7 +240,6 @@ function solvePalette(
     seed: seed.oklch,
     surfaceStep: step,
     tintStep: tint,
-    ...(states !== undefined ? { states } : {}),
   };
 
   for (const id of expansion.order) {
@@ -316,7 +327,8 @@ function finish(
     name: token.name,
     generated: token.generated,
     kind: token.value.kind,
-    ordinal: token.value.ordinal,
+    scale: token.value.scale,
+    ordinal: displayOrdinal(token.value.scale),
     states: token.value.states,
     backdrop: token.backdrop,
     color,
@@ -405,6 +417,20 @@ function colorAt(
     throw new Error(`Internal error: "${id}" was not solved before its dependent.`);
   }
   return color;
+}
+
+function displayOrdinal(scale: number): LevelOrdinal {
+  const rounded = Math.round(scale);
+  if (rounded <= 1) return 1;
+  if (rounded >= 5) return 5;
+  if (rounded === 2 || rounded === 3 || rounded === 4) return rounded;
+  return 3;
+}
+
+function clamp01(value: number): number {
+  if (value <= 0) return 0;
+  if (value >= 1) return 1;
+  return value;
 }
 
 function publish(color: OKLCH): GeneratedColorV4 {

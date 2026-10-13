@@ -13,15 +13,15 @@ import type { OKLCH, RGB } from "../color/types.js";
 import { maxChromaForLs } from "../engine/generate.js";
 import type { Polarity } from "../contrast/types.js";
 import { preferredPolarity } from "../contrast/solve.js";
+import { GLOBAL_CONTRAST_SHIFT } from "./constants.js";
+import { contrastAt } from "./ladders.js";
 import type { CanonicalState } from "./states.js";
-import { contrastTarget, shiftOrdinal, type ContrastShift } from "./targets.js";
 import type {
   ContrastAlgorithm,
   ContrastLevel,
   Direction,
   Hue,
   Kind,
-  LevelOrdinal,
   Mode,
   StateSteps,
 } from "./types.js";
@@ -105,7 +105,7 @@ interface Draft {
   chroma: number;
   hue?: Hue;
   direction?: Direction;
-  ordinal: LevelOrdinal;
+  scale: number;
   seed: OKLCH;
 }
 
@@ -143,15 +143,48 @@ export function lowerToken(
   ctx: LowerContext,
   honorOptions: boolean,
 ): SolverIntent {
-  const shift = contrastShift(token, ctx, honorOptions);
-  const ordinal = shiftOrdinal(token.ordinal, shift);
-  const draft = fromCell(token.kind, ordinal, ctx);
+  const scale = honorOptions ? shiftedScale(token, ctx) : token.scale;
+  const draft = fromScale(token.kind, scale, ctx);
   if (honorOptions) applyOptions(draft, token);
-  if (honorOptions && token.step !== undefined) applyStep(draft, token, ctx);
-  for (const state of token.states) applyState(draft, state, token, ctx, shift);
   if (honorOptions) applyContrastBypass(draft, token, ctx);
   draft.seed = paintSeed(ctx.seed, draft, token.kind);
   return freeze(draft, token);
+}
+
+/**
+ * `contrast.level` still shifts text and border scales (`more` +1, `max` +2).
+ * Surface and emphasis scales are literal step counts and are not shifted.
+ */
+function shiftedScale(token: NormalizedToken, ctx: LowerContext): number {
+  if (token.kind !== "text" && token.kind !== "border") return token.scale;
+  return token.scale + GLOBAL_CONTRAST_SHIFT[ctx.contrastLevel];
+}
+
+function fromScale(kind: Kind, scale: number, ctx: LowerContext): Draft {
+  const draft: Draft = {
+    mode: "lightness",
+    target: 0,
+    elevation: 0,
+    away: 0,
+    stepSize: kind === "surface" ? ctx.surfaceStep : ctx.tintStep,
+    chroma: 1,
+    scale,
+    seed: ctx.seed,
+  };
+  if (kind === "surface") {
+    draft.elevation = scale;
+    draft.stepSize = ctx.surfaceStep;
+    return draft;
+  }
+  if (kind === "emphasis") {
+    draft.away = scale;
+    draft.stepSize = ctx.tintStep;
+    return draft;
+  }
+  const target = contrastAt(kind, ctx.algorithm, scale);
+  draft.mode = "contrast";
+  draft.target = target ?? 0;
+  return draft;
 }
 
 /**
@@ -183,101 +216,9 @@ export function realizeLightness(
   return lightness;
 }
 
-function contrastShift(
-  token: NormalizedToken,
-  ctx: LowerContext,
-  honorOptions: boolean,
-): ContrastShift {
-  if (honorOptions && token.contrast !== undefined) {
-    return { contrastLevel: ctx.contrastLevel, contrast: token.contrast };
-  }
-  return { contrastLevel: ctx.contrastLevel };
-}
-
-function fromCell(kind: Kind, ordinal: LevelOrdinal, ctx: LowerContext): Draft {
-  // `ordinal` is already shifted. Looking the cell up with `contrastLevel`
-  // again would shift a second time.
-  const cell = contrastTarget(ctx.algorithm, kind, ordinal);
-  const draft: Draft = {
-    mode: "lightness",
-    target: 0,
-    elevation: 0,
-    away: 0,
-    stepSize: kind === "surface" ? ctx.surfaceStep : ctx.tintStep,
-    chroma: 1,
-    ordinal,
-    seed: ctx.seed,
-  };
-  if (cell.type === "contrast") {
-    draft.mode = "contrast";
-    draft.target = cell.value;
-  } else if (cell.type === "max") {
-    draft.mode = "max";
-  } else if (cell.type === "tint") {
-    draft.away = cell.steps;
-    draft.stepSize = ctx.tintStep;
-  } else {
-    draft.elevation = cell.offset;
-    draft.stepSize = ctx.surfaceStep;
-  }
-  return draft;
-}
-
 function applyOptions(draft: Draft, token: NormalizedToken): void {
   if (token.chroma !== undefined) draft.chroma = token.chroma;
   if (token.hue !== undefined) draft.hue = token.hue;
-  if (token.direction !== undefined) draft.direction = token.direction;
-}
-
-/** `step` replaces the level cell. Later states still add (§2.4, §5). */
-function applyStep(draft: Draft, token: NormalizedToken, ctx: LowerContext): void {
-  const step = token.step;
-  if (step === undefined) return;
-  draft.mode = "lightness";
-  if (token.kind === "surface") {
-    draft.elevation = step;
-    draft.away = 0;
-    draft.stepSize = ctx.surfaceStep;
-    return;
-  }
-  draft.elevation = 0;
-  draft.away = Math.abs(step);
-  draft.stepSize = ctx.tintStep;
-  if (step < 0 && draft.direction === undefined) draft.direction = "darker";
-}
-
-function applyState(
-  draft: Draft,
-  state: CanonicalState,
-  token: NormalizedToken,
-  ctx: LowerContext,
-  shift: ContrastShift,
-): void {
-  const kind = token.kind;
-  if (state === "disabled") {
-    draft.mode = "contrast";
-    draft.target =
-      ctx.algorithm === "apca" ? DISABLED_TARGET.apca : DISABLED_TARGET.wcag2;
-    draft.elevation = 0;
-    draft.away = 0;
-    draft.chroma *= DISABLED_CHROMA;
-    return;
-  }
-  // "at least default": raise the pre-shift ordinal to 3, then shift once.
-  if (state === "checked") {
-    const raised = shiftOrdinal(token.ordinal < 3 ? 3 : token.ordinal, shift);
-    if (raised !== draft.ordinal) {
-      const promoted = fromCell(kind, raised, ctx);
-      draft.mode = promoted.mode;
-      draft.target = promoted.target;
-      draft.elevation = promoted.elevation;
-      draft.away = promoted.away;
-      draft.stepSize = promoted.stepSize;
-      draft.ordinal = promoted.ordinal;
-    }
-  }
-  if (state === "selected") draft.chroma *= SELECTED_CHROMA;
-  addSteps(draft, stateStepCount(kind, state, ctx.states), ctx);
 }
 
 /**
@@ -376,13 +317,8 @@ function freeze(draft: Draft, token: NormalizedToken): SolverIntent {
   return intent;
 }
 
-function reports(token: NormalizedToken, draft: Draft): boolean {
-  if (token.states.includes("disabled")) return false;
-  if (draft.mode !== "contrast") return false;
-  if (token.kind === "border" && draft.ordinal <= 2) return false;
-  if (token.kind === "surface") return false;
-  if (token.kind === "emphasis" && draft.ordinal <= 2) return false;
-  return true;
+function reports(_token: NormalizedToken, draft: Draft): boolean {
+  return draft.mode === "contrast";
 }
 
 function clamp01(value: number): number {

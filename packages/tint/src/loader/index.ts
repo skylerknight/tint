@@ -224,14 +224,9 @@ async function loadWithEsbuild(
  * Validation still happens in the loader, against the real validator.
  */
 const TINT_STUB = `function __tintKind(kind) {
-  return function (levelOrOptions, options) {
-    const token = { kind: kind };
-    if (typeof levelOrOptions === "string" || typeof levelOrOptions === "number") {
-      token.level = levelOrOptions;
-      if (options && typeof options === "object") Object.assign(token, options);
-      return token;
-    }
-    if (levelOrOptions && typeof levelOrOptions === "object") Object.assign(token, levelOrOptions);
+  return function (scale, options) {
+    const token = { kind: kind, scale: scale };
+    if (options && typeof options === "object") Object.assign(token, options);
     return token;
   };
 }
