@@ -1,14 +1,15 @@
 import postcss from "postcss";
 import type { AtRule, Plugin, PluginCreator, Result } from "postcss";
 import { resolve } from "node:path";
-import { generate } from "../engine/generate.js";
 import { loadConfig } from "../loader/index.js";
-import { toTailwindIntelliSense } from "../output/intellisense.js";
-import { toCSSWithTailwindAndTint } from "../output/tailwind.js";
-import type { TintUtilitiesOptions } from "../output/tailwind.js";
+import { withConfigOutput } from "../v4/emit-options.js";
+import { generateV4 } from "../v4/engine.js";
+import { toTailwindIntelliSense } from "../v4/intellisense.js";
+import { toCSSWithTailwind } from "../v4/output/tailwind.js";
+import type { TailwindOptions } from "../v4/output/tailwind.js";
 import { cachePath, intellisensePath, readQuietly, writeQuietly } from "./files.js";
 
-export interface TintPostCSSOptions extends TintUtilitiesOptions {
+export interface TintPostCSSOptions extends TailwindOptions {
   /** Directory config paths resolve against (default `process.cwd()`). */
   root?: string;
 }
@@ -16,21 +17,23 @@ export interface TintPostCSSOptions extends TintUtilitiesOptions {
 const PLUGIN_NAME = "postcss-tint";
 
 const FORMATTER_KEYS = [
+  "format",
   "indent",
-  "simplifyNames",
-  "generateShortcuts",
-  "generateTintUtilities",
-  "defaultPalette",
-  "includeOKLCH",
-] as const satisfies ReadonlyArray<keyof TintUtilitiesOptions>;
+  "comments",
+  "selector",
+  "aliases",
+  "prefix",
+  "tintUtilities",
+  "shortcuts",
+] as const satisfies ReadonlyArray<keyof TailwindOptions>;
 
 /** Keep only the known formatter options that were explicitly set. */
-function pickFormatterOptions(options: TintPostCSSOptions): TintUtilitiesOptions {
+function pickFormatterOptions(options: TintPostCSSOptions): TailwindOptions {
   const picked: Record<string, unknown> = {};
   for (const key of FORMATTER_KEYS) {
     if (options[key] !== undefined) picked[key] = options[key];
   }
-  return picked as TintUtilitiesOptions;
+  return picked as TailwindOptions;
 }
 
 /** `@tint "./tint.config.ts"` → `./tint.config.ts` (either quote style, or none). */
@@ -73,7 +76,7 @@ function addDependency(result: Result, seen: Set<string>, file: string): void {
 export const tintPostCSS: PluginCreator<TintPostCSSOptions> = (options = {}) => {
   const root = options.root ?? process.cwd();
   const formatterOptions = pickFormatterOptions(options);
-  const writeIntelliSense = options.generateTintUtilities !== false;
+  const writeIntelliSense = options.tintUtilities !== false;
 
   async function processAtRule(atRule: AtRule, result: Result): Promise<void> {
     const configPath = parseConfigPath(atRule.params);
@@ -93,9 +96,10 @@ export const tintPostCSS: PluginCreator<TintPostCSSOptions> = (options = {}) => 
       const loaded = await loadConfig({ root, configPath: absoluteConfigPath });
       for (const file of loaded.dependencies) addDependency(result, dependencies, file);
 
-      const results = generate(loaded.configs);
+      const results = generateV4(loaded.config);
       for (const res of results) {
         for (const diagnostic of res.diagnostics) {
+          if (diagnostic.severity === "info") continue;
           result.warn(`[tint] ${diagnostic.path}: ${diagnostic.message}`, {
             node: atRule,
             plugin: PLUGIN_NAME,
@@ -103,14 +107,13 @@ export const tintPostCSS: PluginCreator<TintPostCSSOptions> = (options = {}) => 
         }
       }
 
-      const css = toCSSWithTailwindAndTint(results, formatterOptions);
+      const css = toCSSWithTailwind(
+        results,
+        withConfigOutput(formatterOptions, loaded.config.output),
+      );
 
       if (writeIntelliSense) {
-        const intellisense = toTailwindIntelliSense(results, {
-          ...formatterOptions,
-          generateTintUtilities: true,
-        });
-        writeQuietly(intellisensePath(root), intellisense);
+        writeQuietly(intellisensePath(root), toTailwindIntelliSense(results));
       }
 
       replaceWithCSS(atRule, css);

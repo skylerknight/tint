@@ -17,7 +17,7 @@ describe("tint inspect", () => {
     expect(out).toContain("== light (light)");
     expect(out).toContain("== dark (dark)");
     expect(out).toContain("brand");
-    expect(out).toContain("heading");
+    expect(out).toContain("strong");
     expect(out).toMatch(/\d+ tokens: \d+ pass, \d+ warn, \d+ fail, \d+ n\/a/);
   });
 
@@ -38,7 +38,7 @@ describe("tint inspect", () => {
     const rows = c
       .out()
       .split("\n")
-      .filter((line) => /^(base|brand)\./.test(line));
+      .filter((line) => /^(neutral|brand)\./.test(line));
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((line) => line.startsWith("brand."))).toBe(true);
     expect(c.out()).toMatch(new RegExp(`^${rows.length} tokens:`, "m"));

@@ -2,8 +2,9 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync } from "node:fs";
 import { dirname, extname, isAbsolute, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import type { Config } from "../config/types.js";
-import { assertConfig, ConfigError } from "../config/validate.js";
+import { ConfigError } from "../v4/errors.js";
+import type { Config } from "../v4/types.js";
+import { assertConfig } from "../v4/validate.js";
 
 export interface LoadOptions {
   /** Directory config paths resolve against (default `process.cwd()`). */
@@ -12,7 +13,8 @@ export interface LoadOptions {
 }
 
 export interface LoadedConfig {
-  configs: Config[];
+  /** Validated v4 config. A v3-shaped document throws {@link ConfigError}. */
+  config: Config;
   /** Absolute path of the config file. */
   path: string;
   /** Absolute paths of every file bundled into the config (including itself). */
@@ -42,8 +44,9 @@ export function findDefaultConfig(root = process.cwd()): string | null {
 }
 
 /**
- * Load a tint config file (`.ts`, `.mts`, `.js`, `.mjs`, `.cjs`, or `.json`) and
- * validate every theme it exports.
+ * Load a tint v4 config file (`.ts`, `.mts`, `.js`, `.mjs`, `.cjs`, or `.json`)
+ * and validate it. A v3 theme array or v3-shaped object fails with the
+ * migration error from the v4 validator.
  */
 export async function loadConfig(options: LoadOptions): Promise<LoadedConfig> {
   const root = resolve(options.root ?? process.cwd());
@@ -75,15 +78,15 @@ export async function loadConfig(options: LoadOptions): Promise<LoadedConfig> {
     }
   }
 
-  const configs = unwrapExport(exported, path, isModule);
-  return { configs, path, dependencies };
+  const config = unwrapExport(exported, path, isModule);
+  return { config, path, dependencies };
 }
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────
 
-function unwrapExport(exported: unknown, path: string, isModule: boolean): Config[] {
+function unwrapExport(exported: unknown, path: string, isModule: boolean): Config {
   let value = exported;
   if (isModule) {
     value = unwrapModule(value);
@@ -94,37 +97,14 @@ function unwrapExport(exported: unknown, path: string, isModule: boolean): Confi
         `Example: export default defineConfig({ ... })`,
     );
   }
-  const list = Array.isArray(value) ? value : [value];
-  if (list.length === 0) {
-    throw new Error(`${path} exports an empty array; at least one theme is required.`);
-  }
-  const names = new Set<string>();
-  for (const item of list) {
-    const name = (item as { name?: unknown } | null)?.name;
-    if (typeof name !== "string") continue;
-    if (names.has(name)) {
-      throw new Error(
-        `${path} defines two themes named "${name}"; theme names must be unique because they become output directories and selectors.`,
-      );
+  try {
+    return assertConfig(value);
+  } catch (error) {
+    if (error instanceof ConfigError) {
+      throw new ConfigError(error.issues, `Invalid tint config in ${path}`);
     }
-    names.add(name);
+    throw error;
   }
-  return list.map((item, index) => {
-    try {
-      return assertConfig(item);
-    } catch (error) {
-      if (error instanceof ConfigError && list.length > 1) {
-        throw new ConfigError(
-          error.issues,
-          `Invalid tint config in ${path} (theme ${index + 1})`,
-        );
-      }
-      if (error instanceof ConfigError) {
-        throw new ConfigError(error.issues, `Invalid tint config in ${path}`);
-      }
-      throw error;
-    }
-  });
 }
 
 /**
@@ -145,7 +125,7 @@ function unwrapModule(value: unknown): unknown {
 function looksLikeModuleWrapper(value: unknown): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const obj = value as Record<string, unknown>;
-  const isConfigShaped = "colors" in obj || "tokens" in obj;
+  const isConfigShaped = "palette" in obj || "tokens" in obj || "colors" in obj;
   return !isConfigShaped && ("default" in obj || "config" in obj);
 }
 
@@ -239,6 +219,31 @@ async function loadWithEsbuild(
 }
 
 /**
+ * Stand-in for `@skylerknight/tint` when the package cannot be resolved.
+ * Kind functions match the v4 return shape so the loaded object validates.
+ * Validation still happens in the loader, against the real validator.
+ */
+const TINT_STUB = `function __tintKind(kind) {
+  return function (levelOrOptions, options) {
+    const token = { kind: kind };
+    if (typeof levelOrOptions === "string" || typeof levelOrOptions === "number") {
+      token.level = levelOrOptions;
+      if (options && typeof options === "object") Object.assign(token, options);
+      return token;
+    }
+    if (levelOrOptions && typeof levelOrOptions === "object") Object.assign(token, levelOrOptions);
+    return token;
+  };
+}
+export const defineConfig = (config) => config;
+export const surface = __tintKind("surface");
+export const text = __tintKind("text");
+export const border = __tintKind("border");
+export const emphasis = __tintKind("emphasis");
+export default { defineConfig, surface, text, border, emphasis };
+`;
+
+/**
  * Replace `@skylerknight/tint` imports inside config files with a tiny stub so the
  * config bundles even when the package is not resolvable from the config's location
  * (monorepos, pnpm strictness, unbuilt dist). Validation happens in the loader.
@@ -263,9 +268,7 @@ function tintStubPlugin(): import("esbuild").Plugin {
         return { path: args.path, namespace: "tint-stub" };
       });
       build.onLoad({ filter: /.*/, namespace: "tint-stub" }, () => ({
-        contents:
-          "export const defineConfig = (config) => config;\n" +
-          "export default { defineConfig };\n",
+        contents: TINT_STUB,
         loader: "js",
       }));
     },

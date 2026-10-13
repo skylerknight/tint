@@ -1,10 +1,12 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { OUTPUT_FORMATS, type OutputFormat } from "../config/types.js";
-import type { GenerationResult } from "../engine/types.js";
-import { toCSS } from "../output/css.js";
-import { toFlatMap, toJSON } from "../output/json.js";
-import { toCSSWithTailwindAndTint, toTailwind } from "../output/tailwind.js";
+import type { GenerationResultV4 } from "../v4/engine.js";
+import { withConfigOutput } from "../v4/emit-options.js";
+import { toCSS } from "../v4/output/css.js";
+import { toFlatJSON } from "../v4/output/flat.js";
+import { toDTCGJSON } from "../v4/output/dtcg.js";
+import { toCSSWithTailwind, toTailwind } from "../v4/output/tailwind.js";
+import { OUTPUT_FORMATS, type OutputFormat, type OutputOptions } from "../v4/types.js";
 import {
   CLIError,
   countTokens,
@@ -36,6 +38,11 @@ export function parseFormats(input: string): OutputFormat[] {
   }
   const formats: OutputFormat[] = [];
   for (const name of names) {
+    if (name === "json") {
+      throw new CLIError(
+        `Unknown format "json". v3 "json" split into "dtcg" and "flat". Expected one of: ${OUTPUT_FORMATS.join(", ")}`,
+      );
+    }
     if (!(OUTPUT_FORMATS as readonly string[]).includes(name)) {
       throw new CLIError(
         `Unknown format "${name}". Expected one of: ${OUTPUT_FORMATS.join(", ")}`,
@@ -48,36 +55,40 @@ export function parseFormats(input: string): OutputFormat[] {
 
 const FILE_NAMES: Record<OutputFormat, string> = {
   css: "tokens.css",
-  json: "tokens.json",
   tailwind: "tailwind.css",
+  dtcg: "tokens.dtcg.json",
   flat: "tokens.flat.json",
 };
 
-function render(format: OutputFormat, result: GenerationResult): string {
+function render(
+  format: OutputFormat,
+  result: GenerationResultV4,
+  output: OutputOptions | undefined,
+): string {
+  const style = withConfigOutput({}, output);
+  const flat = style.format === undefined ? undefined : { format: style.format };
   switch (format) {
     case "css":
-      return toCSS(result);
-    case "json":
-      return toJSON(result);
+      return toCSS(result, style);
+    case "dtcg":
+      return toDTCGJSON(result);
     case "tailwind":
-      return toTailwind(result);
+      return toTailwind(result, style);
     case "flat":
-      return JSON.stringify(toFlatMap(result), null, 2) + "\n";
+      return toFlatJSON(result, flat);
   }
 }
 
 export async function build(io: IO, flags: BuildFlags): Promise<number> {
-  const { configs, results } = await loadAndGenerate(io, flags.config);
+  const { config, results } = await loadAndGenerate(io, flags.config);
 
-  // Precedence: CLI flag → first theme that configures it → default.
-  const configured = configs.find((c) => c.output !== undefined)?.output;
+  const configured = config.output;
   const outDir = resolve(io.cwd, flags.out ?? configured?.path ?? DEFAULT_OUT_DIR);
   const formats = flags.formats
     ? parseFormats(flags.formats)
     : configured?.formats && configured.formats.length > 0
       ? [...new Set(configured.formats)]
       : [...DEFAULT_FORMATS];
-
   const tailwindTint = flags.tailwindTint === true;
   if (tailwindTint && !formats.includes("tailwind")) formats.push("tailwind");
 
@@ -95,11 +106,14 @@ export async function build(io: IO, flags: BuildFlags): Promise<number> {
       const themeDir = join(outDir, result.name);
       for (const format of formats) {
         if (format === "tailwind" && tailwindTint) continue;
-        write(join(themeDir, FILE_NAMES[format]), render(format, result));
+        write(join(themeDir, FILE_NAMES[format]), render(format, result, configured));
       }
     }
     if (tailwindTint) {
-      write(join(outDir, FILE_NAMES.tailwind), toCSSWithTailwindAndTint(results));
+      write(
+        join(outDir, FILE_NAMES.tailwind),
+        toCSSWithTailwind(results, withConfigOutput({}, configured)),
+      );
     }
   } catch (error) {
     throw toCLIError(error);

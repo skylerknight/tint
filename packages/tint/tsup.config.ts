@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  // `src/v4` stays out of the bundle until the public cut-over.
+  // The public entry imports `src/v4`, so the v4 API is in the bundle.
   entry: {
     index: "src/index.ts",
     "cli/index": "src/cli/index.ts",

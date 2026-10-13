@@ -1,78 +1,83 @@
+/**
+ * Public API (tint v4).
+ *
+ * v3 config, engine, and output modules stay in the package for internal
+ * use. They are not re-exported from here.
+ */
+
 // Config
-export {
-  defineConfig,
-  validateConfig,
-  assertConfig,
-  ConfigError,
-  resolveConfig,
-  parseOn,
-  PURE,
-} from "./config/index.js";
-export { LC_SHORTCUTS, TOKEN_ROLES, OUTPUT_FORMATS } from "./config/index.js";
+export { defineConfig } from "./v4/define.js";
+export { surface, text, border, emphasis } from "./v4/kinds.js";
+export { validateConfig, assertConfig } from "./v4/validate.js";
+export { ConfigError, formatConfigIssues } from "./v4/errors.js";
+export { resolveConfig } from "./v4/resolve.js";
+export { OUTPUT_FORMATS, COLOR_FORMATS } from "./v4/types.js";
 export type {
   Mode,
-  TokenRole,
-  LcShortcut,
-  LcVariant,
-  LsVariant,
-  Variant,
-  TokenGroup,
-  Tokens,
-  ColorValue,
-  Colors,
-  OverrideValue,
-  Overrides,
+  Kind,
+  Level,
+  LevelOrdinal,
+  State,
+  TokenOptions,
+  Token,
+  PaletteColor,
+  ContrastAlgorithm,
+  ContrastLevel,
+  ContrastOptions,
+  ThemeOptions,
+  LevelNames,
+  StateSteps,
+  Preset,
   OutputFormat,
-  OutputConfig,
+  ColorFormat,
+  OutputOptions,
   Config,
-  Issue,
-  ValidationResult,
-  ResolvedConfig,
-  ResolvedGroup,
-  ResolvedVariant,
-  ResolvedOverride,
-} from "./config/index.js";
+} from "./v4/types.js";
+export type { ConfigIssue, ConfigFix } from "./v4/errors.js";
+export type { ValidationResult } from "./v4/validate.js";
+export type { ResolveResult, ResolvedConfig } from "./v4/resolve.js";
 
 // Engine
-export { generate, ROLE_MIN_LC, APCA_MINIMUM_LC } from "./engine/index.js";
-export { maxChromaForLs, MODE_BASELINE } from "./engine/generate.js";
+export { generateV4 as generate } from "./v4/engine.js";
 export type {
-  GeneratedColor,
-  GeneratedVariantBase,
-  GeneratedLcVariant,
-  GeneratedLsVariant,
-  GeneratedVariant,
-  GeneratedPalette,
-  GenerationResult,
-  Diagnostic,
-  DiagnosticCode,
-} from "./engine/index.js";
+  GeneratedColorV4,
+  SolvedTokenV4,
+  PaletteResultV4,
+  GenerationResultV4,
+  GenerationResultV4 as GenerationResult,
+} from "./v4/engine.js";
 
 // Output
 export {
   toCSS,
-  toJSON,
-  toDTCG,
-  toFlatMap,
-  toTailwind,
   toCSSWithTailwind,
-  toCSSWithTailwindAndTint,
-  toTailwindIntelliSense,
+  toTailwind,
+  toDTCG,
+  toDTCGJSON,
+  toFlat,
+  toFlatJSON,
   assertConsistentStructure,
-  detectTailwindConflicts,
+  formatColor,
+  mediaQueryFor,
   TAILWIND_UTILITY_PREFIXES,
-  tokenVarName,
-} from "./output/index.js";
+} from "./v4/output/index.js";
 export type {
   CSSOptions,
-  JSONOptions,
   TailwindOptions,
-  TintUtilitiesOptions,
-} from "./output/index.js";
+  FlatOptions,
+  DTCGFile,
+  DTCGColorToken,
+  DTCGColorValue,
+} from "./v4/output/index.js";
 
 // Audit
-export { audit, formatAuditTable } from "./audit/index.js";
-export type { AuditRow, AuditReport } from "./audit/index.js";
+export { auditV4 as audit, formatAuditTable } from "./audit/index.js";
+export type {
+  AuditReportV4,
+  AuditRowV4,
+  AuditReportV4 as AuditReport,
+  AuditRowV4 as AuditRow,
+} from "./audit/index.js";
 
 // Color
 export {
@@ -102,10 +107,5 @@ export {
 export type { Polarity, SolveOptions, SolveResult } from "./contrast/index.js";
 
 // Loader
-export {
-  loadConfig,
-  findDefaultConfig,
-  DEFAULT_CONFIG_FILES,
-  tintCacheDir,
-} from "./loader/index.js";
+export { loadConfig, findDefaultConfig, DEFAULT_CONFIG_FILES } from "./loader/index.js";
 export type { LoadOptions, LoadedConfig } from "./loader/index.js";

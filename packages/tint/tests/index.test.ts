@@ -4,67 +4,91 @@ import * as tint from "../src/index.js";
 describe("public API", () => {
   it("exposes the documented surface", () => {
     const expected = [
-      "defineConfig",
-      "generate",
-      "validateConfig",
-      "assertConfig",
+      "APCA_THRESHOLDS",
+      "COLOR_FORMATS",
       "ConfigError",
-      "resolveConfig",
+      "DEFAULT_CONFIG_FILES",
+      "OUTPUT_FORMATS",
+      "TAILWIND_UTILITY_PREFIXES",
+      "assertConfig",
+      "assertConsistentStructure",
       "audit",
-      "formatAuditTable",
-      "toCSS",
-      "toJSON",
-      "toDTCG",
-      "toFlatMap",
-      "toTailwind",
-      "toCSSWithTailwind",
-      "toCSSWithTailwindAndTint",
-      "toTailwindIntelliSense",
-      "parseColor",
-      "tryParseColor",
-      "rgbToHex",
-      "rgbToOKLCH",
-      "oklchToRGB",
-      "oklchToRGBGamut",
-      "toGamut",
-      "formatOKLCH",
+      "border",
       "calcAPCA",
       "calcAPCAabs",
       "calcAPCAraw",
-      "meetsContrast",
-      "APCA_THRESHOLDS",
-      "solveContrast",
-      "maxContrast",
-      "preferredPolarity",
-      "LC_SHORTCUTS",
-      "TAILWIND_UTILITY_PREFIXES",
-      "loadConfig",
+      "defineConfig",
+      "emphasis",
       "findDefaultConfig",
+      "formatAuditTable",
+      "formatColor",
+      "formatConfigIssues",
+      "formatOKLCH",
+      "generate",
+      "isOKLCHInGamut",
+      "loadConfig",
+      "maxContrast",
+      "mediaQueryFor",
+      "meetsContrast",
+      "oklchToRGB",
+      "oklchToRGBGamut",
+      "parseColor",
+      "preferredPolarity",
+      "resolveConfig",
+      "rgbToHex",
+      "rgbToOKLCH",
+      "solveContrast",
+      "surface",
+      "text",
+      "toCSS",
+      "toCSSWithTailwind",
+      "toDTCG",
+      "toDTCGJSON",
+      "toFlat",
+      "toFlatJSON",
+      "toGamut",
+      "toTailwind",
+      "tryParseColor",
+      "validateConfig",
     ];
-    for (const name of expected) {
-      expect(tint, name).toHaveProperty(name);
+    expect(Object.keys(tint).sort()).toEqual(expected);
+  });
+
+  it("does not re-export the v3 config API", () => {
+    const removed = [
+      "LC_SHORTCUTS",
+      "PURE",
+      "TOKEN_ROLES",
+      "V4_SCAFFOLD",
+      "parseOn",
+      "toCSSWithTailwindAndTint",
+      "toFlatMap",
+      "toJSON",
+      "toTailwindIntelliSense",
+    ];
+    for (const name of removed) {
+      expect(tint, name).not.toHaveProperty(name);
     }
   });
 
   it("round-trips a config end to end", () => {
     const config = tint.defineConfig({
-      name: "light",
-      mode: "light",
-      colors: { base: "#ffffff", brand: "#7c3aed" },
+      palette: { neutral: "#71717a", brand: "#7c3aed" },
       tokens: {
-        surface: { DEFAULT: { ls: 1 }, raised: { ls: 2 } },
-        text: { $on: "surface", heading: { lc: 90 }, body: { lc: 75 } },
+        surface: { DEFAULT: tint.surface() },
+        text: { strong: tint.text("strong") },
       },
     });
-    const result = tint.generate(config);
+    const result = tint.generate(config)[0];
+    if (result === undefined) throw new Error("expected a theme");
     const css = tint.toCSS(result);
-    expect(css).toContain("--brand-text-heading:");
-    expect(css).toContain("--base-surface:");
+    expect(css).toContain("--brand-text-strong:");
+    expect(css).toContain("--neutral-surface:");
     const report = tint.audit(result);
     expect(report.summary.fail).toBe(0);
-    expect(tint.toFlatMap(result)["brand.text.body"]).toMatch(/^#[0-9a-f]{6}$/);
-    const tailwind = tint.toCSSWithTailwindAndTint(result);
+    expect(tint.toFlat(result)["brand.text.strong"]).toMatch(/^oklch\(/);
+    const tailwind = tint.toCSSWithTailwind(result);
     expect(tailwind).toContain("@utility tint-brand");
-    expect(tailwind).toContain("@utility text-heading");
+    expect(tailwind).toContain("@utility text-strong");
   });
 });

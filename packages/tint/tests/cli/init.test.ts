@@ -18,16 +18,19 @@ describe("tint init", () => {
     expect(await c.run(["init", "--yes", "--brand", "#7c3aed", "--dark"])).toBe(0);
     const path = join(c.dir, "tint.config.ts");
     const source = readFileSync(path, "utf8");
-    expect(source).toContain('import { defineConfig } from "@skylerknight/tint"');
-    expect(source).toContain('brand: "#7c3aed"');
+    expect(source).toContain('from "@skylerknight/tint"');
+    expect(source).toContain("defineConfig");
+    expect(source).toContain('color: "#7c3aed"');
     expect(source).toContain('selector: ".dark"');
-    expect(source).toContain('prefersColorScheme: "dark"');
-    expect(source).toContain('"soft-hover": { ls: 4 }');
+    expect(source).toContain("media: true");
+    expect(source).not.toContain('"light-hc"');
+    expect(source).toContain('surface("sunken")');
     expect(c.out()).toContain("Next steps");
 
     const loaded = await loadConfig({ root: c.dir, configPath: path });
-    expect(loaded.configs.map((cfg) => cfg.name)).toEqual(["light", "dark"]);
-    expect(loaded.configs[1]!.colors["base"]).toBe("#1c1c1f");
+    expect(Object.keys(loaded.config.themes ?? {})).toEqual(["light", "dark"]);
+    const dark = loaded.config.themes?.dark;
+    expect(dark?.palette?.brand).toBe("#a78bfa");
 
     c.stdout.length = 0;
     expect(await c.run(["build", "-f", "css,tailwind", "--tailwind-tint"])).toBe(0);
@@ -40,9 +43,9 @@ describe("tint init", () => {
     expect(await c.run(["init", "--yes"])).toBe(0);
     const source = readFileSync(join(c.dir, "tint.config.ts"), "utf8");
     expect(source).toContain("export default defineConfig({");
-    expect(source).not.toContain("darkColors");
+    expect(source).not.toContain('selector: ".dark"');
     const loaded = await loadConfig({ root: c.dir, configPath: "tint.config.ts" });
-    expect(loaded.configs).toHaveLength(1);
+    expect(Object.keys(loaded.config.themes ?? {})).toEqual(["light"]);
   });
 
   it("refuses a bad --brand", async () => {
@@ -64,8 +67,8 @@ describe("tint init", () => {
     expect(asked[2]).toContain("dark");
     expect(c.err()).toContain('"nope" is not a hex color');
     const source = readFileSync(join(c.dir, "tint.config.ts"), "utf8");
-    expect(source).toContain('brand: "#aabbcc"');
-    expect(source).not.toContain("darkColors");
+    expect(source).toContain('color: "#aabbcc"');
+    expect(source).not.toContain('selector: ".dark"');
   });
 
   it("uses the prompt default and asks before overwriting", async () => {
@@ -91,8 +94,8 @@ describe("tint init", () => {
       ),
     ).toBe(0);
     const source = readFileSync(join(c.dir, "tint.config.ts"), "utf8");
-    expect(source).toContain('brand: "#2563eb"');
-    expect(source).toContain("darkColors"); // "Include a dark theme?" defaults to yes
+    expect(source).toContain('color: "#2563eb"');
+    expect(source).toContain('selector: ".dark"'); // "Include a dark theme?" defaults to yes
   });
 });
 

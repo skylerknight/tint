@@ -1026,9 +1026,10 @@ describe("assertConfig", () => {
     expect(error.message).toBe("Invalid tint config\n✖ palette: Missing palette.");
   });
 
-  it("is not the v3 ConfigError and is not on the public entry", () => {
+  it("is not the v3 ConfigError and is the public validator", () => {
     expect(ConfigError).not.toBe(V3ConfigError);
-    expect(publicApi).not.toHaveProperty("formatConfigIssues");
-    expect(publicApi.validateConfig).not.toBe(validateConfig);
+    expect(publicApi.formatConfigIssues).toBe(formatConfigIssues);
+    expect(publicApi.validateConfig).toBe(validateConfig);
+    expect(publicApi.ConfigError).toBe(ConfigError);
   });
 });

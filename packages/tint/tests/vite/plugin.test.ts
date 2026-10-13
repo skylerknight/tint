@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { build } from "vite";
 import type { Plugin } from "vite";
-import { generate } from "../../src/engine/generate.js";
+import { generateV4 } from "../../src/v4/engine.js";
 import { loadConfig } from "../../src/loader/index.js";
 import { tint } from "../../src/vite/index.js";
 
@@ -28,22 +28,20 @@ vi.mock("../../src/loader/index.js", async (importOriginal) => {
 // ─────────────────────────────────────────────────────────────
 
 const TOKENS = `{
-  surface: { DEFAULT: { ls: 1 } },
-  text: { $on: "surface", body: { lc: 75 } },
+  surface: { DEFAULT: { kind: "surface" } },
+  text: { body: { kind: "text" } },
 }`;
 
 function configSource(brand = "#3366ff"): string {
   return `export default {
-  name: "light",
-  mode: "light",
-  colors: { base: "#ffffff", brand: "${brand}" },
+  palette: { neutral: "#ffffff", brand: "${brand}" },
   tokens: ${TOKENS},
 };
 `;
 }
 
 const CONFIG_WITH_IMPORT = `import { tokens } from "./theme/tokens";
-export default { name: "light", mode: "light", colors: { base: "#fff", brand: "#3366ff" }, tokens };
+export default { palette: { neutral: "#fff", brand: "#3366ff" }, tokens };
 `;
 const TOKENS_MODULE = `export const tokens = ${TOKENS} as const;`;
 
@@ -150,7 +148,7 @@ describe("transform", () => {
     expect(result!.code).toContain(`@import "tailwindcss";`);
     expect(result!.code).toContain("@theme static");
     expect(result!.code).toContain("@utility tint-brand");
-    expect(result!.code).toContain("--base-surface:");
+    expect(result!.code).toContain("--neutral-surface:");
   });
 
   it("handles single quotes, no semicolon, and ids with a query string", async () => {
@@ -241,10 +239,10 @@ describe("transform", () => {
   });
 
   it("logs generation diagnostics once per load via the Vite logger", async () => {
-    // A palette named like a Tailwind utility prefix triggers a warning diagnostic.
+    // An out-of-sRGB oklch() palette color triggers a warning diagnostic.
     writeFileSync(
       join(dir, "tint.config.ts"),
-      `export default { name: "light", mode: "light", colors: { base: "#fff", text: "#333" }, tokens: ${TOKENS} };`,
+      `export default { palette: { neutral: "oklch(0.7 0.4 30)" }, tokens: ${TOKENS} };`,
     );
     const { transform, logger } = createPlugin(dir);
     const css = `@tint "./tint.config.ts";`;
@@ -254,13 +252,34 @@ describe("transform", () => {
     const warnings = logger.warn.mock.calls.map((call) => String(call[0]));
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toMatch(/^\[tint\] tint\.config\.ts: /);
-    expect(warnings[0]).toContain("text");
+    expect(warnings[0]).toContain("sRGB");
+  });
+
+  it("passes output.prefix from the config into the stylesheet", async () => {
+    writeFileSync(
+      join(dir, "tint.config.ts"),
+      `export default {
+        palette: { neutral: "#ffffff", brand: "#3366ff" },
+        tokens: ${TOKENS},
+        output: { prefix: "tint" },
+      };
+      `,
+    );
+    const { transform } = createPlugin(dir);
+    const result = await transform.call(
+      createContext(),
+      `@tint "./tint.config.ts";`,
+      join(dir, "app.css"),
+    );
+    expect(result!.code).toContain("--tint-neutral-surface:");
+    expect(result!.code).toContain("--color-surface: var(--tint-surface);");
+    expect(result!.code).toContain("@utility tint-brand");
   });
 
   it("forwards only utility options to the formatter", async () => {
     writeFileSync(join(dir, "tint.config.ts"), configSource());
     const { transform } = createPlugin(dir, {
-      generateTintUtilities: false,
+      tintUtilities: false,
       intellisense: false,
     });
     const result = await transform.call(
@@ -268,8 +287,7 @@ describe("transform", () => {
       `@tint "./tint.config.ts";`,
       join(dir, "app.css"),
     );
-    expect(result!.code).toContain("@theme {");
-    expect(result!.code).not.toContain("@theme static");
+    expect(result!.code).toContain("@theme static");
     expect(result!.code).not.toContain("@utility tint-brand");
   });
 });
@@ -293,7 +311,7 @@ describe("intellisense", () => {
     expect(existsSync(intellisensePath())).toBe(true);
     const content = readFileSync(intellisensePath(), "utf8");
     expect(content).toContain("@import 'tailwindcss';");
-    expect(content).toContain("--color-base-surface: #");
+    expect(content).toContain("--color-surface: #");
     expect(content).toContain("/* Unprefixed colors (for tint-* utility classes) */");
   });
 
@@ -357,7 +375,7 @@ describe("virtual module", () => {
     );
 
     const loaded = await loadConfig({ root: dir, configPath: "a.config.ts" });
-    expect(exported).toEqual(JSON.parse(JSON.stringify(generate(loaded.configs))));
+    expect(exported).toEqual(JSON.parse(JSON.stringify(generateV4(loaded.config))));
   });
 
   it("loads a specific config via virtual:tint/<path> relative to the root", async () => {
@@ -369,7 +387,7 @@ describe("virtual module", () => {
     const code = await load.call(context, "\0virtual:tint/config/tint.config.ts");
     const exported = JSON.parse(code!.replace(/^export default /, "").replace(/;$/, ""));
     const loaded = await loadConfig({ root: dir, configPath: "config/tint.config.ts" });
-    expect(exported).toEqual(JSON.parse(JSON.stringify(generate(loaded.configs))));
+    expect(exported).toEqual(JSON.parse(JSON.stringify(generateV4(loaded.config))));
     expect(context.addWatchFile).toHaveBeenCalledWith(
       join(dir, "config", "tint.config.ts"),
     );
@@ -426,11 +444,11 @@ describe("configureServer", () => {
     mkdirSync(join(dir, "theme"));
     const tokensPath = join(dir, "theme", "tokens.ts");
     writeFileSync(tokensPath, TOKENS_MODULE);
-    // A `text` palette produces a warning diagnostic, which is logged once per load.
+    // An out-of-gamut palette produces a warning diagnostic, logged once per load.
     writeFileSync(
       join(dir, "tint.config.ts"),
       `import { tokens } from "./theme/tokens";
-export default { name: "light", mode: "light", colors: { base: "#fff", text: "#333" }, tokens };`,
+export default { palette: { neutral: "oklch(0.7 0.4 30)" }, tokens };`,
     );
 
     const { transform, load, configureServer, logger } = createPlugin(dir);
@@ -609,7 +627,7 @@ describe("vite build", () => {
     );
     expect(cssAsset).toBeDefined();
     const css = String((cssAsset as { source: string | Uint8Array }).source);
-    expect(css).toContain("--base-surface:");
+    expect(css).toContain("--neutral-surface:");
     expect(css).toContain("--brand-surface:");
     expect(css).toContain("@theme static");
     expect(css).not.toContain("@tint");

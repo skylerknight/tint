@@ -1,8 +1,9 @@
 /**
  * Internal home for the tint v4 API (docs/v4-spec.md).
  *
- * Not re-exported from `src/index.ts` and not a tsup entry, so the v3
- * public surface and build output stay unchanged until the cut-over.
+ * `src/index.ts` re-exports the public subset (defineConfig, kinds,
+ * generate, validate, outputs, audit). This barrel also exposes helpers
+ * that stay off the public entry. It is not its own tsup entry.
  */
 
 export const V4_SCAFFOLD = "v4" as const;

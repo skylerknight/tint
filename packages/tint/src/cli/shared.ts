@@ -1,8 +1,8 @@
 import { relative } from "node:path";
-import { ConfigError } from "../config/validate.js";
-import type { Config } from "../config/types.js";
-import { generate } from "../engine/generate.js";
-import type { GenerationResult } from "../engine/types.js";
+import { ConfigError } from "../v4/errors.js";
+import { generateV4 } from "../v4/engine.js";
+import type { GenerationResultV4 } from "../v4/engine.js";
+import type { Config } from "../v4/types.js";
 import { findDefaultConfig, loadConfig, DEFAULT_CONFIG_FILES } from "../loader/index.js";
 import { formatDiagnostic, type IO } from "./ui.js";
 
@@ -12,8 +12,8 @@ export class CLIError extends Error {
 }
 
 export interface Loaded {
-  configs: Config[];
-  results: GenerationResult[];
+  config: Config;
+  results: GenerationResultV4[];
   /** Config path, absolute. */
   path: string;
 }
@@ -43,8 +43,8 @@ export async function loadAndGenerate(
   }
 
   try {
-    const results = generate(loaded.configs);
-    return { configs: loaded.configs, results, path: loaded.path };
+    const results = generateV4(loaded.config);
+    return { config: loaded.config, results, path: loaded.path };
   } catch (error) {
     throw toCLIError(error);
   }
@@ -57,10 +57,15 @@ export function toCLIError(error: unknown): CLIError {
   return new CLIError(String(error));
 }
 
-export function printDiagnostics(io: IO, results: readonly GenerationResult[]): number {
+/**
+ * Print warning and error diagnostics. Info lints stay out of the summary
+ * so `--strict` fails on warnings only.
+ */
+export function printDiagnostics(io: IO, results: readonly GenerationResultV4[]): number {
   let count = 0;
   for (const result of results) {
     for (const diagnostic of result.diagnostics) {
+      if (diagnostic.severity === "info") continue;
       io.err(formatDiagnostic(diagnostic, io.color));
       count += 1;
     }
@@ -68,12 +73,12 @@ export function printDiagnostics(io: IO, results: readonly GenerationResult[]): 
   return count;
 }
 
-export function countTokens(results: readonly GenerationResult[]): number {
+export function countTokens(results: readonly GenerationResultV4[]): number {
   let total = 0;
   for (const result of results) {
     for (const palette of result.palettes) {
-      for (const group of Object.values(palette.tokens)) {
-        total += Object.keys(group).length;
+      for (const token of palette.tokens) {
+        if (!token.generated) total += 1;
       }
     }
   }
