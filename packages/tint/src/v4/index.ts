@@ -32,6 +32,7 @@ export type {
   StateStepCounts,
   SurfaceStep,
   SurfaceStateSteps,
+  EmphasisStateSteps,
   StateSteps,
   Preset,
   OutputFormat,

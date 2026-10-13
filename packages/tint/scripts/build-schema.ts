@@ -357,6 +357,27 @@ function stateCountProperties(): Record<string, Schema> {
   return properties;
 }
 
+/** Step counts plus `{ light, dark }` size. Shared by surface and emphasis (§4). */
+function steppedKindStates(title: string, description: string): Schema {
+  return {
+    title,
+    description,
+    type: "object",
+    properties: {
+      ...stateCountProperties(),
+      step: {
+        type: "object",
+        properties: {
+          light: { type: "number" },
+          dark: { type: "number" },
+        },
+        additionalProperties: false,
+      },
+    },
+    additionalProperties: false,
+  };
+}
+
 function themeSchema(): Schema {
   const mode: Schema = { enum: MODES };
   const extendsTheme: Schema = {
@@ -443,7 +464,12 @@ export function buildSchema(): Schema {
   for (const kind of KINDS) {
     levelNames[kind] = { $ref: "#/$defs/kindLevelNames" };
     stateSteps[kind] = {
-      $ref: kind === "surface" ? "#/$defs/surfaceStateSteps" : "#/$defs/stateStepCounts",
+      $ref:
+        kind === "surface"
+          ? "#/$defs/surfaceStateSteps"
+          : kind === "emphasis"
+            ? "#/$defs/emphasisStateSteps"
+            : "#/$defs/stateStepCounts",
     };
   }
 
@@ -570,24 +596,14 @@ export function buildSchema(): Schema {
         properties: stateCountProperties(),
         additionalProperties: false,
       },
-      surfaceStateSteps: {
-        title: "SurfaceStateSteps",
-        description:
-          "Surface step counts, plus the OKLCH lightness size of one step (§4).",
-        type: "object",
-        properties: {
-          ...stateCountProperties(),
-          step: {
-            type: "object",
-            properties: {
-              light: { type: "number" },
-              dark: { type: "number" },
-            },
-            additionalProperties: false,
-          },
-        },
-        additionalProperties: false,
-      },
+      surfaceStateSteps: steppedKindStates(
+        "SurfaceStateSteps",
+        "Surface step counts, plus the OKLCH lightness size of one step (§4).",
+      ),
+      emphasisStateSteps: steppedKindStates(
+        "EmphasisStateSteps",
+        "Emphasis step counts, plus the OKLCH lightness size of one tint step (§4).",
+      ),
       theme: themeSchema(),
       output: {
         title: "OutputOptions",

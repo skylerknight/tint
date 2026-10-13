@@ -869,14 +869,23 @@ describe("the rest of the config", () => {
   });
 
   it("checks state step config", () => {
-    const step = at(
+    const bare = at(
       issuesOf({
         ...base(),
         states: { emphasis: { hover: 1, step: 0.02 } },
       }),
       "states.emphasis.step",
     );
-    expect(step.message).toContain("states.surface");
+    expect(bare.message).toContain("not a count");
+    const elsewhere = at(
+      issuesOf({
+        ...base(),
+        states: { text: { step: { light: 0.025 } } },
+      }),
+      "states.text.step",
+    );
+    expect(elsewhere.message).toContain("states.surface");
+    expect(elsewhere.message).toContain("states.emphasis");
     const typo = at(
       issuesOf({
         ...base(),
@@ -901,6 +910,14 @@ describe("the rest of the config", () => {
       "states.surface.step",
     );
     expect(count.message).toContain("not a count");
+    const tint = at(
+      issuesOf({
+        ...base(),
+        states: { emphasis: { step: { dark: 0 } } },
+      }),
+      "states.emphasis.step.dark",
+    );
+    expect(tint.message).toContain("greater than 0");
     const checked = at(
       issuesOf({
         ...base(),
@@ -913,7 +930,7 @@ describe("the rest of the config", () => {
       issuesOf({
         ...base(),
         states: {
-          emphasis: { hover: 1, pressed: 3 },
+          emphasis: { hover: 1, pressed: 3, step: { light: 0.025, dark: 0.04 } },
           surface: { step: { light: 0.02, dark: 0.035 } },
         },
       }),

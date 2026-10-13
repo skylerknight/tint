@@ -77,7 +77,7 @@
           "$ref": "#/$defs/stateStepCounts"
         },
         "emphasis": {
-          "$ref": "#/$defs/stateStepCounts"
+          "$ref": "#/$defs/emphasisStateSteps"
         }
       },
       "additionalProperties": false
@@ -576,6 +576,54 @@
     "surfaceStateSteps": {
       "title": "SurfaceStateSteps",
       "description": "Surface step counts, plus the OKLCH lightness size of one step (§4).",
+      "type": "object",
+      "properties": {
+        "hover": {
+          "description": "How many steps `hover` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "pressed": {
+          "description": "How many steps `pressed` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "focus": {
+          "description": "How many steps `focus` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "selected": {
+          "description": "How many steps `selected` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "checked": {
+          "description": "How many steps `checked` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "disabled": {
+          "description": "How many steps `disabled` moves from the rest token (§4).",
+          "type": "number"
+        },
+        "active": {
+          "description": "Step count for the `active` alias of `pressed` (§4).",
+          "type": "number"
+        },
+        "step": {
+          "type": "object",
+          "properties": {
+            "light": {
+              "type": "number"
+            },
+            "dark": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "emphasisStateSteps": {
+      "title": "EmphasisStateSteps",
+      "description": "Emphasis step counts, plus the OKLCH lightness size of one tint step (§4).",
       "type": "object",
       "properties": {
         "hover": {

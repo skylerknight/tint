@@ -308,4 +308,82 @@ describe("generateV4", () => {
     expect(light?.palettes[0]?.page.oklch.l).toBeCloseTo(1 - 2 * 0.04, 6);
     expect(dark?.palettes[0]?.page.oklch.l).toBeCloseTo(0.15, 6);
   });
+
+  it("keeps the light tint step and scales the dark step with the surface ratio", () => {
+    const themes = generateV4({
+      palette: { neutral: "#71717a" },
+      themes: {
+        light: { mode: "light" as const },
+        dark: { mode: "dark" as const },
+      },
+      tokens: {
+        surface: { DEFAULT: surface() },
+        soft: {
+          DEFAULT: emphasis("subtle"),
+          hover: emphasis("subtle", { state: "hover" }),
+        },
+        ghost: { DEFAULT: emphasis("quiet") },
+        offset: { DEFAULT: text({ step: 2 }) },
+      },
+    });
+    const light = themes.find((theme) => theme.mode === "light");
+    const dark = themes.find((theme) => theme.mode === "dark");
+    const lightPalette = light?.palettes[0];
+    const darkPalette = dark?.palettes[0];
+    if (lightPalette === undefined || darkPalette === undefined) {
+      throw new Error("missing palette");
+    }
+    const lightPage = lightPalette.page.oklch.l;
+    const darkPage = darkPalette.page.oklch.l;
+    // Light stays 0.025. Dark is 0.025 * (0.03 / 0.02).
+    expect(token(lightPalette, "soft.DEFAULT").color.oklch.l).toBeCloseTo(
+      lightPage - 0.05,
+      6,
+    );
+    expect(token(lightPalette, "soft.hover").color.oklch.l).toBeCloseTo(
+      lightPage - 0.075,
+      6,
+    );
+    expect(token(lightPalette, "ghost.DEFAULT").color.oklch.l).toBeCloseTo(
+      lightPage - 0.025,
+      6,
+    );
+    expect(token(lightPalette, "offset.DEFAULT").color.oklch.l).toBeCloseTo(
+      lightPage - 0.05,
+      6,
+    );
+    expect(token(darkPalette, "soft.DEFAULT").color.oklch.l).toBeCloseTo(
+      darkPage + 0.075,
+      6,
+    );
+    expect(token(darkPalette, "soft.hover").color.oklch.l).toBeCloseTo(
+      darkPage + 0.1125,
+      6,
+    );
+    expect(token(darkPalette, "ghost.DEFAULT").color.oklch.l).toBeCloseTo(
+      darkPage + 0.0375,
+      6,
+    );
+    expect(token(darkPalette, "offset.DEFAULT").color.oklch.l).toBeCloseTo(
+      darkPage + 0.075,
+      6,
+    );
+
+    const overridden = generateV4({
+      palette: { neutral: "#71717a" },
+      themes: { dark: { mode: "dark" as const } },
+      states: { emphasis: { step: { light: 0.04, dark: 0.05 } } },
+      tokens: {
+        surface: { DEFAULT: surface() },
+        soft: { DEFAULT: emphasis("subtle") },
+      },
+    });
+    const darkOnly = overridden[0]?.palettes[0];
+    if (darkOnly === undefined) throw new Error("missing palette");
+    // Two tint steps. The light override does not apply in a dark theme.
+    expect(token(darkOnly, "soft.DEFAULT").color.oklch.l).toBeCloseTo(
+      darkOnly.page.oklch.l + 0.1,
+      6,
+    );
+  });
 });

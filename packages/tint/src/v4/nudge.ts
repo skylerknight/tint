@@ -28,7 +28,6 @@ import {
   DISABLED_TARGET,
   SELECTED_CHROMA,
   stateStepCount,
-  TINT_STEP,
   WCAG_STATE_RATIO,
 } from "./lower.js";
 import type { NormalizedToken } from "./normalize.js";
@@ -51,6 +50,8 @@ export interface PostSolveInput {
   algorithm: ContrastAlgorithm;
   metric: Metric;
   states?: StateSteps;
+  /** Resolved emphasis tint step for this theme's mode (§4). */
+  tintStep: number;
   diagnostics: EngineDiagnosticV4[];
 }
 
@@ -309,7 +310,7 @@ function nudgeBudget(
   );
   if (cell.type === "contrast") return { contrast: cell.value };
   if (cell.type === "max") return {};
-  return { lightness: NUDGE_MAX_LEVELS * TINT_STEP };
+  return { lightness: NUDGE_MAX_LEVELS * input.tintStep };
 }
 
 function shiftFamily(

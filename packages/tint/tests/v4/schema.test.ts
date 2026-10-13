@@ -217,7 +217,7 @@ const valid = [
     name: "state steps and every output format",
     config: base({
       states: {
-        emphasis: { hover: 1, pressed: 3, active: 2 },
+        emphasis: { hover: 1, pressed: 3, active: 2, step: { light: 0.025, dark: 0.04 } },
         surface: { hover: 1, step: { light: 0.02, dark: 0.035 } },
       },
       output: {

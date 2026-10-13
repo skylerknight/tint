@@ -1122,23 +1122,24 @@ function checkKindStates(
       issue({
         path,
         message: `Expected state steps for ${kind}.`,
-        expected: "step counts, and step: { light, dark } on surface",
-        hint: "Counts are how many steps a state moves. surface.step is the size of one step.",
+        expected: "step counts, and step: { light, dark } on surface or emphasis",
+        hint: "Counts are how many steps a state moves. surface.step and emphasis.step are the size of one step.",
       }),
     );
     return;
   }
-  const allowed = kind === "surface" ? [...STATE_COUNT_KEYS, "step"] : STATE_COUNT_KEYS;
+  const stepped = kind === "surface" || kind === "emphasis";
+  const allowed = stepped ? [...STATE_COUNT_KEYS, "step"] : STATE_COUNT_KEYS;
   for (const [key, entry] of Object.entries(value)) {
     const keyPath = joinPath(path, key);
-    if (key === "step" && kind !== "surface") {
+    if (key === "step" && !stepped) {
       push(
         issue({
           path: keyPath,
           message:
-            "step is the size of one surface step. It belongs under states.surface.",
-          expected: "a step count, or states.surface.step",
-          hint: "Emphasis, text, and border entries are counts such as hover: 1.",
+            "step is the OKLCH size of one step. It belongs under states.surface or states.emphasis.",
+          expected: "a step count, or states.surface.step / states.emphasis.step",
+          hint: "Text and border entries are counts such as hover: 1.",
         }),
       );
       continue;
@@ -1169,7 +1170,7 @@ function checkKindStates(
       continue;
     }
     if (key === "step") {
-      checkSurfaceStep(entry, keyPath, push);
+      checkModeStep(entry, keyPath, kind === "emphasis" ? "emphasis" : "surface", push);
       continue;
     }
     checkStepCount(entry, keyPath, push);
@@ -1200,14 +1201,26 @@ function checkStepCount(value: unknown, path: string, push: Ctx["push"]): void {
   }
 }
 
-function checkSurfaceStep(value: unknown, path: string, push: Ctx["push"]): void {
+const MODE_STEP_DEFAULTS = {
+  surface: "0.02 (light) and 0.03 (dark)",
+  emphasis: "0.025 (light) and 0.0375 (dark)",
+} as const;
+
+function checkModeStep(
+  value: unknown,
+  path: string,
+  kind: "surface" | "emphasis",
+  push: Ctx["push"],
+): void {
+  const defaults = `The published defaults are ${MODE_STEP_DEFAULTS[kind]}.`;
+  const label = kind === "surface" ? "surface.step" : "emphasis.step";
   if (typeof value === "number") {
     push(
       issue({
         path,
-        message: "surface.step is the size of one step, not a count.",
+        message: `${label} is the size of one step, not a count.`,
         expected: "{ light?: number, dark?: number }",
-        hint: "Put hover: 1 beside step for a count. Defaults are light 0.02 and dark 0.03.",
+        hint: `Put hover: 1 beside step for a count. ${defaults}`,
       }),
     );
     return;
@@ -1216,7 +1229,7 @@ function checkSurfaceStep(value: unknown, path: string, push: Ctx["push"]): void
     push(
       issue({
         path,
-        message: "Expected a surface step size.",
+        message: `Expected a ${kind} step size.`,
         expected: "{ light?: number, dark?: number }",
         hint: "Values are OKLCH lightness for one step.",
       }),
@@ -1238,18 +1251,19 @@ function checkSurfaceStep(value: unknown, path: string, push: Ctx["push"]): void
           path: sidePath,
           message: "Expected a finite number.",
           expected: "an OKLCH lightness greater than 0 and at most 1",
-          hint: "The published defaults are 0.02 (light) and 0.03 (dark).",
+          hint: defaults,
         }),
       );
       continue;
     }
     if (amount <= 0 || amount > 1) {
+      const name = kind === "surface" ? "Surface" : "Emphasis";
       push(
         issue({
           path: sidePath,
-          message: `Surface step ${side} ${amount} must be greater than 0 and at most 1.`,
+          message: `${name} step ${side} ${amount} must be greater than 0 and at most 1.`,
           expected: "a number in (0, 1]",
-          hint: "The published defaults are 0.02 (light) and 0.03 (dark).",
+          hint: defaults,
         }),
       );
     }
