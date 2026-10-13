@@ -205,8 +205,8 @@ function scaleSchema(): Schema {
   return {
     description:
       "Numeric scale. surface is signed lightness steps from the page. " +
-      "emphasis 1–2 are lightness tint steps, emphasis 3–5 are a contrast ladder, " +
-      "and values between 2 and 3 blend the two. " +
+      "emphasis(1) is the disabled contrast floor, emphasis 2–3 are lightness tint steps, " +
+      "emphasis 9–11 are a contrast ladder, and values between 3 and 9 blend the two. " +
       "text and border are contrast-ladder steps. Decimals interpolate.",
     type: "number",
   };

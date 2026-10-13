@@ -1,10 +1,11 @@
 /**
  * Lower a normalized token into a solver intent (docs/v4-spec.md §4, §5, §6.2).
  *
- * Surfaces become elevation steps from an anchor. Emphasis 1–2 become tint
- * steps from the backdrop. Emphasis 3–5 become a contrast target from
- * `ladders.ts`. Scales between those blend at realize time. Text and border
- * are contrast ladders. `lc` / `ratio` / `chroma` / `hue` override that result.
+ * Surfaces become elevation steps from an anchor. Emphasis 1 is the disabled
+ * contrast floor. Emphasis 2–3 become tint steps from the backdrop. Emphasis
+ * 9 and up become a contrast target from `ladders.ts`. Scales between the
+ * tint and the solid blend at realize time. Text and border are contrast
+ * ladders. `lc` / `ratio` / `chroma` / `hue` override that result.
  *
  * This module does not read backdrop colors. The engine supplies the anchor.
  */
@@ -15,10 +16,15 @@ import type { Polarity } from "../contrast/types.js";
 import { preferredPolarity } from "../contrast/solve.js";
 import { GLOBAL_CONTRAST_SHIFT } from "./constants.js";
 import {
+  EMPHASIS_FLOOR,
+  EMPHASIS_FLOOR_SCALE,
   EMPHASIS_SOLID_MIN,
   EMPHASIS_TINT_MAX,
   contrastAt,
+  emphasisBlend,
   emphasisContrast,
+  emphasisTintSteps,
+  isEmphasisFloor,
 } from "./ladders.js";
 import type { CanonicalState } from "./states.js";
 import type {
@@ -36,8 +42,9 @@ import type { NormalizedToken } from "./normalize.js";
 export const SURFACE_STEP = { light: 0.02, dark: 0.03 } as const;
 
 /**
- * Emphasis 1–2, state steps on those tints, and non-surface `step` overrides (§4).
- * Overridable via `states.emphasis.step`.
+ * One tint step inside an emphasis integer, plus non-surface `step` overrides (§4).
+ * Overridable via `states.emphasis.step`. An emphasis integer in the tint region
+ * is two of these steps.
  *
  * Dark keeps the light step's ratio to a surface step:
  * `0.025 * (0.03 / 0.02) = 0.0375`. One tint stays 1.25 surface steps in both modes.
@@ -48,8 +55,8 @@ export const TINT_STEP = { light: 0.025, dark: 0.0375 } as const;
 export const APCA_STATE_DELTA = 6;
 export const WCAG_STATE_RATIO = 1.15;
 
-/** Disabled contrast (§4). These tokens are never contrast-linted. */
-export const DISABLED_TARGET = { apca: 15, wcag2: 1.5 } as const;
+/** Disabled contrast (§4). Same floor as `emphasis(1)`. These tokens are never contrast-linted. */
+export const DISABLED_TARGET = EMPHASIS_FLOOR;
 
 export const SELECTED_CHROMA = 1.5;
 export const DISABLED_CHROMA = 0.3;
@@ -98,8 +105,9 @@ export interface SolverIntent {
   readonly direction?: Direction;
   /**
    * 0..1 blend from the tint at {@link EMPHASIS_TINT_MAX} toward a contrast
-   * solve at `blendTarget` (the emphasis(3) rung). Set only for scales in
-   * (2, 3). The engine lerps lightness; this module does not see the backdrop.
+   * solve at `blendTarget` (the first solid rung). Set only for scales between
+   * the tint max and {@link EMPHASIS_SOLID_MIN}. The engine lerps lightness;
+   * this module does not see the backdrop.
    */
   readonly blend?: number;
   /** Contrast target of the solid end of a blend. */
@@ -194,8 +202,24 @@ function fromScale(kind: Kind, scale: number, ctx: LowerContext): Draft {
     return draft;
   }
   if (kind === "emphasis") {
+    const floorTarget =
+      ctx.algorithm === "apca" ? EMPHASIS_FLOOR.apca : EMPHASIS_FLOOR.wcag2;
+    if (scale > 0 && scale < EMPHASIS_FLOOR_SCALE) {
+      // Targets under the floor sit inside APCA's clip, so this blends
+      // lightness toward the floor instead of solving a smaller Lc.
+      draft.away = 0;
+      draft.stepSize = ctx.tintStep;
+      draft.blend = scale / EMPHASIS_FLOOR_SCALE;
+      draft.blendTarget = floorTarget;
+      return draft;
+    }
+    if (isEmphasisFloor(scale)) {
+      draft.mode = "contrast";
+      draft.target = floorTarget;
+      return draft;
+    }
     if (scale <= EMPHASIS_TINT_MAX) {
-      draft.away = scale;
+      draft.away = Math.max(0, emphasisTintSteps(scale));
       draft.stepSize = ctx.tintStep;
       return draft;
     }
@@ -204,9 +228,9 @@ function fromScale(kind: Kind, scale: number, ctx: LowerContext): Draft {
       draft.target = emphasisContrast(ctx.algorithm, ctx.mode, scale);
       return draft;
     }
-    draft.away = EMPHASIS_TINT_MAX;
+    draft.away = emphasisTintSteps(EMPHASIS_TINT_MAX);
     draft.stepSize = ctx.tintStep;
-    draft.blend = scale - EMPHASIS_TINT_MAX;
+    draft.blend = emphasisBlend(scale);
     draft.blendTarget = emphasisContrast(ctx.algorithm, ctx.mode, EMPHASIS_SOLID_MIN);
     return draft;
   }

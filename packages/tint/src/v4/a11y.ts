@@ -1,7 +1,7 @@
 /**
  * Kind lints for the numeric-scale prototype.
  *
- * Text under the body stop, solid emphasis and firm borders under WCAG 3:1,
+ * Text under the minimum for any text, solid emphasis and firm borders under WCAG 3:1,
  * surfaces that share a lightness, and page lightness too far into the middle
  * for body text to pass.
  */
@@ -12,10 +12,11 @@ import { calcAPCAabs } from "../contrast/apca.js";
 import { wcag2Ratio } from "../contrast/wcag2.js";
 import {
   BODY_TEXT_RULE,
+  MIN_TEXT_RULE,
   NON_TEXT_RATIO,
   SOLID_EMPHASIS_SCALE,
   SURFACE_DISTINCT_DELTA,
-  TEXT_BODY_SCALE,
+  TEXT_MIN_SCALE,
   bodyTextTarget,
 } from "./ladders.js";
 import type { EngineDiagnosticV4 } from "./diagnostics.js";
@@ -104,10 +105,11 @@ function textLints(
   algorithm: ContrastAlgorithm,
   palette: PaletteResultV4,
 ): EngineDiagnosticV4[] {
-  const rule = BODY_TEXT_RULE[algorithm];
+  const rule = MIN_TEXT_RULE[algorithm];
   const lints: EngineDiagnosticV4[] = [];
   for (const token of palette.tokens) {
     if (token.generated || token.kind !== "text") continue;
+    if (isDisabledName(token.name) || token.states.includes("disabled")) continue;
     if (token.mode !== "contrast" || token.target === undefined) continue;
     if (token.target + 1e-6 >= rule.value) continue;
     lints.push({
@@ -116,8 +118,8 @@ function textLints(
       path: `${palette.name}.${token.id}`,
       theme,
       palette: palette.name,
-      message: `${palette.name}.${token.id} is below ${rule.name} (${rule.unit} ${rule.value}). Lowest passing scale is ${TEXT_BODY_SCALE}.`,
-      hint: `This token targets ${rule.unit} ${formatTarget(algorithm, token.target)}. Use text(${TEXT_BODY_SCALE}) or higher for body text.`,
+      message: `${palette.name}.${token.id} is below the minimum for text (${rule.name} ${rule.unit} ${rule.value}). Lowest passing scale is ${TEXT_MIN_SCALE}.`,
+      hint: `This token targets ${rule.unit} ${formatTarget(algorithm, token.target)}. Use text(${TEXT_MIN_SCALE}) or higher. Muted text above that floor is allowed. Disabled text is exempt.`,
       data: { target: rule.value, achieved: token.target },
     });
   }

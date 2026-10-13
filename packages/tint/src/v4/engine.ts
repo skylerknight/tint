@@ -314,8 +314,9 @@ function realize(
 }
 
 /**
- * Scales in (2, 3): lerp OKLCH from the 2-step tint toward the emphasis(3)
- * contrast color. `t` is 0 at scale 2 and 1 at scale 3, so the ends meet.
+ * Scales between the last tint and the first solid: lerp OKLCH from that tint
+ * toward the first solid contrast color. `t` is 0 at the tint and 1 at the
+ * solid, so the ends meet.
  */
 function realizeBlend(
   token: ResolvedToken,

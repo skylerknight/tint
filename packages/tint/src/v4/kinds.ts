@@ -76,10 +76,12 @@ export const text = kindFunction("text");
 export const border = kindFunction("border");
 
 /**
- * Soft tints through solid fills, on one 1..5 scale.
- * `emphasis(1)` and `emphasis(2)` are lightness steps from the backdrop
- * (0.025 in light mode, 0.0375 in dark mode). `emphasis(3)` through
- * `emphasis(5)` are a contrast ladder against that backdrop. Values between
- * 2 and 3 blend lightness from the tint into the first solid rung.
+ * Soft tints through solid fills.
+ * `emphasis(1)` is the disabled floor (APCA Lc 15, WCAG 1.5:1) in both modes.
+ * `emphasis(2)` through `emphasis(3)` are lightness steps from the backdrop:
+ * one integer is ΔL 0.05 in light mode and 0.075 in dark mode, and a half
+ * step is the hover between them. `emphasis(9)` through `emphasis(11)` are a
+ * per-mode contrast ladder. Values between 3 and 9 blend lightness from the
+ * last tint into the first solid rung.
  */
 export const emphasis = kindFunction("emphasis");

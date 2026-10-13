@@ -4,6 +4,7 @@ import {
   BORDER_LADDER,
   EMPHASIS_LADDER,
   TEXT_BODY_SCALE,
+  TEXT_MIN_SCALE,
   TEXT_LADDER,
   emphasisContrast,
   ladderValue,
@@ -49,18 +50,18 @@ describe("contrast ladders", () => {
   });
 
   it("places emphasis solids on a mode-aware ladder", () => {
-    expect(emphasisContrast("apca", "light", 3)).toBe(EMPHASIS_LADDER.apca.light[0]);
-    expect(emphasisContrast("apca", "light", 4)).toBe(EMPHASIS_LADDER.apca.light[1]);
-    expect(emphasisContrast("apca", "light", 5)).toBe(EMPHASIS_LADDER.apca.light[2]);
-    expect(emphasisContrast("apca", "dark", 3)).toBe(EMPHASIS_LADDER.apca.dark[0]);
-    expect(emphasisContrast("apca", "dark", 5)).toBe(EMPHASIS_LADDER.apca.dark[2]);
-    approx(emphasisContrast("apca", "light", 3.5), (62 + 74) / 2);
-    approx(emphasisContrast("apca", "dark", 3.5), (75 + 87) / 2);
-    approx(emphasisContrast("wcag2", "light", 3.5), 3 * Math.sqrt(4.5 / 3));
-    expect(emphasisContrast("wcag2", "dark", 3)).toBe(3);
-    expect(emphasisContrast("wcag2", "light", 5)).toBe(7);
-    approx(emphasisContrast("apca", "light", 6), 90 + (90 - 74));
-    approx(emphasisContrast("apca", "dark", 6), 100 + (100 - 87));
+    expect(emphasisContrast("apca", "light", 9)).toBe(EMPHASIS_LADDER.apca.light[0]);
+    expect(emphasisContrast("apca", "light", 10)).toBe(EMPHASIS_LADDER.apca.light[1]);
+    expect(emphasisContrast("apca", "light", 11)).toBe(EMPHASIS_LADDER.apca.light[2]);
+    expect(emphasisContrast("apca", "dark", 9)).toBe(EMPHASIS_LADDER.apca.dark[0]);
+    expect(emphasisContrast("apca", "dark", 11)).toBe(EMPHASIS_LADDER.apca.dark[2]);
+    approx(emphasisContrast("apca", "light", 9.5), (62 + 74) / 2);
+    approx(emphasisContrast("apca", "dark", 9.5), (75 + 87) / 2);
+    approx(emphasisContrast("wcag2", "light", 9.5), 3 * Math.sqrt(4.5 / 3));
+    expect(emphasisContrast("wcag2", "dark", 9)).toBe(3);
+    expect(emphasisContrast("wcag2", "light", 11)).toBe(7);
+    approx(emphasisContrast("apca", "light", 12), 90 + (90 - 74));
+    approx(emphasisContrast("apca", "dark", 12), 100 + (100 - 87));
   });
 });
 
@@ -153,25 +154,67 @@ describe("lightness polarity", () => {
 });
 
 describe("kind lints", () => {
-  it("warns when text is under the body stop and names the lowest passing scale", () => {
+  it("warns when text is under the minimum and lets muted text through", () => {
     const [theme] = generate(
       defineConfig({
         palette: { neutral: "#ffffff" },
         themes: { light: { mode: "light" } },
         tokens: {
           surface: { DEFAULT: surface(0) },
-          text: { DEFAULT: text(3), faint: text(1) },
+          text: {
+            DEFAULT: text(3),
+            muted: text(2),
+            faint: text(1),
+            ghost: text(0),
+          },
+          action: {
+            disabled: emphasis(1, { chroma: 0.3 }),
+            "on-disabled": text(-1, { on: "action.disabled", chroma: 0.3 }),
+          },
         },
       }),
     );
-    const faint = theme?.diagnostics.find((item) => item.code === "text-below-body");
-    expect(faint?.message).toContain("APCA body text");
-    expect(faint?.message).toContain("Lc 75");
-    expect(faint?.message).toContain(`Lowest passing scale is ${TEXT_BODY_SCALE}`);
-    expect(faint?.path).toBe("neutral.text.faint");
-    expect(theme?.diagnostics.some((item) => item.path === "neutral.text.DEFAULT")).toBe(
+    const ghost = theme?.diagnostics.find((item) => item.code === "text-below-body");
+    expect(ghost?.message).toContain("APCA minimum text");
+    expect(ghost?.message).toContain("Lc 45");
+    expect(ghost?.message).toContain(`Lowest passing scale is ${TEXT_MIN_SCALE}`);
+    expect(ghost?.path).toBe("neutral.text.ghost");
+    for (const path of [
+      "neutral.text.DEFAULT",
+      "neutral.text.muted",
+      "neutral.text.faint",
+      "neutral.action.on-disabled",
+    ]) {
+      expect(theme?.diagnostics.some((item) => item.path === path)).toBe(false);
+    }
+  });
+
+  it("uses the WCAG 3:1 floor and exempts disabled text", () => {
+    const [theme] = generate(
+      defineConfig({
+        contrast: { algorithm: "wcag2" },
+        palette: { neutral: "#ffffff" },
+        themes: { light: { mode: "light" } },
+        tokens: {
+          surface: { DEFAULT: surface(0) },
+          text: { faint: text(1), ghost: text(0) },
+          action: {
+            disabled: emphasis(1),
+            "on-disabled": text(0, { on: "action.disabled" }),
+          },
+        },
+      }),
+    );
+    const ghost = theme?.diagnostics.find((item) => item.code === "text-below-body");
+    expect(ghost?.message).toContain("WCAG 2 minimum text");
+    expect(ghost?.message).toContain("ratio 3");
+    expect(ghost?.path).toBe("neutral.text.ghost");
+    expect(theme?.diagnostics.some((item) => item.path === "neutral.text.faint")).toBe(
       false,
     );
+    expect(
+      theme?.diagnostics.some((item) => item.path === "neutral.action.on-disabled"),
+    ).toBe(false);
   });
 
   it("warns when a solid emphasis fill misses non-text 3:1", () => {
@@ -182,7 +225,7 @@ describe("kind lints", () => {
         themes: { light: { lightness: 96 } },
         tokens: {
           surface: { DEFAULT: surface(0) },
-          action: { DEFAULT: emphasis(1), on: text(3, { on: "action" }) },
+          action: { DEFAULT: emphasis(2), on: text(3, { on: "action" }) },
         },
       }),
     );
@@ -196,7 +239,7 @@ describe("kind lints", () => {
         themes: { light: { lightness: 96 } },
         tokens: {
           surface: { DEFAULT: surface(0) },
-          action: { DEFAULT: emphasis(3, { ratio: 2, chroma: 0.2 }) },
+          action: { DEFAULT: emphasis(9, { ratio: 2, chroma: 0.2 }) },
         },
       }),
     )[0];
@@ -224,7 +267,7 @@ describe("kind lints", () => {
   });
 });
 
-describe("hybrid emphasis", () => {
+describe("calibrated emphasis", () => {
   function tokenL(
     mode: "light" | "dark",
     scale: number,
@@ -253,35 +296,58 @@ describe("hybrid emphasis", () => {
     };
   }
 
-  it("keeps emphasis 1 and 2 as mode-aware tint steps", () => {
-    const light = tokenL("light", 2);
-    const dark = tokenL("dark", 2);
-    expect(light.mode).toBe("lightness");
-    expect(dark.mode).toBe("lightness");
-    expect(light.l).toBeCloseTo(0.96 - 2 * 0.025, 2);
-    expect(dark.l).toBeCloseTo(0.15 + 2 * 0.0375, 2);
-    expect(tokenL("light", 1).l).toBeCloseTo(0.96 - 0.025, 2);
+  it("keeps the soft ramp on even tint steps", () => {
+    const light2 = tokenL("light", 2);
+    const dark2 = tokenL("dark", 2);
+    expect(light2.mode).toBe("lightness");
+    expect(dark2.mode).toBe("lightness");
+    expect(light2.l).toBeCloseTo(0.96 - 2 * 0.025, 2);
+    expect(dark2.l).toBeCloseTo(0.15 + 2 * 0.0375, 2);
+    expect(tokenL("light", 2.5).l).toBeCloseTo(0.96 - 3 * 0.025, 2);
+    expect(tokenL("light", 3).l).toBeCloseTo(0.96 - 4 * 0.025, 2);
+    expect(tokenL("dark", 3).l).toBeCloseTo(0.15 + 4 * 0.0375, 2);
+    const lightStep = Math.abs(tokenL("light", 2).l - tokenL("light", 3).l);
+    const darkStep = Math.abs(tokenL("dark", 2).l - tokenL("dark", 3).l);
+    expect(lightStep).toBeGreaterThan(0.04);
+    expect(darkStep).toBeGreaterThan(0.06);
   });
 
-  it("solves emphasis 3–5 against the backdrop", () => {
+  it("puts the disabled floor at emphasis(1) without an lc override", () => {
     for (const mode of ["light", "dark"] as const) {
-      for (const scale of [3, 3.5, 4, 5]) {
+      const row = tokenL(mode, 1);
+      expect(row.mode).toBe("contrast");
+      expect(row.target).toBeCloseTo(15, 5);
+      expect(row.achieved).toBeGreaterThan(14);
+      const half = tokenL(mode, 0.5);
+      const page = mode === "light" ? 0.96 : 0.15;
+      expect(half.mode).toBe("lightness");
+      const between =
+        mode === "light"
+          ? half.l < page && half.l > row.l
+          : half.l > page && half.l < row.l;
+      expect(between).toBe(true);
+    }
+  });
+
+  it("solves emphasis 9–11 against the backdrop", () => {
+    for (const mode of ["light", "dark"] as const) {
+      for (const scale of [9, 9.5, 10, 11]) {
         const row = tokenL(mode, scale);
         expect(row.mode).toBe("contrast");
         expect(row.target).toBeCloseTo(emphasisContrast("apca", mode, scale), 5);
         expect(row.achieved).toBeGreaterThan(row.target! - 1);
       }
     }
-    const wcag = tokenL("light", 4, "wcag2");
+    const wcag = tokenL("light", 10, "wcag2");
     expect(wcag.target).toBeCloseTo(4.5, 5);
     expect(wcag.achieved).toBeGreaterThan(4.4);
   });
 
-  it("blends lightness from the tint at 2 into the solid at 3", () => {
+  it("blends lightness from the tint at 3 into the solid at 9", () => {
     for (const mode of ["light", "dark"] as const) {
-      const tint = tokenL(mode, 2);
-      const mid = tokenL(mode, 2.5);
-      const solid = tokenL(mode, 3);
+      const tint = tokenL(mode, 3);
+      const mid = tokenL(mode, 6);
+      const solid = tokenL(mode, 9);
       expect(mid.mode).toBe("lightness");
       const toward =
         mode === "light"
@@ -289,6 +355,18 @@ describe("hybrid emphasis", () => {
           : mid.l > tint.l && mid.l < solid.l;
       expect(toward).toBe(true);
       expect(mid.l).toBeCloseTo((tint.l + solid.l) / 2, 2);
+    }
+  });
+
+  it("keeps integer steps visible from the soft ramp through the first solid", () => {
+    for (const mode of ["light", "dark"] as const) {
+      const scales = [2, 3, 4, 5, 6, 7, 8, 9];
+      const levels = scales.map((scale) => tokenL(mode, scale).l);
+      for (let i = 1; i < levels.length; i++) {
+        const delta = Math.abs((levels[i] ?? 0) - (levels[i - 1] ?? 0));
+        expect(delta).toBeGreaterThan(0.03);
+        expect(delta).toBeLessThan(0.12);
+      }
     }
   });
 
@@ -301,9 +379,9 @@ describe("hybrid emphasis", () => {
           tokens: {
             surface: { DEFAULT: surface(0) },
             action: {
-              DEFAULT: emphasis(3),
-              hover: emphasis(3.5),
-              pressed: emphasis(4),
+              DEFAULT: emphasis(9),
+              hover: emphasis(9.5),
+              pressed: emphasis(10),
               on: text(3, { on: "action" }),
             },
           },

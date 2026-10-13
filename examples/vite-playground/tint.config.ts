@@ -1,15 +1,15 @@
 import { defineConfig, border, emphasis, surface, text } from "@skylerknight/tint";
 
 /**
- * Hybrid-emphasis port of the v4 playground.
+ * Calibrated-emphasis port of the v4 playground.
  *
  * Surfaces, text, and borders keep the numeric contrast ladders. Soft fills
- * stay on the tint end (emphasis 2, 2.1, 2.15 ≈ the old 2 / 3 / 4 tint steps).
- * Solid actions sit on the contrast ladder: 3 / 3.5 / 4 match the old
+ * sit on whole and half steps (2 / 2.5 / 3 = the old 2 / 3 / 4 tint steps).
+ * Solid actions sit on the contrast ladder: 9 / 9.5 / 10 match the old
  * Lc 62 / 68 / 74 buttons in light mode and the nudged Lc 75 / 81 / 87
  * buttons in dark mode, so `action.on` can reach body text in both.
- * Disabled is the Lc 15 floor (`lc`), not a solid rung — that floor is not
- * one scale in both modes. Selection stays a tint (1.6 steps = 2 surface steps).
+ * Disabled is emphasis(1), the Lc 15 floor — no raw `lc`. Selection is the
+ * half step under soft (one tint step; the old selection was 1.6).
  */
 export default defineConfig({
   contrast: { algorithm: "apca", level: "standard" },
@@ -47,7 +47,7 @@ export default defineConfig({
       raised: surface(1),
       lowlight: surface(-1),
       highlight: surface(2),
-      selection: emphasis(1.6, { chroma: 1.5 }),
+      selection: emphasis(1.5, { chroma: 1.5 }),
     },
 
     text: {
@@ -65,18 +65,18 @@ export default defineConfig({
     },
 
     action: {
-      DEFAULT: emphasis(3),
-      hover: emphasis(3.5),
-      pressed: emphasis(4),
-      disabled: emphasis(2, { chroma: 0.3, lc: 15 }),
+      DEFAULT: emphasis(9),
+      hover: emphasis(9.5),
+      pressed: emphasis(10),
+      disabled: emphasis(1, { chroma: 0.3 }),
       on: text(3, { on: "action" }),
       "on-disabled": text(-1, { on: "action.disabled", chroma: 0.3 }),
     },
 
     soft: {
       DEFAULT: emphasis(2),
-      hover: emphasis(2.1),
-      pressed: emphasis(2.15),
+      hover: emphasis(2.5),
+      pressed: emphasis(3),
       on: text(3, { on: "soft" }),
     },
   },

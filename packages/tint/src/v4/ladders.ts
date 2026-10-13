@@ -1,12 +1,20 @@
 /**
- * Numeric-scale ladders (proto/numeric-scale).
+ * Numeric-scale ladders (proto/numeric-scale-calibrated).
  *
  * One file on purpose: these are the numbers to tune by feel.
- * Scale 1 is the first stop. Decimals interpolate. Values outside 1..5
- * continue the end segment (APCA linear, WCAG geometric).
+ * Decimals interpolate. Values past the last stop continue the end segment
+ * (APCA linear, WCAG geometric).
  *
- * Text 3 is body text. Border 4 is the WCAG non-text 3:1 rung.
- * Emphasis 1–2 are tint steps; emphasis 3–5 are {@link EMPHASIS_LADDER}.
+ * Text 1 is the minimum for any text. Text 3 is body text.
+ * Border 4 is the WCAG non-text 3:1 rung.
+ *
+ * Emphasis is one scale with three regimes:
+ * - {@link EMPHASIS_FLOOR_SCALE} is a per-mode contrast floor (the disabled spot).
+ * - Through {@link EMPHASIS_TINT_MAX}, lightness tints. One integer is two tint
+ *   steps (ΔL 0.05 light, 0.075 dark): a clearly visible fill change.
+ * - From {@link EMPHASIS_SOLID_MIN} up, the per-mode {@link EMPHASIS_LADDER}.
+ *   Scales between the tint max and that solid blend lightness, so the step
+ *   stays about the same size instead of jumping.
  */
 
 import type { ContrastAlgorithm, Kind, Mode } from "./types.js";
@@ -23,32 +31,57 @@ export const BORDER_LADDER = {
   wcag2: [1.25, 1.6, 2, 3, 4.5],
 } as const;
 
-/** `text(3)` / the body-text stop. Below this, text lints. */
+/** `text(1)` / the minimum for any text. Below this, text lints. Disabled text does not. */
+export const TEXT_MIN_SCALE = 1;
+
+/** `text(3)` / the body-text stop. */
 export const TEXT_BODY_SCALE = 3;
 
 /**
- * Emphasis at or below this scale is a lightness tint.
- * One step is {@link TINT_STEP} in `lower.ts` (mode-aware).
+ * Disabled spot. Per-mode contrast, not a tint: Lc 15 is about ΔL 0.09 on a
+ * light page and about ΔL 0.29 on a dark page, so no single tint step matches.
  */
-export const EMPHASIS_TINT_MAX = 2;
+export const EMPHASIS_FLOOR_SCALE = 1;
+
+/** APCA |Lc| and WCAG ratio for {@link EMPHASIS_FLOOR_SCALE}. */
+export const EMPHASIS_FLOOR = { apca: 15, wcag2: 1.5 } as const;
 
 /**
- * Emphasis at or above this scale is a solid fill on {@link EMPHASIS_LADDER}.
- * Scales between {@link EMPHASIS_TINT_MAX} and this blend lightness.
+ * Tint steps represented by one emphasis integer in the lightness region.
+ * Two tint steps is ΔL 0.05 (light) / 0.075 (dark): the soft resting→pressed
+ * jump, large enough to see, small enough that a half step is a hover.
  */
-export const EMPHASIS_SOLID_MIN = 3;
+export const EMPHASIS_TINT_PER_SCALE = 2;
 
 /**
- * Fill-vs-backdrop contrast for `emphasis(3)` … `emphasis(5)`.
+ * Last pure tint.
+ * `emphasis(2)` is two tint steps, `emphasis(2.5)` three, `emphasis(3)` four.
+ */
+export const EMPHASIS_TINT_MAX = 3;
+
+/**
+ * First solid fill on {@link EMPHASIS_LADDER}.
+ *
+ * The gap from the tint at {@link EMPHASIS_TINT_MAX} (about L 0.86 light /
+ * 0.30 dark) to the first body-capable fill (about L 0.57 / 0.84) is several
+ * tint-integers wide. Six scale steps (3 → 9) keep each integer near ΔL 0.05
+ * light and ΔL 0.09 dark instead of spending the whole gap on one number.
+ * Scales between the two blend lightness.
+ */
+export const EMPHASIS_SOLID_MIN = 9;
+
+/**
+ * Fill-vs-backdrop contrast for `emphasis(9)` … `emphasis(11)`.
  *
  * APCA is mode-aware. A light page needs only ~Lc 62 before white text can
  * hit body contrast (Lc 75); a dark page needs ~Lc 75 before black text can.
  * The same number cannot do both: Lc 60–72 sits in APCA's mid-tone dead zone
  * on a dark page (label tops out near Lc 65). WCAG 4.5:1 has no such gap, so
- * both modes share the old solid rungs (3 / 4.5 / 7).
+ * both modes share the solid rungs (3 / 4.5 / 7).
  *
- * Stops are scales 3, 4, 5. Decimals interpolate (APCA linear, WCAG geometric).
- * Past 5 the last segment continues.
+ * Stops are scales 9, 10, 11. Halves are the button ramp: light Lc 62 / 68 / 74
+ * and dark Lc 75 / 81 / 87 at scales 9 / 9.5 / 10. Decimals interpolate
+ * (APCA linear, WCAG geometric). Past 11 the last segment continues.
  */
 export const EMPHASIS_LADDER = {
   apca: {
@@ -88,6 +121,16 @@ export const BODY_TEXT_RULE = {
     name: "WCAG 2 body text",
     unit: "ratio" as const,
     value: TEXT_LADDER.wcag2[2],
+  },
+} as const;
+
+/** Minimum contrast for any non-disabled text. Scale {@link TEXT_MIN_SCALE}. */
+export const MIN_TEXT_RULE = {
+  apca: { name: "APCA minimum text", unit: "Lc" as const, value: TEXT_LADDER.apca[0] },
+  wcag2: {
+    name: "WCAG 2 minimum text",
+    unit: "ratio" as const,
+    value: TEXT_LADDER.wcag2[0],
   },
 } as const;
 
@@ -146,7 +189,28 @@ export function contrastAt(
   return ladderValue(ladderFor(kind, algorithm), scale, algorithm === "wcag2");
 }
 
-/** Contrast target for a solid emphasis scale (3 and up). */
+/**
+ * Tint-step count for a scale in the lightness region.
+ * `emphasis(2)` is 2, `emphasis(2.5)` is 3, `emphasis(3)` is 4.
+ * Below scale 1 the count is negative; the caller clamps that to the page.
+ */
+export function emphasisTintSteps(scale: number): number {
+  const origin = EMPHASIS_TINT_MAX - EMPHASIS_TINT_PER_SCALE;
+  return EMPHASIS_TINT_PER_SCALE * (scale - origin);
+}
+
+/** 0 at {@link EMPHASIS_TINT_MAX}, 1 at {@link EMPHASIS_SOLID_MIN}. */
+export function emphasisBlend(scale: number): number {
+  const span = EMPHASIS_SOLID_MIN - EMPHASIS_TINT_MAX;
+  if (span <= 0) return 0;
+  return (scale - EMPHASIS_TINT_MAX) / span;
+}
+
+export function isEmphasisFloor(scale: number): boolean {
+  return Math.abs(scale - EMPHASIS_FLOOR_SCALE) < 1e-6;
+}
+
+/** Contrast target for a solid emphasis scale ({@link EMPHASIS_SOLID_MIN} and up). */
 export function emphasisContrast(
   algorithm: ContrastAlgorithm,
   mode: Mode,

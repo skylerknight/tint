@@ -43,7 +43,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <header class="mb-6 flex items-center justify-between">
     <div>
       <h1 class="text-strong text-2xl font-bold">tint playground</h1>
-      <p class="text-faint text-xs">hybrid emphasis prototype — tints through solids on 1..5</p>
+      <p class="text-faint text-xs">calibrated emphasis prototype — even steps, round scales</p>
     </div>
     <button id="toggle" class="rounded-md border border-strong px-3 py-1.5 text-body hover:bg-surface-highlight">Toggle dark</button>
   </header>
