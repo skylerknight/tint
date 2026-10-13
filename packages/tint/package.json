@@ -45,7 +45,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit && prettier --check src tests scripts schema",
     "schema": "vite-node --script scripts/build-schema.ts",
-    "schema:check": "vitest run tests/v4/schema.test.ts"
+    "schema:check": "vitest run tests/v4/schema.test.ts",
+    "docs:examples": "vitest run tests/docs/readme-examples.test.ts"
   },
   "keywords": [
     "color",

@@ -1,5 +1,9 @@
 # Architecture
 
+**v3.** This page follows [SPEC.md](../SPEC.md). The v4 pipeline (kinds, levels,
+`on`, nudge, `exact`) is specified in [v4-spec.md](v4-spec.md) and implemented
+under `packages/tint/src/v4/`.
+
 How `@skylerknight/tint` is put together, for contributors and for anyone who wants to
 reason about what a given config will produce. [SPEC.md](../SPEC.md) is the normative
 source; this page is the narrative.

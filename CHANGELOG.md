@@ -1,5 +1,68 @@
 # Changelog
 
+## 4.0.0-alpha.0
+
+First alpha of the v4 config. Install with `@skylerknight/tint@next`. The public
+entry exports the v4 API. The migration map is [docs/migration-v4.md](docs/migration-v4.md).
+The quick start is [examples/v4-spec](examples/v4-spec) and the
+[package README](packages/tint/README.md).
+
+### Breaking
+
+- One config object replaces the v3 theme array. `palette` holds the colors
+  (the first is the default; `base` is not special). `themes` holds light, dark,
+  and high-contrast. Tokens are `surface()`, `text()`, `border()`, and
+  `emphasis()`, with levels and states. v3 keys (`colors`, `overrides`, `lc` /
+  `ls`, `$on`, `$reference`, `$invert`, `$role`, `$chroma`, `$scale`,
+  `$decorative`, `name`, `mode`, `selector`, `prefersColorScheme`,
+  `prefersContrast`, `scale`, `offset`) fail validation with `code: "v3-config"`.
+- A high-contrast theme that `extends` another theme must set its own selector.
+  The spec example uses `.light-hc`. Copying `.light` would emit a second
+  unconditional `.light` block.
+- `defineConfig` accepts a single config and does not validate. `generate`
+  always returns `GenerationResult[]`. Results expose `diagnostics` (`info`,
+  `warning`, `error`). The `warnings` array is gone.
+- `loadConfig` returns `{ config, path, dependencies }`.
+- Output formats are `css`, `tailwind`, `dtcg`, and `flat`. The v3 format name
+  `json` is rejected: it split into `dtcg` (`tokens.dtcg.json`) and `flat`
+  (`tokens.flat.json`).
+- `toJSON` is now `toDTCGJSON`. `toFlatMap` is now `toFlat` / `toFlatJSON`.
+  `toCSSWithTailwindAndTint` and `toTailwindIntelliSense` are no longer public.
+  `toCSSWithTailwind` emits the variables, the alias layer, `@theme static`,
+  `tint-<palette>` utilities, and shortcut utilities.
+- Emitted notation defaults to `oklch`. `output.format` is `oklch`, `hex`, or
+  `rgb`. `output.prefix` prepends a CSS identifier to every custom property
+  (`"tint"` → `--tint-brand-action-hover` and alias `--tint-action-hover`).
+  `tint-<palette>` class names are unchanged. DTCG and flat keys ignore the prefix.
+- Plugin options are `tintUtilities` and `shortcuts`. `generateTintUtilities`,
+  `generateShortcuts`, `simplifyNames`, `defaultPalette`, and `includeOKLCH`
+  are gone.
+- `LC_SHORTCUTS` is removed. Levels are the §3 names or ordinals 1–5.
+
+### Added
+
+- Kind functions and the JSON form they return. Level aliases (`levels`,
+  including `$replace`). State grammar (`hover`, `pressed`, `selected-hover`,
+  `checked-disabled`, …) with `active` normalized to `pressed`.
+- `on` solves against a token and its states (except `disabled`). Omitted `on`
+  uses the base surface. Auto-nudge moves an emphasis fill so its label can pass
+  (`emphasis-nudged`, `label-unreachable`, `nudge: false`).
+- `palette` color options: `exact`, `tune`, `default`. Per-theme `palette` deltas.
+- Engine lints: `contrast-unreachable`, `label-unreachable`, `emphasis-nudged`,
+  `exact-rejected`, `duplicate-token`, `hue-identity-lost`, `expert-value`,
+  `color-out-of-gamut`. `name-conflict` is a config error (a token shortcut would
+  replace a Tailwind utility).
+- JSON Schema for the config, `$id`
+  `https://unpkg.com/@skylerknight/tint/schema/v4.json`. A JSON config may set
+  `$schema` to that URL. The file is also exported as
+  `@skylerknight/tint/schema/v4.json`.
+- `contrast.algorithm` (`apca` or `wcag2`) and `contrast.level` (`standard`,
+  `more`, `max`), overridable per theme.
+- CLI formats `dtcg` and `flat`. `tint check --strict`, `tint inspect`
+  (`--theme`, `--palette`, `--json`), `tint init` (`--dark`, `--brand`, `--yes`).
+- README samples are typechecked and executed by
+  `packages/tint/tests/docs/readme-examples.test.ts` (`pnpm docs:examples`).
+
 ## 3.0.0
 
 A ground-up rewrite against [SPEC.md](SPEC.md). The config format is compatible with v2

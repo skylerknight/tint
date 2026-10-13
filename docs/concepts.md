@@ -1,5 +1,9 @@
 # Concepts
 
+**v3.** This page describes the v3 config (`lc`, `ls`, `$on`). Version 4.0.0-alpha.0
+replaces that config. See the [package README](../packages/tint/README.md), the
+[v4 spec](v4-spec.md), and the [migration guide](migration-v4.md).
+
 This page is the mental model behind a tint config. The
 [package README](../packages/tint/README.md) has the reference tables; this page explains
 why the pieces fit together the way they do.
