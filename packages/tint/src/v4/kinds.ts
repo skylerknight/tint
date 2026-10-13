@@ -76,8 +76,10 @@ export const text = kindFunction("text");
 export const border = kindFunction("border");
 
 /**
- * Lightness steps away from the backdrop (`on`, or the base surface).
- * One step is 0.025 in light mode and 0.0375 in dark mode.
- * Hover and pressed are other tokens (`emphasis(5)`, `emphasis(6)`), not states.
+ * Soft tints through solid fills, on one 1..5 scale.
+ * `emphasis(1)` and `emphasis(2)` are lightness steps from the backdrop
+ * (0.025 in light mode, 0.0375 in dark mode). `emphasis(3)` through
+ * `emphasis(5)` are a contrast ladder against that backdrop. Values between
+ * 2 and 3 blend lightness from the tint into the first solid rung.
  */
 export const emphasis = kindFunction("emphasis");

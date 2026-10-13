@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { emphasis, generate, surface, text } from "../../src/index.js";
 import {
   BORDER_LADDER,
+  EMPHASIS_LADDER,
   TEXT_BODY_SCALE,
   TEXT_LADDER,
+  emphasisContrast,
   ladderValue,
 } from "../../src/v4/ladders.js";
 import { resolveConfig } from "../../src/v4/resolve.js";
@@ -44,6 +46,21 @@ describe("contrast ladders", () => {
     approx(ladderValue(TEXT_LADDER.apca, 6, false), 110);
     approx(ladderValue(TEXT_LADDER.wcag2, 0, true), 3 / (3.75 / 3));
     approx(ladderValue(BORDER_LADDER.wcag2, 1.5, true), 1.25 * Math.sqrt(1.6 / 1.25));
+  });
+
+  it("places emphasis solids on a mode-aware ladder", () => {
+    expect(emphasisContrast("apca", "light", 3)).toBe(EMPHASIS_LADDER.apca.light[0]);
+    expect(emphasisContrast("apca", "light", 4)).toBe(EMPHASIS_LADDER.apca.light[1]);
+    expect(emphasisContrast("apca", "light", 5)).toBe(EMPHASIS_LADDER.apca.light[2]);
+    expect(emphasisContrast("apca", "dark", 3)).toBe(EMPHASIS_LADDER.apca.dark[0]);
+    expect(emphasisContrast("apca", "dark", 5)).toBe(EMPHASIS_LADDER.apca.dark[2]);
+    approx(emphasisContrast("apca", "light", 3.5), (62 + 74) / 2);
+    approx(emphasisContrast("apca", "dark", 3.5), (75 + 87) / 2);
+    approx(emphasisContrast("wcag2", "light", 3.5), 3 * Math.sqrt(4.5 / 3));
+    expect(emphasisContrast("wcag2", "dark", 3)).toBe(3);
+    expect(emphasisContrast("wcag2", "light", 5)).toBe(7);
+    approx(emphasisContrast("apca", "light", 6), 90 + (90 - 74));
+    approx(emphasisContrast("apca", "dark", 6), 100 + (100 - 87));
   });
 });
 
@@ -179,7 +196,7 @@ describe("kind lints", () => {
         themes: { light: { lightness: 96 } },
         tokens: {
           surface: { DEFAULT: surface(0) },
-          action: { DEFAULT: emphasis(8, { chroma: 0.2 }) },
+          action: { DEFAULT: emphasis(3, { ratio: 2, chroma: 0.2 }) },
         },
       }),
     )[0];
@@ -204,5 +221,102 @@ describe("kind lints", () => {
     expect(lint?.message).toContain("surface.DEFAULT");
     expect(lint?.message).toContain("surface.same");
     expect(lint?.data?.tokens).toEqual(["surface.DEFAULT", "surface.same"]);
+  });
+});
+
+describe("hybrid emphasis", () => {
+  function tokenL(
+    mode: "light" | "dark",
+    scale: number,
+    algorithm: "apca" | "wcag2" = "apca",
+  ): { l: number; mode: string; achieved: number; target?: number } {
+    const [theme] = generate(
+      defineConfig({
+        contrast: { algorithm },
+        palette: { neutral: "#ffffff" },
+        themes: { only: { mode } },
+        tokens: {
+          surface: { DEFAULT: surface(0) },
+          action: { DEFAULT: emphasis(scale) },
+        },
+      }),
+    );
+    const token = theme?.palettes[0]?.tokens.find(
+      (entry) => entry.id === "action.DEFAULT",
+    );
+    if (token === undefined) throw new Error("missing action.DEFAULT");
+    return {
+      l: token.color.oklch.l,
+      mode: token.mode,
+      achieved: token.achieved,
+      ...(token.target !== undefined ? { target: token.target } : {}),
+    };
+  }
+
+  it("keeps emphasis 1 and 2 as mode-aware tint steps", () => {
+    const light = tokenL("light", 2);
+    const dark = tokenL("dark", 2);
+    expect(light.mode).toBe("lightness");
+    expect(dark.mode).toBe("lightness");
+    expect(light.l).toBeCloseTo(0.96 - 2 * 0.025, 2);
+    expect(dark.l).toBeCloseTo(0.15 + 2 * 0.0375, 2);
+    expect(tokenL("light", 1).l).toBeCloseTo(0.96 - 0.025, 2);
+  });
+
+  it("solves emphasis 3–5 against the backdrop", () => {
+    for (const mode of ["light", "dark"] as const) {
+      for (const scale of [3, 3.5, 4, 5]) {
+        const row = tokenL(mode, scale);
+        expect(row.mode).toBe("contrast");
+        expect(row.target).toBeCloseTo(emphasisContrast("apca", mode, scale), 5);
+        expect(row.achieved).toBeGreaterThan(row.target! - 1);
+      }
+    }
+    const wcag = tokenL("light", 4, "wcag2");
+    expect(wcag.target).toBeCloseTo(4.5, 5);
+    expect(wcag.achieved).toBeGreaterThan(4.4);
+  });
+
+  it("blends lightness from the tint at 2 into the solid at 3", () => {
+    for (const mode of ["light", "dark"] as const) {
+      const tint = tokenL(mode, 2);
+      const mid = tokenL(mode, 2.5);
+      const solid = tokenL(mode, 3);
+      expect(mid.mode).toBe("lightness");
+      const toward =
+        mode === "light"
+          ? mid.l < tint.l && mid.l > solid.l
+          : mid.l > tint.l && mid.l < solid.l;
+      expect(toward).toBe(true);
+      expect(mid.l).toBeCloseTo((tint.l + solid.l) / 2, 2);
+    }
+  });
+
+  it("lets body text sit on a solid fill in both modes", () => {
+    for (const mode of ["light", "dark"] as const) {
+      const [theme] = generate(
+        defineConfig({
+          palette: { brand: mode === "light" ? "#7c3aed" : "#a78bfa" },
+          themes: { only: { mode } },
+          tokens: {
+            surface: { DEFAULT: surface(0) },
+            action: {
+              DEFAULT: emphasis(3),
+              hover: emphasis(3.5),
+              pressed: emphasis(4),
+              on: text(3, { on: "action" }),
+            },
+          },
+        }),
+      );
+      const on = theme?.palettes[0]?.tokens.find((entry) => entry.id === "action.on");
+      expect(on?.achieved).toBeGreaterThanOrEqual(75 - 0.5);
+      expect(theme?.diagnostics.some((item) => item.code === "label-unreachable")).toBe(
+        false,
+      );
+      expect(
+        theme?.diagnostics.some((item) => item.code === "contrast-unreachable"),
+      ).toBe(false);
+    }
   });
 });

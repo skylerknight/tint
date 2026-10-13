@@ -240,6 +240,7 @@ function solvePalette(
     seed: seed.oklch,
     surfaceStep: step,
     tintStep: tint,
+    mode: theme.mode,
   };
 
   for (const id of expansion.order) {
@@ -283,6 +284,9 @@ function realize(
 
   if (intent.mode === "lightness") {
     const host = colorAt(colors, hostId(token));
+    if (intent.blend !== undefined && intent.blendTarget !== undefined) {
+      return realizeBlend(token, intent, host, rgbs, backs, metric);
+    }
     const lightness = realizeLightness(intent, host.oklch.l, host.oklch.l, host.rgb);
     const color = publish({ l: lightness, c: intent.seed.c, h: intent.seed.h });
     const across = minContrast(metric, color.rgb, rgbs);
@@ -306,6 +310,35 @@ function realize(
     polarity: solved.polarity,
     reached,
     ...(worst !== undefined ? { worst } : {}),
+  });
+}
+
+/**
+ * Scales in (2, 3): lerp OKLCH from the 2-step tint toward the emphasis(3)
+ * contrast color. `t` is 0 at scale 2 and 1 at scale 3, so the ends meet.
+ */
+function realizeBlend(
+  token: ResolvedToken,
+  intent: SolverIntent,
+  host: GeneratedColorV4,
+  rgbs: readonly RGB[],
+  backs: readonly string[],
+  metric: Metric,
+): SolvedTokenV4 {
+  const tintL = realizeLightness(intent, host.oklch.l, host.oklch.l, host.rgb);
+  const tint: OKLCH = { l: tintL, c: intent.seed.c, h: intent.seed.h };
+  const solid = solveAgainstSet(intent.seed, rgbs, intent.blendTarget ?? 0, { metric });
+  const t = intent.blend ?? 0;
+  const color = publish({
+    l: tint.l + (solid.color.l - tint.l) * t,
+    c: tint.c + (solid.color.c - tint.c) * t,
+    h: intent.seed.h,
+  });
+  const across = minContrast(metric, color.rgb, rgbs);
+  const worst = backs[across.index];
+  return finish(token, intent.mode, color, across.min, {
+    ...(worst !== undefined ? { worst } : {}),
+    ...sideOf(color.oklch.l, host.oklch.l, intent.direction),
   });
 }
 
