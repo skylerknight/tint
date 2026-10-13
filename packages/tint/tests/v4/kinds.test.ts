@@ -256,6 +256,7 @@ describe("defineConfig", () => {
         "light-hc": {
           mode: "light",
           extends: "light",
+          selector: ".light-hc",
           media: "(prefers-contrast: more)",
           contrast: { level: "more" },
         },
@@ -294,7 +295,7 @@ describe("defineConfig", () => {
           hairline: border("hairline"),
           DEFAULT: border(),
           firm: border("firm"),
-          focus: border("heavy", { on: "action" }),
+          focus: border("firm", { on: "action" }),
         },
         text: {
           DEFAULT: text(),

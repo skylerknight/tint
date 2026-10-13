@@ -440,25 +440,25 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0,
-            0,
+            0.2263223273073549,
+            0.013807626152223492,
             285.9384698755475
           ],
-          "hex": "#000000"
+          "hex": "#1b1b22"
         },
-        "$description": "border level 5, on action.DEFAULT, action.hover, action.pressed",
+        "$description": "border level 4, on action.DEFAULT, action.hover, action.pressed",
         "$extensions": {
           "dev.tint": {
             "kind": "border",
-            "level": 5,
+            "level": 4,
             "on": [
               "action.DEFAULT",
               "action.hover",
               "action.pressed"
             ],
             "algorithm": "apca",
-            "achieved": 75.80437212825669,
-            "target": 75
+            "achieved": 73.788127672452,
+            "target": 60
           }
         }
       }
@@ -1187,25 +1187,25 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0,
-            0,
+            0.21095933690911278,
+            0.11758862442861155,
             293.5411992313725
           ],
-          "hex": "#000000"
+          "hex": "#1f0047"
         },
-        "$description": "border level 5, on action.DEFAULT, action.hover, action.pressed",
+        "$description": "border level 4, on action.DEFAULT, action.hover, action.pressed",
         "$extensions": {
           "dev.tint": {
             "kind": "border",
-            "level": 5,
+            "level": 4,
             "on": [
               "action.DEFAULT",
               "action.hover",
               "action.pressed"
             ],
             "algorithm": "apca",
-            "achieved": 75.80506334944643,
-            "target": 75
+            "achieved": 73.8277694207997,
+            "target": 60
           }
         }
       }
@@ -1934,25 +1934,25 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0,
-            0,
+            0.20582252629157463,
+            0.08472846963488573,
             27.32504873954491
           ],
-          "hex": "#000000"
+          "hex": "#350001"
         },
-        "$description": "border level 5, on action.DEFAULT, action.hover, action.pressed",
+        "$description": "border level 4, on action.DEFAULT, action.hover, action.pressed",
         "$extensions": {
           "dev.tint": {
             "kind": "border",
-            "level": 5,
+            "level": 4,
             "on": [
               "action.DEFAULT",
               "action.hover",
               "action.pressed"
             ],
             "algorithm": "apca",
-            "achieved": 75.88140530801493,
-            "target": 75
+            "achieved": 73.83043632746701,
+            "target": 60
           }
         }
       }
@@ -2679,23 +2679,23 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.19914752825113508,
-            0.04834890816681502,
+            0.4165502465919575,
+            0.0995418697552074,
             58.318340431334605
           ],
-          "hex": "#250f00"
+          "hex": "#733c00"
         },
-        "$description": "border level 5, on action.DEFAULT",
+        "$description": "border level 4, on action.DEFAULT",
         "$extensions": {
           "dev.tint": {
             "kind": "border",
-            "level": 5,
+            "level": 4,
             "on": [
               "action.DEFAULT"
             ],
             "algorithm": "apca",
-            "achieved": 75.01773867356154,
-            "target": 75
+            "achieved": 60.01022292066942,
+            "target": 60
           }
         }
       }

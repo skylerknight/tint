@@ -51,7 +51,7 @@
       "hairline": { "kind": "border", "level": "hairline" },
       "DEFAULT": { "kind": "border" },
       "firm": { "kind": "border", "level": "firm" },
-      "focus": { "kind": "border", "level": "heavy", "on": "action" }
+      "focus": { "kind": "border", "level": "firm", "on": "action" }
     },
     "text": {
       "DEFAULT": { "kind": "text" },

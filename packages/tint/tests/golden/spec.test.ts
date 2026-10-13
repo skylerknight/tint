@@ -200,16 +200,11 @@ describe("spec example golden output", () => {
     expect(ruleBody(css, ".light-hc")).not.toContain(lightDecl);
   });
 
-  it("keeps the §8 warnings that --strict reports", () => {
+  it("keeps the brand exact warnings that --strict reports", () => {
     expect(warningLines(fromTs)).toEqual([
-      "light warning contrast-unreachable neutral.border.focus",
-      "light warning contrast-unreachable brand.border.focus",
-      "light warning contrast-unreachable danger.border.focus",
-      "dark warning contrast-unreachable neutral.border.focus",
-      "dark warning contrast-unreachable brand.border.focus",
       "dark warning exact-rejected brand.action.DEFAULT",
-      "dark warning contrast-unreachable danger.border.focus",
       "light-hc warning exact-rejected brand.action.DEFAULT",
     ]);
+    expect(warningLines(fromJson)).toEqual(warningLines(fromTs));
   });
 });

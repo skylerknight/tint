@@ -53,7 +53,7 @@ export default defineConfig({
       hairline: border("hairline"),                       // dividers
       DEFAULT: border(),
       firm: border("firm"),                               // inputs
-      focus: border("heavy", { on: "action" }),           // focus ring: an ordinary border on the hardest backdrop
+      focus: border("firm", { on: "action" }),            // focus ring: non-text contrast (APCA Lc 60) on the action fill
     },
 
     text: {

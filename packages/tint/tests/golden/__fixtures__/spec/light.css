@@ -17,7 +17,7 @@
   --neutral-border-hairline: oklch(87.09% 0.0138 285.94);
   --neutral-border: oklch(69.26% 0.0138 285.94);
   --neutral-border-firm: oklch(59.31% 0.0138 285.94);
-  --neutral-border-focus: oklch(100.00% 0.0000 285.94);
+  --neutral-border-focus: oklch(93.85% 0.0138 285.94);
   --neutral-text: oklch(47.61% 0.0138 285.94);
   --neutral-text-strong: oklch(32.85% 0.0138 285.94);
   --neutral-text-muted: oklch(59.31% 0.0138 285.94);
@@ -48,7 +48,7 @@
   --brand-border-hairline: oklch(87.09% 0.0695 293.01);
   --brand-border: oklch(70.58% 0.1698 293.01);
   --brand-border-firm: oklch(61.19% 0.2327 293.01);
-  --brand-border-focus: oklch(100.00% 0.0000 293.01);
+  --brand-border-focus: oklch(94.01% 0.0313 293.01);
   --brand-text: oklch(49.18% 0.2466 293.01);
   --brand-text-strong: oklch(32.66% 0.1817 293.01);
   --brand-text-muted: oklch(61.19% 0.2327 293.01);
@@ -79,7 +79,7 @@
   --danger-border-hairline: oklch(87.36% 0.0674 27.33);
   --danger-border: oklch(70.68% 0.1853 27.33);
   --danger-border-firm: oklch(60.18% 0.2152 27.33);
-  --danger-border-focus: oklch(100.00% 0.0000 27.33);
+  --danger-border-focus: oklch(93.94% 0.0305 27.33);
   --danger-text: oklch(47.05% 0.1921 27.33);
   --danger-text-strong: oklch(31.12% 0.1273 27.33);
   --danger-text-muted: oklch(60.18% 0.2152 27.33);
@@ -110,7 +110,7 @@
   --warning-border-hairline: oklch(87.23% 0.0828 58.32);
   --warning-border: oklch(70.16% 0.1574 58.32);
   --warning-border-firm: oklch(59.65% 0.1424 58.32);
-  --warning-border-focus: oklch(94.18% 0.0358 58.32);
+  --warning-border-focus: oklch(87.13% 0.0835 58.32);
   --warning-text: oklch(47.74% 0.1140 58.32);
   --warning-text-strong: oklch(32.73% 0.0784 58.32);
   --warning-text-muted: oklch(59.65% 0.1424 58.32);
@@ -175,7 +175,7 @@
     --neutral-border-hairline: oklch(87.09% 0.0138 285.94);
     --neutral-border: oklch(69.26% 0.0138 285.94);
     --neutral-border-firm: oklch(59.31% 0.0138 285.94);
-    --neutral-border-focus: oklch(100.00% 0.0000 285.94);
+    --neutral-border-focus: oklch(93.85% 0.0138 285.94);
     --neutral-text: oklch(47.61% 0.0138 285.94);
     --neutral-text-strong: oklch(32.85% 0.0138 285.94);
     --neutral-text-muted: oklch(59.31% 0.0138 285.94);
@@ -206,7 +206,7 @@
     --brand-border-hairline: oklch(87.09% 0.0695 293.01);
     --brand-border: oklch(70.58% 0.1698 293.01);
     --brand-border-firm: oklch(61.19% 0.2327 293.01);
-    --brand-border-focus: oklch(100.00% 0.0000 293.01);
+    --brand-border-focus: oklch(94.01% 0.0313 293.01);
     --brand-text: oklch(49.18% 0.2466 293.01);
     --brand-text-strong: oklch(32.66% 0.1817 293.01);
     --brand-text-muted: oklch(61.19% 0.2327 293.01);
@@ -237,7 +237,7 @@
     --danger-border-hairline: oklch(87.36% 0.0674 27.33);
     --danger-border: oklch(70.68% 0.1853 27.33);
     --danger-border-firm: oklch(60.18% 0.2152 27.33);
-    --danger-border-focus: oklch(100.00% 0.0000 27.33);
+    --danger-border-focus: oklch(93.94% 0.0305 27.33);
     --danger-text: oklch(47.05% 0.1921 27.33);
     --danger-text-strong: oklch(31.12% 0.1273 27.33);
     --danger-text-muted: oklch(60.18% 0.2152 27.33);
@@ -268,7 +268,7 @@
     --warning-border-hairline: oklch(87.23% 0.0828 58.32);
     --warning-border: oklch(70.16% 0.1574 58.32);
     --warning-border-firm: oklch(59.65% 0.1424 58.32);
-    --warning-border-focus: oklch(94.18% 0.0358 58.32);
+    --warning-border-focus: oklch(87.13% 0.0835 58.32);
     --warning-text: oklch(47.74% 0.1140 58.32);
     --warning-text-strong: oklch(32.73% 0.0784 58.32);
     --warning-text-muted: oklch(59.65% 0.1424 58.32);

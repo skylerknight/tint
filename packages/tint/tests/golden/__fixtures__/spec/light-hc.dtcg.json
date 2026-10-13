@@ -449,11 +449,11 @@
           ],
           "hex": "#f0f1fb"
         },
-        "$description": "border level 5, on action.DEFAULT, action.hover, action.pressed",
+        "$description": "border level 4, on action.DEFAULT, action.hover, action.pressed",
         "$extensions": {
           "dev.tint": {
             "kind": "border",
-            "level": 5,
+            "level": 4,
             "on": [
               "action.DEFAULT",
               "action.hover",
@@ -1199,11 +1199,11 @@
           ],
           "hex": "#f1efff"
         },
-        "$description": "border level 5, on action.DEFAULT, action.hover, action.pressed",
+        "$description": "border level 4, on action.DEFAULT, action.hover, action.pressed",
         "$extensions": {
           "dev.tint": {
             "kind": "border",
-            "level": 5,
+            "level": 4,
             "on": [
               "action.DEFAULT",
               "action.hover",
@@ -1949,11 +1949,11 @@
           ],
           "hex": "#ffedea"
         },
-        "$description": "border level 5, on action.DEFAULT, action.hover, action.pressed",
+        "$description": "border level 4, on action.DEFAULT, action.hover, action.pressed",
         "$extensions": {
           "dev.tint": {
             "kind": "border",
-            "level": 5,
+            "level": 4,
             "on": [
               "action.DEFAULT",
               "action.hover",
@@ -2697,11 +2697,11 @@
           ],
           "hex": "#ffd3b2"
         },
-        "$description": "border level 5, on action.DEFAULT",
+        "$description": "border level 4, on action.DEFAULT",
         "$extensions": {
           "dev.tint": {
             "kind": "border",
-            "level": 5,
+            "level": 4,
             "on": [
               "action.DEFAULT"
             ],

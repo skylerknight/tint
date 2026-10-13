@@ -328,7 +328,7 @@ export default defineConfig({
   themes: {
     light: { mode: "light", selector: ".light", media: true },
     dark: { mode: "dark", selector: ".dark", media: true, palette: { brand: "#a78bfa" } },
-    "light-hc": { mode: "light", extends: "light", media: "(prefers-contrast: more)", contrast: { level: "more" } },
+    "light-hc": { mode: "light", extends: "light", selector: ".light-hc", media: "(prefers-contrast: more)", contrast: { level: "more" } },
   },
 
   tokens: {
@@ -359,7 +359,7 @@ export default defineConfig({
       hairline: border("hairline"),                       // dividers
       DEFAULT: border(),
       firm: border("firm"),                               // inputs
-      focus: border("heavy", { on: "action" }),           // focus ring: an ordinary border on the hardest backdrop
+      focus: border("firm", { on: "action" }),            // focus ring: non-text contrast (APCA Lc 60) on the action fill
     },
 
     text: {
@@ -404,9 +404,9 @@ JSON equivalent (excerpt):
 --neutral-row  --neutral-row-hover  --neutral-row-selected  --neutral-row-selected-hover  --neutral-row-on
 ```
 That's 29 tokens × 4 palette colors = 116 variables per theme, in 3 themes:
-- `.light { }` + `@media (prefers-color-scheme: light) { :root:not(.dark) { } }`
-- the mirror for `.dark`
-- `@media (prefers-contrast: more) { … }` for `light-hc`
+- `.light { }` + `@media (prefers-color-scheme: light) { :root:not(.dark):not(.light-hc) { } }`
+- `.dark { }` + `@media (prefers-color-scheme: dark) { :root:not(.light):not(.light-hc) { } }`
+- `.light-hc { }` + `@media (prefers-contrast: more) { :root:not(.light):not(.dark) { } }`
 
 ### 8.2 Tailwind classes
 | UI | Classes |
