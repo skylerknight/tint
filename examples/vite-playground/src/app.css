@@ -4,6 +4,5 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 body {
-  background: var(--surface);
-  color: var(--text-body);
+  @apply bg-surface text-body;
 }

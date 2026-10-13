@@ -1,0 +1,254 @@
+@theme static {
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-floating: var(--surface-floating);
+  --color-action: var(--action);
+  --color-action-hover: var(--action-hover);
+  --color-action-pressed: var(--action-pressed);
+  --color-action-disabled: var(--action-disabled);
+  --color-action-on: var(--action-on);
+  --color-action-on-disabled: var(--action-on-disabled);
+  --color-soft: var(--soft);
+  --color-soft-hover: var(--soft-hover);
+  --color-soft-pressed: var(--soft-pressed);
+  --color-soft-on: var(--soft-on);
+  --color-border-hairline: var(--border-hairline);
+  --color-border: var(--border);
+  --color-border-firm: var(--border-firm);
+  --color-border-focus: var(--border-focus);
+  --color-text: var(--text);
+  --color-text-strong: var(--text-strong);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-link: var(--text-link);
+  --color-row: var(--row);
+  --color-row-hover: var(--row-hover);
+  --color-row-selected: var(--row-selected);
+  --color-row-selected-hover: var(--row-selected-hover);
+  --color-row-on: var(--row-on);
+}
+
+@utility tint-brand {
+  --surface-sunken: var(--brand-surface-sunken);
+  --color-surface-sunken: var(--brand-surface-sunken);
+  --surface: var(--brand-surface);
+  --color-surface: var(--brand-surface);
+  --surface-raised: var(--brand-surface-raised);
+  --color-surface-raised: var(--brand-surface-raised);
+  --surface-floating: var(--brand-surface-floating);
+  --color-surface-floating: var(--brand-surface-floating);
+  --action: var(--brand-action);
+  --color-action: var(--brand-action);
+  --action-hover: var(--brand-action-hover);
+  --color-action-hover: var(--brand-action-hover);
+  --action-pressed: var(--brand-action-pressed);
+  --color-action-pressed: var(--brand-action-pressed);
+  --action-disabled: var(--brand-action-disabled);
+  --color-action-disabled: var(--brand-action-disabled);
+  --action-on: var(--brand-action-on);
+  --color-action-on: var(--brand-action-on);
+  --action-on-disabled: var(--brand-action-on-disabled);
+  --color-action-on-disabled: var(--brand-action-on-disabled);
+  --soft: var(--brand-soft);
+  --color-soft: var(--brand-soft);
+  --soft-hover: var(--brand-soft-hover);
+  --color-soft-hover: var(--brand-soft-hover);
+  --soft-pressed: var(--brand-soft-pressed);
+  --color-soft-pressed: var(--brand-soft-pressed);
+  --soft-on: var(--brand-soft-on);
+  --color-soft-on: var(--brand-soft-on);
+  --border-hairline: var(--brand-border-hairline);
+  --color-border-hairline: var(--brand-border-hairline);
+  --border: var(--brand-border);
+  --color-border: var(--brand-border);
+  --border-firm: var(--brand-border-firm);
+  --color-border-firm: var(--brand-border-firm);
+  --border-focus: var(--brand-border-focus);
+  --color-border-focus: var(--brand-border-focus);
+  --text: var(--brand-text);
+  --color-text: var(--brand-text);
+  --text-strong: var(--brand-text-strong);
+  --color-text-strong: var(--brand-text-strong);
+  --text-muted: var(--brand-text-muted);
+  --color-text-muted: var(--brand-text-muted);
+  --text-faint: var(--brand-text-faint);
+  --color-text-faint: var(--brand-text-faint);
+  --text-disabled: var(--brand-text-disabled);
+  --color-text-disabled: var(--brand-text-disabled);
+  --text-link: var(--brand-text-link);
+  --color-text-link: var(--brand-text-link);
+  --row: var(--brand-row);
+  --color-row: var(--brand-row);
+  --row-hover: var(--brand-row-hover);
+  --color-row-hover: var(--brand-row-hover);
+  --row-selected: var(--brand-row-selected);
+  --color-row-selected: var(--brand-row-selected);
+  --row-selected-hover: var(--brand-row-selected-hover);
+  --color-row-selected-hover: var(--brand-row-selected-hover);
+  --row-on: var(--brand-row-on);
+  --color-row-on: var(--brand-row-on);
+}
+
+@utility tint-danger {
+  --surface-sunken: var(--danger-surface-sunken);
+  --color-surface-sunken: var(--danger-surface-sunken);
+  --surface: var(--danger-surface);
+  --color-surface: var(--danger-surface);
+  --surface-raised: var(--danger-surface-raised);
+  --color-surface-raised: var(--danger-surface-raised);
+  --surface-floating: var(--danger-surface-floating);
+  --color-surface-floating: var(--danger-surface-floating);
+  --action: var(--danger-action);
+  --color-action: var(--danger-action);
+  --action-hover: var(--danger-action-hover);
+  --color-action-hover: var(--danger-action-hover);
+  --action-pressed: var(--danger-action-pressed);
+  --color-action-pressed: var(--danger-action-pressed);
+  --action-disabled: var(--danger-action-disabled);
+  --color-action-disabled: var(--danger-action-disabled);
+  --action-on: var(--danger-action-on);
+  --color-action-on: var(--danger-action-on);
+  --action-on-disabled: var(--danger-action-on-disabled);
+  --color-action-on-disabled: var(--danger-action-on-disabled);
+  --soft: var(--danger-soft);
+  --color-soft: var(--danger-soft);
+  --soft-hover: var(--danger-soft-hover);
+  --color-soft-hover: var(--danger-soft-hover);
+  --soft-pressed: var(--danger-soft-pressed);
+  --color-soft-pressed: var(--danger-soft-pressed);
+  --soft-on: var(--danger-soft-on);
+  --color-soft-on: var(--danger-soft-on);
+  --border-hairline: var(--danger-border-hairline);
+  --color-border-hairline: var(--danger-border-hairline);
+  --border: var(--danger-border);
+  --color-border: var(--danger-border);
+  --border-firm: var(--danger-border-firm);
+  --color-border-firm: var(--danger-border-firm);
+  --border-focus: var(--danger-border-focus);
+  --color-border-focus: var(--danger-border-focus);
+  --text: var(--danger-text);
+  --color-text: var(--danger-text);
+  --text-strong: var(--danger-text-strong);
+  --color-text-strong: var(--danger-text-strong);
+  --text-muted: var(--danger-text-muted);
+  --color-text-muted: var(--danger-text-muted);
+  --text-faint: var(--danger-text-faint);
+  --color-text-faint: var(--danger-text-faint);
+  --text-disabled: var(--danger-text-disabled);
+  --color-text-disabled: var(--danger-text-disabled);
+  --text-link: var(--danger-text-link);
+  --color-text-link: var(--danger-text-link);
+  --row: var(--danger-row);
+  --color-row: var(--danger-row);
+  --row-hover: var(--danger-row-hover);
+  --color-row-hover: var(--danger-row-hover);
+  --row-selected: var(--danger-row-selected);
+  --color-row-selected: var(--danger-row-selected);
+  --row-selected-hover: var(--danger-row-selected-hover);
+  --color-row-selected-hover: var(--danger-row-selected-hover);
+  --row-on: var(--danger-row-on);
+  --color-row-on: var(--danger-row-on);
+}
+
+@utility tint-warning {
+  --surface-sunken: var(--warning-surface-sunken);
+  --color-surface-sunken: var(--warning-surface-sunken);
+  --surface: var(--warning-surface);
+  --color-surface: var(--warning-surface);
+  --surface-raised: var(--warning-surface-raised);
+  --color-surface-raised: var(--warning-surface-raised);
+  --surface-floating: var(--warning-surface-floating);
+  --color-surface-floating: var(--warning-surface-floating);
+  --action: var(--warning-action);
+  --color-action: var(--warning-action);
+  --action-hover: var(--warning-action-hover);
+  --color-action-hover: var(--warning-action-hover);
+  --action-pressed: var(--warning-action-pressed);
+  --color-action-pressed: var(--warning-action-pressed);
+  --action-disabled: var(--warning-action-disabled);
+  --color-action-disabled: var(--warning-action-disabled);
+  --action-on: var(--warning-action-on);
+  --color-action-on: var(--warning-action-on);
+  --action-on-disabled: var(--warning-action-on-disabled);
+  --color-action-on-disabled: var(--warning-action-on-disabled);
+  --soft: var(--warning-soft);
+  --color-soft: var(--warning-soft);
+  --soft-hover: var(--warning-soft-hover);
+  --color-soft-hover: var(--warning-soft-hover);
+  --soft-pressed: var(--warning-soft-pressed);
+  --color-soft-pressed: var(--warning-soft-pressed);
+  --soft-on: var(--warning-soft-on);
+  --color-soft-on: var(--warning-soft-on);
+  --border-hairline: var(--warning-border-hairline);
+  --color-border-hairline: var(--warning-border-hairline);
+  --border: var(--warning-border);
+  --color-border: var(--warning-border);
+  --border-firm: var(--warning-border-firm);
+  --color-border-firm: var(--warning-border-firm);
+  --border-focus: var(--warning-border-focus);
+  --color-border-focus: var(--warning-border-focus);
+  --text: var(--warning-text);
+  --color-text: var(--warning-text);
+  --text-strong: var(--warning-text-strong);
+  --color-text-strong: var(--warning-text-strong);
+  --text-muted: var(--warning-text-muted);
+  --color-text-muted: var(--warning-text-muted);
+  --text-faint: var(--warning-text-faint);
+  --color-text-faint: var(--warning-text-faint);
+  --text-disabled: var(--warning-text-disabled);
+  --color-text-disabled: var(--warning-text-disabled);
+  --text-link: var(--warning-text-link);
+  --color-text-link: var(--warning-text-link);
+  --row: var(--warning-row);
+  --color-row: var(--warning-row);
+  --row-hover: var(--warning-row-hover);
+  --color-row-hover: var(--warning-row-hover);
+  --row-selected: var(--warning-row-selected);
+  --color-row-selected: var(--warning-row-selected);
+  --row-selected-hover: var(--warning-row-selected-hover);
+  --color-row-selected-hover: var(--warning-row-selected-hover);
+  --row-on: var(--warning-row-on);
+  --color-row-on: var(--warning-row-on);
+}
+
+@utility border-hairline {
+  border-color: var(--border-hairline);
+}
+
+@utility border-default {
+  border-color: var(--border);
+}
+
+@utility border-firm {
+  border-color: var(--border-firm);
+}
+
+@utility border-focus {
+  border-color: var(--border-focus);
+}
+
+@utility text-default {
+  color: var(--text);
+}
+
+@utility text-strong {
+  color: var(--text-strong);
+}
+
+@utility text-muted {
+  color: var(--text-muted);
+}
+
+@utility text-faint {
+  color: var(--text-faint);
+}
+
+@utility text-disabled {
+  color: var(--text-disabled);
+}
+
+@utility text-link {
+  color: var(--text-link);
+}

@@ -1,0 +1,3686 @@
+{
+  "neutral": {
+    "surface": {
+      "well": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9199999999999999,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#e4e4e4"
+        },
+        "$description": "surface level 1, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 1,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.96,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#f2f2f2"
+        },
+        "$description": "surface level 3, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 3,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "raised": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.98,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#f8f8f8"
+        },
+        "$description": "surface level 4, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 4,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "lowlight": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.94,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#ebebeb"
+        },
+        "$description": "surface level 2, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 2,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "highlight": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            0
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "surface level 5, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 5,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "selection": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9199999999999999,
+            5.591099330278927e-8,
+            0
+          ],
+          "hex": "#e4e4e4"
+        },
+        "$description": "surface level 3, state selected, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 3,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0,
+            "state": "selected"
+          }
+        }
+      }
+    },
+    "text": {
+      "strong": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.3309310893416736,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#363536"
+        },
+        "$description": "text level 4, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 4,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 90.16823210519097,
+            "target": 90
+          }
+        }
+      },
+      "body": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.4730666851826995,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#5c5c5c"
+        },
+        "$description": "text level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.29517511567087,
+            "target": 75
+          }
+        }
+      },
+      "muted": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5932106052290994,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#7e7e7e"
+        },
+        "$description": "text level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 60.100758512065255,
+            "target": 60
+          }
+        }
+      },
+      "faint": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.6927047890175244,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#9c9c9c"
+        },
+        "$description": "text level 1, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 1,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 45.35432941960245,
+            "target": 45
+          }
+        }
+      }
+    },
+    "border": {
+      "subtle": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.871043420336399,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#d4d4d4"
+        },
+        "$description": "border level 1, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 1,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.008918286697218,
+            "target": 15
+          }
+        }
+      },
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7846899778030492,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#b9b9b9"
+        },
+        "$description": "border level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 30.06478249108593,
+            "target": 30
+          }
+        }
+      },
+      "strong": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.6927047890175244,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#9c9c9c"
+        },
+        "$description": "border level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 45.35432941960245,
+            "target": 45
+          }
+        }
+      },
+      "focus": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5932106052290994,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#7e7e7e"
+        },
+        "$description": "border level 4, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 4,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 60.100758512065255,
+            "target": 60
+          }
+        }
+      }
+    },
+    "action": {
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5782106052290994,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#7a7a7a"
+        },
+        "$description": "emphasis level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 61.97695707267575,
+            "target": 60
+          }
+        }
+      },
+      "hover": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5331566352116994,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#6d6d6d"
+        },
+        "$description": "emphasis level 3, state hover, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 67.91665246099589,
+            "state": "hover",
+            "target": 66
+          }
+        }
+      },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.4843481676928495,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#5f5f5f"
+        },
+        "$description": "emphasis level 3, state pressed, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 74.02688209894815,
+            "state": "pressed",
+            "target": 72
+          }
+        }
+      },
+      "disabled": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.871043420336399,
+            1.1182198660557854e-8,
+            0
+          ],
+          "hex": "#d4d4d4"
+        },
+        "$description": "emphasis level 3, state disabled, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.008918286697218,
+            "state": "disabled",
+            "target": 15
+          }
+        }
+      },
+      "on": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            0
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "text level 3, on action.DEFAULT, action.hover, action.pressed",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "action.DEFAULT",
+              "action.hover",
+              "action.pressed"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.20696115725129,
+            "target": 75
+          }
+        }
+      },
+      "on-disabled": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7713952482777842,
+            1.1182198660557854e-8,
+            0
+          ],
+          "hex": "#b4b4b4"
+        },
+        "$description": "text level 3, state disabled, on action.disabled",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "action.disabled"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.452890279312479,
+            "state": "disabled",
+            "target": 15
+          }
+        }
+      }
+    },
+    "soft": {
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9099999999999999,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#e1e1e1"
+        },
+        "$description": "emphasis level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 7.498042349443729
+          }
+        }
+      },
+      "hover": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.885,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#d9d9d9"
+        },
+        "$description": "emphasis level 2, state hover, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 12.139611607741415,
+            "state": "hover"
+          }
+        }
+      },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.86,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#d1d1d1"
+        },
+        "$description": "emphasis level 2, state pressed, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 16.718623277287897,
+            "state": "pressed"
+          }
+        }
+      },
+      "on": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.27232892838474804,
+            3.7273995535192846e-8,
+            0
+          ],
+          "hex": "#272727"
+        },
+        "$description": "text level 3, on soft.DEFAULT, soft.hover, soft.pressed",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "soft.DEFAULT",
+              "soft.hover",
+              "soft.pressed"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.07879594659916,
+            "target": 75
+          }
+        }
+      }
+    }
+  },
+  "brand": {
+    "surface": {
+      "well": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9199999999999999,
+            0.0421875,
+            293.0089677307044
+          ],
+          "hex": "#e5e0ff"
+        },
+        "$description": "surface level 1, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 1,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.96,
+            0.02,
+            293.0089677307044
+          ],
+          "hex": "#f2f0ff"
+        },
+        "$description": "surface level 3, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 3,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "raised": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.98,
+            0.010253906250000002,
+            293.0089677307044
+          ],
+          "hex": "#f8f7ff"
+        },
+        "$description": "surface level 4, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 4,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "lowlight": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.94,
+            0.03134765625,
+            293.0089677307044
+          ],
+          "hex": "#ebe8ff"
+        },
+        "$description": "surface level 2, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 2,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "highlight": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            293.0089677307044
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "surface level 5, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 5,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "selection": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9199999999999999,
+            0.0421875,
+            293.0089677307044
+          ],
+          "hex": "#e5e0ff"
+        },
+        "$description": "surface level 3, state selected, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 3,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0,
+            "state": "selected"
+          }
+        }
+      }
+    },
+    "text": {
+      "strong": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.32660331832180794,
+            0.1817487560975723,
+            293.0089677307044
+          ],
+          "hex": "#3e0086"
+        },
+        "$description": "text level 4, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 4,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 90.16589991201053,
+            "target": 90
+          }
+        }
+      },
+      "body": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.49178200804777983,
+            0.24658592413900496,
+            293.0089677307044
+          ],
+          "hex": "#6f24dc"
+        },
+        "$description": "text level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.12868767989251,
+            "target": 75
+          }
+        }
+      },
+      "muted": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.6119119642121229,
+            0.23267934492120462,
+            293.0089677307044
+          ],
+          "hex": "#8f59ff"
+        },
+        "$description": "text level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 60.07024592771193,
+            "target": 60
+          }
+        }
+      },
+      "faint": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7057634924655161,
+            0.1698288310537434,
+            293.0089677307044
+          ],
+          "hex": "#a688ff"
+        },
+        "$description": "text level 1, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 1,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 45.21840294494462,
+            "target": 45
+          }
+        }
+      }
+    },
+    "border": {
+      "subtle": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.8709421821914879,
+            0.06953289608900165,
+            293.0089677307044
+          ],
+          "hex": "#d6cdff"
+        },
+        "$description": "border level 1, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 1,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.263531894724652,
+            "target": 15
+          }
+        }
+      },
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7921068984586377,
+            0.11570755522342957,
+            293.0089677307044
+          ],
+          "hex": "#beadff"
+        },
+        "$description": "border level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 30.15800025663806,
+            "target": 30
+          }
+        }
+      },
+      "strong": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7057634924655161,
+            0.1698288310537434,
+            293.0089677307044
+          ],
+          "hex": "#a688ff"
+        },
+        "$description": "border level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 45.21840294494462,
+            "target": 45
+          }
+        }
+      },
+      "focus": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.6119119642121229,
+            0.23267934492120462,
+            293.0089677307044
+          ],
+          "hex": "#8f59ff"
+        },
+        "$description": "border level 4, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 4,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 60.07024592771193,
+            "target": 60
+          }
+        }
+      }
+    },
+    "action": {
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5969119642121229,
+            0.23267934492120462,
+            293.0089677307044
+          ],
+          "hex": "#8a54fa"
+        },
+        "$description": "emphasis level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 62.147874599607164,
+            "target": 60
+          }
+        }
+      },
+      "hover": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5518632306504941,
+            0.24658592413900496,
+            293.0089677307044
+          ],
+          "hex": "#7f3ef1"
+        },
+        "$description": "emphasis level 3, state hover, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 68.13845165409718,
+            "state": "hover",
+            "target": 66
+          }
+        }
+      },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5030604359587298,
+            0.24658592413900496,
+            293.0089677307044
+          ],
+          "hex": "#722ae0"
+        },
+        "$description": "emphasis level 3, state pressed, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 73.83319594887969,
+            "state": "pressed",
+            "target": 72
+          }
+        }
+      },
+      "disabled": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.8709421821914879,
+            0.06949677510402033,
+            293.0089677307044
+          ],
+          "hex": "#d6cdff"
+        },
+        "$description": "emphasis level 3, state disabled, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.263531894724652,
+            "state": "disabled",
+            "target": 15
+          }
+        }
+      },
+      "on": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            293.0089677307044
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "text level 3, on action.DEFAULT, action.hover, action.pressed",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "action.DEFAULT",
+              "action.hover",
+              "action.pressed"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.63790606250079,
+            "target": 75
+          }
+        }
+      },
+      "on-disabled": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7748005112397693,
+            0.07397577724170148,
+            293.0089677307044
+          ],
+          "hex": "#b7ade1"
+        },
+        "$description": "text level 3, state disabled, on action.disabled",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "action.disabled"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.150638044912416,
+            "state": "disabled",
+            "target": 15
+          }
+        }
+      }
+    },
+    "soft": {
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9099999999999999,
+            0.04767970017531541,
+            293.0089677307044
+          ],
+          "hex": "#e2dcff"
+        },
+        "$description": "emphasis level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 7.781176820966877
+          }
+        }
+      },
+      "hover": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.885,
+            0.06158627939311574,
+            293.0089677307044
+          ],
+          "hex": "#dad2ff"
+        },
+        "$description": "emphasis level 2, state hover, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 12.796797948261057,
+            "state": "hover"
+          }
+        }
+      },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.86,
+            0.07573366517745807,
+            293.0089677307044
+          ],
+          "hex": "#d2c8ff"
+        },
+        "$description": "emphasis level 2, state pressed, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 17.702011649348854,
+            "state": "pressed"
+          }
+        }
+      },
+      "on": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.23492467081467638,
+            0.13111917548211738,
+            293.0089677307044
+          ],
+          "hex": "#250054"
+        },
+        "$description": "text level 3, on soft.DEFAULT, soft.hover, soft.pressed",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "soft.DEFAULT",
+              "soft.hover",
+              "soft.pressed"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.20403265385252,
+            "target": 75
+          }
+        }
+      }
+    }
+  },
+  "info": {
+    "surface": {
+      "well": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9199999999999999,
+            0.03828125,
+            262.8809171408741
+          ],
+          "hex": "#d7e5ff"
+        },
+        "$description": "surface level 1, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 1,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.96,
+            0.018828125,
+            262.8809171408741
+          ],
+          "hex": "#ebf2ff"
+        },
+        "$description": "surface level 3, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 3,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "raised": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.98,
+            0.009277343750000002,
+            262.8809171408741
+          ],
+          "hex": "#f5f9ff"
+        },
+        "$description": "surface level 4, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 4,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "lowlight": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.94,
+            0.028515625000000003,
+            262.8809171408741
+          ],
+          "hex": "#e1ecff"
+        },
+        "$description": "surface level 2, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 2,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "highlight": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            262.8809171408741
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "surface level 5, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 5,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "selection": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9199999999999999,
+            0.03828125,
+            262.8809171408741
+          ],
+          "hex": "#d7e5ff"
+        },
+        "$description": "surface level 3, state selected, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 3,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0,
+            "state": "selected"
+          }
+        }
+      }
+    },
+    "text": {
+      "strong": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.3261397913872284,
+            0.16355999015646144,
+            262.8809171408741
+          ],
+          "hex": "#002686"
+        },
+        "$description": "text level 4, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 4,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 90.05312015257029,
+            "target": 90
+          }
+        }
+      },
+      "body": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.47843207903212664,
+            0.21520774805039064,
+            262.8809171408741
+          ],
+          "hex": "#104dd3"
+        },
+        "$description": "text level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.02685263935787,
+            "target": 75
+          }
+        }
+      },
+      "muted": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5960485842594174,
+            0.21520774805039064,
+            262.8809171408741
+          ],
+          "hex": "#3473fd"
+        },
+        "$description": "text level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 60.20297097002963,
+            "target": 60
+          }
+        }
+      },
+      "faint": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.6953900149693202,
+            0.15930417287323836,
+            262.8809171408741
+          ],
+          "hex": "#6799ff"
+        },
+        "$description": "text level 1, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 1,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 45.20554826624696,
+            "target": 45
+          }
+        }
+      }
+    },
+    "border": {
+      "subtle": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.8683003354030663,
+            0.06436266878948449,
+            262.8809171408741
+          ],
+          "hex": "#bed4ff"
+        },
+        "$description": "border level 1, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 1,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.173580839546325,
+            "target": 15
+          }
+        }
+      },
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7841881334576533,
+            0.10902247978626967,
+            262.8809171408741
+          ],
+          "hex": "#94b8ff"
+        },
+        "$description": "border level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 30.353671058003094,
+            "target": 30
+          }
+        }
+      },
+      "strong": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.6953900149693202,
+            0.15930417287323836,
+            262.8809171408741
+          ],
+          "hex": "#6799ff"
+        },
+        "$description": "border level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 45.20554826624696,
+            "target": 45
+          }
+        }
+      },
+      "focus": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5960485842594174,
+            0.21520774805039064,
+            262.8809171408741
+          ],
+          "hex": "#3473fd"
+        },
+        "$description": "border level 4, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 4,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 60.20297097002963,
+            "target": 60
+          }
+        }
+      }
+    },
+    "action": {
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5860485842594174,
+            0.21520774805039064,
+            262.8809171408741
+          ],
+          "hex": "#3170f9"
+        },
+        "$description": "emphasis level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 61.54342525501936,
+            "target": 60
+          }
+        }
+      },
+      "hover": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5410637854473859,
+            0.21520774805039064,
+            262.8809171408741
+          ],
+          "hex": "#2361e9"
+        },
+        "$description": "emphasis level 3, state hover, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 67.60245515626944,
+            "state": "hover",
+            "target": 66
+          }
+        }
+      },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.4923302534010183,
+            0.21520774805039064,
+            262.8809171408741
+          ],
+          "hex": "#1451d8"
+        },
+        "$description": "emphasis level 3, state pressed, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 73.55427345593353,
+            "state": "pressed",
+            "target": 72
+          }
+        }
+      },
+      "disabled": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.8683003354030663,
+            0.06431012783537064,
+            262.8809171408741
+          ],
+          "hex": "#bed4ff"
+        },
+        "$description": "emphasis level 3, state disabled, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.173580839546325,
+            "state": "disabled",
+            "target": 15
+          }
+        }
+      },
+      "on": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            262.8809171408741
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "text level 3, on action.DEFAULT, action.hover, action.pressed",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "action.DEFAULT",
+              "action.hover",
+              "action.pressed"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.06133047808538,
+            "target": 75
+          }
+        }
+      },
+      "on-disabled": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7695544420003375,
+            0.0645623244151172,
+            262.8809171408741
+          ],
+          "hex": "#9eb5de"
+        },
+        "$description": "text level 3, state disabled, on action.disabled",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "action.disabled"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.021617518274693,
+            "state": "disabled",
+            "target": 15
+          }
+        }
+      }
+    },
+    "soft": {
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9099999999999999,
+            0.04324120523571082,
+            262.8809171408741
+          ],
+          "hex": "#d2e2ff"
+        },
+        "$description": "emphasis level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "hover": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.885,
+            0.05579849326892452,
+            262.8809171408741
+          ],
+          "hex": "#c6daff"
+        },
+        "$description": "emphasis level 2, state hover, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 11.84861276835864,
+            "state": "hover"
+          }
+        }
+      },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.86,
+            0.06861848607270755,
+            262.8809171408741
+          ],
+          "hex": "#b9d2ff"
+        },
+        "$description": "emphasis level 2, state pressed, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 16.509852252481245,
+            "state": "pressed"
+          }
+        }
+      },
+      "on": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.2621613706253658,
+            0.1323506634128257,
+            262.8809171408741
+          ],
+          "hex": "#001a63"
+        },
+        "$description": "text level 3, on soft.DEFAULT, soft.hover, soft.pressed",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "soft.DEFAULT",
+              "soft.hover",
+              "soft.pressed"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.2032298542586,
+            "target": 75
+          }
+        }
+      }
+    }
+  },
+  "success": {
+    "surface": {
+      "well": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9199999999999999,
+            0.05,
+            149.2137880560274
+          ],
+          "hex": "#ceeed3"
+        },
+        "$description": "surface level 1, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 1,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.96,
+            0.02,
+            149.2137880560274
+          ],
+          "hex": "#e9f6eb"
+        },
+        "$description": "surface level 3, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 3,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "raised": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.98,
+            0.03203125,
+            149.2137880560274
+          ],
+          "hex": "#eaffed"
+        },
+        "$description": "surface level 4, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 4,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "lowlight": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.94,
+            0.05,
+            149.2137880560274
+          ],
+          "hex": "#d5f5d9"
+        },
+        "$description": "surface level 2, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 2,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "highlight": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            149.2137880560274
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "surface level 5, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 5,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "selection": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9199999999999999,
+            0.05,
+            149.2137880560274
+          ],
+          "hex": "#ceeed3"
+        },
+        "$description": "surface level 3, state selected, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 3,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0,
+            "state": "selected"
+          }
+        }
+      }
+    },
+    "text": {
+      "strong": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.3188903518710997,
+            0.08976801032257589,
+            149.2137880560274
+          ],
+          "hex": "#003e16"
+        },
+        "$description": "text level 4, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 4,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 90.20136030717237,
+            "target": 90
+          }
+        }
+      },
+      "body": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.45910831541442143,
+            0.12901040300518068,
+            149.2137880560274
+          ],
+          "hex": "#006a2c"
+        },
+        "$description": "text level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.33716851214466,
+            "target": 75
+          }
+        }
+      },
+      "muted": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5740026333679794,
+            0.16120078008943156,
+            149.2137880560274
+          ],
+          "hex": "#00913e"
+        },
+        "$description": "text level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 60.04566363485453,
+            "target": 60
+          }
+        }
+      },
+      "faint": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.6752972157270345,
+            0.1699120934756335,
+            149.2137880560274
+          ],
+          "hex": "#30b259"
+        },
+        "$description": "text level 1, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 1,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 45.243355297664664,
+            "target": 45
+          }
+        }
+      }
+    },
+    "border": {
+      "subtle": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.8516248220557602,
+            0.1699120934756335,
+            149.2137880560274
+          ],
+          "hex": "#73ec8f"
+        },
+        "$description": "border level 1, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 1,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.216087619078722,
+            "target": 15
+          }
+        }
+      },
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7672126700898809,
+            0.1699120934756335,
+            149.2137880560274
+          ],
+          "hex": "#55d075"
+        },
+        "$description": "border level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 30.198166340837528,
+            "target": 30
+          }
+        }
+      },
+      "strong": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.6752972157270345,
+            0.1699120934756335,
+            149.2137880560274
+          ],
+          "hex": "#30b259"
+        },
+        "$description": "border level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 45.243355297664664,
+            "target": 45
+          }
+        }
+      },
+      "focus": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5740026333679794,
+            0.16120078008943156,
+            149.2137880560274
+          ],
+          "hex": "#00913e"
+        },
+        "$description": "border level 4, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 4,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 60.04566363485453,
+            "target": 60
+          }
+        }
+      }
+    },
+    "action": {
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5590026333679794,
+            0.15695036889566727,
+            149.2137880560274
+          ],
+          "hex": "#008c3c"
+        },
+        "$description": "emphasis level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 62.098189539769365,
+            "target": 60
+          }
+        }
+      },
+      "hover": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.513982818986177,
+            0.14437389631673703,
+            149.2137880560274
+          ],
+          "hex": "#007d34"
+        },
+        "$description": "emphasis level 3, state hover, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 68.11598398430561,
+            "state": "hover",
+            "target": 66
+          }
+        }
+      },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.467087179005133,
+            0.13123360277561763,
+            149.2137880560274
+          ],
+          "hex": "#006d2d"
+        },
+        "$description": "emphasis level 3, state pressed, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 74.22926765287647,
+            "state": "pressed",
+            "target": 72
+          }
+        }
+      },
+      "disabled": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.8647556012504525,
+            0.050973628042690046,
+            149.2137880560274
+          ],
+          "hex": "#bcdcc1"
+        },
+        "$description": "emphasis level 3, state disabled, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.391922327540442,
+            "state": "disabled",
+            "target": 15
+          }
+        }
+      },
+      "on": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            149.2137880560274
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "text level 3, on action.DEFAULT, action.hover, action.pressed",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "action.DEFAULT",
+              "action.hover",
+              "action.pressed"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.0151787517883,
+            "target": 75
+          }
+        }
+      },
+      "on-disabled": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7658911534346133,
+            0.050973628042690046,
+            149.2137880560274
+          ],
+          "hex": "#9dbca2"
+        },
+        "$description": "text level 3, state disabled, on action.disabled",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "action.disabled"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.26244562850098,
+            "state": "disabled",
+            "target": 15
+          }
+        }
+      }
+    },
+    "soft": {
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9099999999999999,
+            0.16203042898335557,
+            149.2137880560274
+          ],
+          "hex": "#8dffa5"
+        },
+        "$description": "emphasis level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "hover": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.885,
+            0.1699120934756335,
+            149.2137880560274
+          ],
+          "hex": "#7ef89a"
+        },
+        "$description": "emphasis level 2, state hover, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 8.622172301359559,
+            "state": "hover"
+          }
+        }
+      },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.86,
+            0.1699120934756335,
+            149.2137880560274
+          ],
+          "hex": "#76ef92"
+        },
+        "$description": "emphasis level 2, state pressed, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 13.562026563103204,
+            "state": "pressed"
+          }
+        }
+      },
+      "on": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.30886068540755185,
+            0.08694720408323432,
+            149.2137880560274
+          ],
+          "hex": "#003b15"
+        },
+        "$description": "text level 3, on soft.DEFAULT, soft.hover, soft.pressed",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "soft.DEFAULT",
+              "soft.hover",
+              "soft.pressed"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.19823881980857,
+            "target": 75
+          }
+        }
+      }
+    }
+  },
+  "warning": {
+    "surface": {
+      "well": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9199999999999999,
+            0.05,
+            58.318340431334605
+          ],
+          "hex": "#ffddc4"
+        },
+        "$description": "surface level 1, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 1,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.96,
+            0.02,
+            58.318340431334605
+          ],
+          "hex": "#fdefe5"
+        },
+        "$description": "surface level 3, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 3,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "raised": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.98,
+            0.0119140625,
+            58.318340431334605
+          ],
+          "hex": "#fff7f1"
+        },
+        "$description": "surface level 4, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 4,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "lowlight": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.94,
+            0.03691406250000001,
+            58.318340431334605
+          ],
+          "hex": "#ffe6d4"
+        },
+        "$description": "surface level 2, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 2,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "highlight": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            58.318340431334605
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "surface level 5, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 5,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "selection": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9199999999999999,
+            0.05,
+            58.318340431334605
+          ],
+          "hex": "#ffddc4"
+        },
+        "$description": "surface level 3, state selected, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 3,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0,
+            "state": "selected"
+          }
+        }
+      }
+    },
+    "text": {
+      "strong": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.32734160869628437,
+            0.07840363486510545,
+            58.318340431334605
+          ],
+          "hex": "#512900"
+        },
+        "$description": "text level 4, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 4,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 90.09505249169891,
+            "target": 90
+          }
+        }
+      },
+      "body": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.4774122602475896,
+            0.11399273578916802,
+            58.318340431334605
+          ],
+          "hex": "#8b4900"
+        },
+        "$description": "text level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.20487349321134,
+            "target": 75
+          }
+        }
+      },
+      "muted": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5965308399164381,
+            0.1423564036962503,
+            58.318340431334605
+          ],
+          "hex": "#bc6600"
+        },
+        "$description": "text level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 60.07658453825175,
+            "target": 60
+          }
+        }
+      },
+      "faint": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7015802960023516,
+            0.15742220019974112,
+            58.318340431334605
+          ],
+          "hex": "#e58220"
+        },
+        "$description": "text level 1, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 1,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 45.06822307187861,
+            "target": 45
+          }
+        }
+      }
+    },
+    "border": {
+      "subtle": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.8722856621419612,
+            0.0827850144605084,
+            58.318340431334605
+          ],
+          "hex": "#ffc89f"
+        },
+        "$description": "border level 1, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 1,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.186801501589928,
+            "target": 15
+          }
+        }
+      },
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7916226869331349,
+            0.14435492772222352,
+            58.318340431334605
+          ],
+          "hex": "#ffa254"
+        },
+        "$description": "border level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 30.10896069269696,
+            "target": 30
+          }
+        }
+      },
+      "strong": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7015802960023516,
+            0.15742220019974112,
+            58.318340431334605
+          ],
+          "hex": "#e58220"
+        },
+        "$description": "border level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 45.06822307187861,
+            "target": 45
+          }
+        }
+      },
+      "focus": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5965308399164381,
+            0.1423564036962503,
+            58.318340431334605
+          ],
+          "hex": "#bc6600"
+        },
+        "$description": "border level 4, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 4,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 60.07658453825175,
+            "target": 60
+          }
+        }
+      }
+    },
+    "action": {
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5865308399164381,
+            0.13999306496301175,
+            58.318340431334605
+          ],
+          "hex": "#b86300"
+        },
+        "$description": "emphasis level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 61.5337042382084,
+            "target": 60
+          }
+        }
+      },
+      "hover": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5415096444510465,
+            0.1292931471831028,
+            58.318340431334605
+          ],
+          "hex": "#a55800"
+        },
+        "$description": "emphasis level 3, state hover, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 67.48915072253013,
+            "state": "hover",
+            "target": 66
+          }
+        }
+      },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.49273668269687243,
+            0.1176615256693304,
+            58.318340431334605
+          ],
+          "hex": "#914d00"
+        },
+        "$description": "emphasis level 3, state pressed, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 73.34922586810345,
+            "state": "pressed",
+            "target": 72
+          }
+        }
+      },
+      "disabled": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.87040977899757,
+            0.047226660059922335,
+            58.318340431334605
+          ],
+          "hex": "#edcdb6"
+        },
+        "$description": "emphasis level 3, state disabled, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.265630633231803,
+            "state": "disabled",
+            "target": 15
+          }
+        }
+      },
+      "on": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            58.318340431334605
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "text level 3, on action.DEFAULT, action.hover, action.pressed",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "action.DEFAULT",
+              "action.hover",
+              "action.pressed"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.1284138121939,
+            "target": 75
+          }
+        }
+      },
+      "on-disabled": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7708990315690085,
+            0.047226660059922335,
+            58.318340431334605
+          ],
+          "hex": "#ccae97"
+        },
+        "$description": "text level 3, state disabled, on action.disabled",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "action.disabled"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.09070989098587,
+            "state": "disabled",
+            "target": 15
+          }
+        }
+      }
+    },
+    "soft": {
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9099999999999999,
+            0.05665046950547324,
+            58.318340431334605
+          ],
+          "hex": "#ffd9bd"
+        },
+        "$description": "emphasis level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 7.665029900363726
+          }
+        }
+      },
+      "hover": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.885,
+            0.07379165634362865,
+            58.318340431334605
+          ],
+          "hex": "#ffcea9"
+        },
+        "$description": "emphasis level 2, state hover, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 12.607898684057792,
+            "state": "hover"
+          }
+        }
+      },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.86,
+            0.09162463996000558,
+            58.318340431334605
+          ],
+          "hex": "#ffc395"
+        },
+        "$description": "emphasis level 2, state pressed, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 17.330256302474336,
+            "state": "pressed"
+          }
+        }
+      },
+      "on": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.2488009794386394,
+            0.059878854470507004,
+            58.318340431334605
+          ],
+          "hex": "#361900"
+        },
+        "$description": "text level 3, on soft.DEFAULT, soft.hover, soft.pressed",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "soft.DEFAULT",
+              "soft.hover",
+              "soft.pressed"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.20693716310676,
+            "target": 75
+          }
+        }
+      }
+    }
+  },
+  "error": {
+    "surface": {
+      "well": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9199999999999999,
+            0.040917968750000006,
+            27.32504873954491
+          ],
+          "hex": "#ffdbd6"
+        },
+        "$description": "surface level 1, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 1,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.96,
+            0.019765625000000002,
+            27.32504873954491
+          ],
+          "hex": "#ffedeb"
+        },
+        "$description": "surface level 3, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 3,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "raised": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.98,
+            0.009667968750000002,
+            27.32504873954491
+          ],
+          "hex": "#fff6f5"
+        },
+        "$description": "surface level 4, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 4,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "lowlight": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.94,
+            0.030078124999999997,
+            27.32504873954491
+          ],
+          "hex": "#ffe4e0"
+        },
+        "$description": "surface level 2, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 2,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "highlight": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            27.32504873954491
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "surface level 5, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 5,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0
+          }
+        }
+      },
+      "selection": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9199999999999999,
+            0.040917968750000006,
+            27.32504873954491
+          ],
+          "hex": "#ffdbd6"
+        },
+        "$description": "surface level 3, state selected, on page",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "surface",
+            "level": 3,
+            "on": [
+              "page"
+            ],
+            "algorithm": "apca",
+            "achieved": 0,
+            "state": "selected"
+          }
+        }
+      }
+    },
+    "text": {
+      "strong": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.3111974906797472,
+            0.1272765542004514,
+            27.32504873954491
+          ],
+          "hex": "#620004"
+        },
+        "$description": "text level 4, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 4,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 90.11692895613254,
+            "target": 90
+          }
+        }
+      },
+      "body": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.4705456033772082,
+            0.19209672253860952,
+            27.32504873954491
+          ],
+          "hex": "#ad000e"
+        },
+        "$description": "text level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.11915390192048,
+            "target": 75
+          }
+        }
+      },
+      "muted": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.6017734608927643,
+            0.2151567338031568,
+            27.32504873954491
+          ],
+          "hex": "#e5322e"
+        },
+        "$description": "text level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 60.00891126327153,
+            "target": 60
+          }
+        }
+      },
+      "faint": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.706755746905209,
+            0.18526801760833353,
+            27.32504873954491
+          ],
+          "hex": "#ff695d"
+        },
+        "$description": "text level 1, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 1,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 45.037214086719146,
+            "target": 45
+          }
+        }
+      }
+    },
+    "border": {
+      "subtle": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.8736025943178447,
+            0.06739406481187749,
+            27.32504873954491
+          ],
+          "hex": "#ffc5bd"
+        },
+        "$description": "border level 1, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 1,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.050529897040752,
+            "target": 15
+          }
+        }
+      },
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7929911961297174,
+            0.11934475078143854,
+            27.32504873954491
+          ],
+          "hex": "#ff9d91"
+        },
+        "$description": "border level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 30.14329659754172,
+            "target": 30
+          }
+        }
+      },
+      "strong": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.706755746905209,
+            0.18526801760833353,
+            27.32504873954491
+          ],
+          "hex": "#ff695d"
+        },
+        "$description": "border level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 45.037214086719146,
+            "target": 45
+          }
+        }
+      },
+      "focus": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.6017734608927643,
+            0.2151567338031568,
+            27.32504873954491
+          ],
+          "hex": "#e5322e"
+        },
+        "$description": "border level 4, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "border",
+            "level": 4,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 60.00891126327153,
+            "target": 60
+          }
+        }
+      }
+    },
+    "action": {
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5917734608927643,
+            0.2151567338031568,
+            27.32504873954491
+          ],
+          "hex": "#e12d2b"
+        },
+        "$description": "emphasis level 3, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 61.409930311107,
+            "target": 60
+          }
+        }
+      },
+      "hover": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.5411570015653354,
+            0.2151567338031568,
+            27.32504873954491
+          ],
+          "hex": "#cf0f19"
+        },
+        "$description": "emphasis level 3, state hover, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 67.24534751413223,
+            "state": "hover",
+            "target": 66
+          }
+        }
+      },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.4867911748803193,
+            0.19870084761473322,
+            27.32504873954491
+          ],
+          "hex": "#b5000f"
+        },
+        "$description": "emphasis level 3, state pressed, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 73.34752163051076,
+            "state": "pressed",
+            "target": 72
+          }
+        }
+      },
+      "disabled": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.871727910639051,
+            0.06454702014094704,
+            27.32504873954491
+          ],
+          "hex": "#fdc5be"
+        },
+        "$description": "emphasis level 3, state disabled, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 3,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.330363520964054,
+            "state": "disabled",
+            "target": 15
+          }
+        }
+      },
+      "on": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            27.32504873954491
+          ],
+          "hex": "#ffffff"
+        },
+        "$description": "text level 3, on action.DEFAULT, action.hover, action.pressed",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "action.DEFAULT",
+              "action.hover",
+              "action.pressed"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.31898796707537,
+            "target": 75
+          }
+        }
+      },
+      "on-disabled": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7726523007592558,
+            0.06454702014094704,
+            27.32504873954491
+          ],
+          "hex": "#dba69f"
+        },
+        "$description": "text level 3, state disabled, on action.disabled",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "action.disabled"
+            ],
+            "algorithm": "apca",
+            "achieved": 15.15506034919426,
+            "state": "disabled",
+            "target": 15
+          }
+        }
+      }
+    },
+    "soft": {
+      "$root": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9099999999999999,
+            0.04643519352587662,
+            27.32504873954491
+          ],
+          "hex": "#ffd6d1"
+        },
+        "$description": "emphasis level 2, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 7.821099263101881
+          }
+        }
+      },
+      "hover": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.885,
+            0.060670416880528835,
+            27.32504873954491
+          ],
+          "hex": "#ffcbc4"
+        },
+        "$description": "emphasis level 2, state hover, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 12.549774188443552,
+            "state": "hover"
+          }
+        }
+      },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.86,
+            0.07558851072820866,
+            27.32504873954491
+          ],
+          "hex": "#ffbfb6"
+        },
+        "$description": "emphasis level 2, state pressed, on surface.DEFAULT",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "emphasis",
+            "level": 2,
+            "on": [
+              "surface.DEFAULT"
+            ],
+            "algorithm": "apca",
+            "achieved": 17.496082670311687,
+            "state": "pressed"
+          }
+        }
+      },
+      "on": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.225209853461001,
+            0.09250268755550761,
+            27.32504873954491
+          ],
+          "hex": "#3d0001"
+        },
+        "$description": "text level 3, on soft.DEFAULT, soft.hover, soft.pressed",
+        "$extensions": {
+          "dev.tint": {
+            "kind": "text",
+            "level": 3,
+            "on": [
+              "soft.DEFAULT",
+              "soft.hover",
+              "soft.pressed"
+            ],
+            "algorithm": "apca",
+            "achieved": 75.07766951402337,
+            "target": 75
+          }
+        }
+      }
+    }
+  }
+}

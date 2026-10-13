@@ -732,6 +732,17 @@ describe("reuses level and state normalization", () => {
 });
 
 describe("the rest of the config", () => {
+  it("accepts $schema and ignores it when generating", () => {
+    const withSchema = {
+      $schema: "https://unpkg.com/@skylerknight/tint/schema/v4.json",
+      ...base(),
+    };
+    expect(validateConfig(withSchema).ok).toBe(true);
+    expect(publicApi.generate(withSchema)).toEqual(publicApi.generate(base()));
+    const blank = at(issuesOf({ ...base(), $schema: "  " }), "$schema");
+    expect(blank.message).toContain("non-empty string");
+  });
+
   it("suggests a mistyped top-level key and a contrast enum", () => {
     const key = at(issuesOf({ ...base(), palete: {} }), "palete");
     expect(key.didYouMean).toBe("palette");
