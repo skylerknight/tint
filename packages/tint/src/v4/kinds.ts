@@ -1,7 +1,7 @@
 /**
  * Kind functions for the unified scale.
  *
- * `surface(0)`, `text(5)`, `border(4.5)`, `emphasis(8)`.
+ * `surface(0)`, `text(5)`, `border(4.5)`, `emphasis(5)`.
  * `emphasis`, `text`, and `border` are contrast steps on 0–10. Higher means
  * more contrast against the backdrop. `surface` is signed lightness steps
  * from the page, −10..10. There are no level names and no `state`. Hover and
@@ -86,9 +86,13 @@ export const border = kindFunction("border");
 /**
  * Contrast against its surface (`on`, or the base surface).
  * One pure curve: no tint branch and no polarity flip as the number grows.
- * One unit is +9 Lc in light, +10 Lc in dark, or ×7^0.1 on the WCAG ratio
- * (1:1 at 0, 7:1 at 10).
- * Hover and pressed are other tokens (`emphasis(7)`, `emphasis(9)`).
+ * `emphasis(0)` clears the non-text floor. The lint measures WCAG 3:1, so the
+ * APCA anchors are the Lc values that first clear that ratio on the mode page:
+ * Lc 53.5 in light, Lc 22 in dark. WCAG `emphasis(0)` is 3:1.
+ * `emphasis(10)` is Lc 90 in light, Lc 100 in dark, and WCAG 7:1.
+ * One step is +3.65 Lc in light, +7.8 Lc in dark, or ×(7/3)^0.1 on the ratio.
+ * Decimals interpolate (linear in Lc, geometric in the ratio).
+ * Hover and pressed are other tokens (`emphasis(4.5)`, `emphasis(6)`).
  */
 export const emphasis = kindFunction("emphasis");
 

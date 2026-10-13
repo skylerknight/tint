@@ -50,30 +50,44 @@ export const BORDER_WCAG_AT_0 = 1.5;
 export const BORDER_WCAG_UNIT = 2 ** 0.2;
 
 /**
- * APCA emphasis is linear and mode-aware. The dark unit is steeper so the
- * same n can hold body text in both modes (APCA's mid-tone dead zone).
- * Light: 9 Lc per unit (emphasis(10) = 90). Dark: 10 Lc per unit (emphasis(10) = 100).
+ * WCAG non-text contrast for UI components (SC 1.4.11).
+ * The emphasis lint uses this floor. `emphasis(0)` targets it.
  */
-export const EMPHASIS_APCA_UNIT = { light: 9, dark: 10 } as const;
+export const NON_TEXT_RATIO = 3;
 
 /**
- * WCAG emphasis: emphasis(n) = 7^(n/10).
- * emphasis(0) = 1:1, emphasis(10) = 7:1. One unit multiplies by 7^0.1.
+ * APCA emphasis is a straight line in Lc, mode-aware at both ends.
+ * `emphasis(0)` is the Lc at which a fill on that mode's page first clears
+ * the non-text lint (WCAG 3:1). Lc 45 does not: on the light page it is about
+ * 2.6:1. The measured floors are Lc 53.5 in light and Lc 22 in dark.
+ * `emphasis(10)` stays the previous maximum: Lc 90 in light, Lc 100 in dark.
+ * One step is (max − floor) / 10: 3.65 Lc in light, 7.8 Lc in dark.
  */
+export const EMPHASIS_APCA_AT_0 = { light: 53.5, dark: 22 } as const;
+export const EMPHASIS_APCA_AT_10 = { light: 90, dark: 100 } as const;
+export const EMPHASIS_APCA_UNIT = {
+  light: (EMPHASIS_APCA_AT_10.light - EMPHASIS_APCA_AT_0.light) / SCALE_MAX,
+  dark: (EMPHASIS_APCA_AT_10.dark - EMPHASIS_APCA_AT_0.dark) / SCALE_MAX,
+} as const;
+
+/**
+ * WCAG emphasis is geometric in the ratio, the same in both modes.
+ * `emphasis(0)` is {@link NON_TEXT_RATIO} (3:1). `emphasis(10)` is 7:1.
+ * One step multiplies by (7/3)^0.1.
+ */
+export const EMPHASIS_WCAG_AT_0 = NON_TEXT_RATIO;
 export const EMPHASIS_WCAG_AT_10 = 7;
-export const EMPHASIS_WCAG_UNIT = 7 ** 0.1;
+export const EMPHASIS_WCAG_UNIT =
+  (EMPHASIS_WCAG_AT_10 / EMPHASIS_WCAG_AT_0) ** (1 / SCALE_MAX);
 
 /**
- * Emphasis at or above this scale is held to non-text 3:1.
- * WCAG emphasis crosses 3:1 between 6 and 7 (7^0.7 ≈ 3.9).
+ * Every emphasis scale is a solid fill. The curve starts at the non-text floor,
+ * so the whole 0–10 range is held to WCAG 3:1.
  */
-export const SOLID_EMPHASIS_SCALE = 7;
+export const SOLID_EMPHASIS_SCALE = 0;
 
 /** Border scale whose WCAG target is the non-text 3:1 rung. */
 export const BORDER_NON_TEXT_SCALE = 5;
-
-/** WCAG non-text contrast for UI components (SC 1.4.11). */
-export const NON_TEXT_RATIO = 3;
 
 /**
  * Surfaces closer than this in OKLCH lightness are treated as indistinguishable.
@@ -109,8 +123,9 @@ export function emphasisTarget(
   mode: Mode,
   scale: number,
 ): number {
-  if (algorithm === "apca") return Math.max(0, EMPHASIS_APCA_UNIT[mode] * scale);
-  return EMPHASIS_WCAG_AT_10 ** (scale / SCALE_MAX);
+  if (algorithm === "apca")
+    return EMPHASIS_APCA_AT_0[mode] + EMPHASIS_APCA_UNIT[mode] * scale;
+  return EMPHASIS_WCAG_AT_0 * EMPHASIS_WCAG_UNIT ** scale;
 }
 
 /**

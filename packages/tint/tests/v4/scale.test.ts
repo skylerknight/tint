@@ -42,10 +42,15 @@ describe("contrast ladders", () => {
     expect(textTarget("apca", 0)).toBe(45);
     expect(borderTarget("wcag2", BORDER_NON_TEXT_SCALE)).toBeCloseTo(3, 8);
     expect(borderTarget("apca", 0)).toBe(15);
-    expect(emphasisTarget("apca", "light", 0)).toBe(0);
+    expect(emphasisTarget("apca", "light", 0)).toBe(53.5);
+    expect(emphasisTarget("apca", "dark", 0)).toBe(22);
     expect(emphasisTarget("apca", "light", 10)).toBe(90);
     expect(emphasisTarget("apca", "dark", 10)).toBe(100);
-    expect(emphasisTarget("wcag2", "light", 0)).toBeCloseTo(1, 8);
+    expect(emphasisTarget("apca", "light", 5)).toBe(71.75);
+    expect(emphasisTarget("apca", "dark", 5)).toBe(61);
+    expect(emphasisTarget("wcag2", "light", 0)).toBeCloseTo(3, 8);
+    expect(emphasisTarget("wcag2", "dark", 0)).toBeCloseTo(3, 8);
+    expect(emphasisTarget("wcag2", "light", 10)).toBeCloseTo(7, 8);
     expect(emphasisTarget("wcag2", "dark", 10)).toBeCloseTo(7, 8);
   });
 
@@ -432,6 +437,44 @@ describe("kind lints", () => {
     const lint = solid?.diagnostics.find((item) => item.code === "emphasis-non-text");
     expect(lint?.message).toContain("WCAG 3:1");
     expect(lint?.path).toBe("neutral.action.DEFAULT");
+  });
+
+  it("starts APCA emphasis at a fill that clears non-text 3:1", () => {
+    const themes = generate(
+      defineConfig({
+        palette: {
+          neutral: "#ffffff",
+          brand: "#7c3aed",
+          // Hue that needs the most Lc before a light-page fill reaches 3:1.
+          edge: "oklch(0.7 0.25 15)",
+        },
+        themes: {
+          light: { mode: "light" },
+          dark: { mode: "dark" },
+        },
+        tokens: {
+          ramp: { n0: emphasis(0), mid: emphasis(5), n10: emphasis(10) },
+        },
+      }),
+    );
+    for (const theme of themes) {
+      for (const palette of theme.palettes) {
+        const n0 = palette.tokens.find((token) => token.id === "ramp.n0");
+        const mid = palette.tokens.find((token) => token.id === "ramp.mid");
+        const n10 = palette.tokens.find((token) => token.id === "ramp.n10");
+        expect(n0, palette.name).toBeDefined();
+        expect(mid, palette.name).toBeDefined();
+        expect(n10, palette.name).toBeDefined();
+        if (!n0 || !mid || !n10) continue;
+        const ratio = wcag2Ratio(n0.color.rgb, palette.page.rgb);
+        expect(ratio, `${theme.mode} ${palette.name}`).toBeGreaterThanOrEqual(3);
+        expect(n0.achieved).toBeLessThan(mid.achieved);
+        expect(mid.achieved).toBeLessThan(n10.achieved);
+      }
+      expect(theme.diagnostics.some((item) => item.code === "emphasis-non-text")).toBe(
+        false,
+      );
+    }
   });
 
   it("warns when adjacent surfaces share a lightness", () => {

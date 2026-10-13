@@ -25,7 +25,10 @@ describe("tint init", () => {
     expect(source).toContain("media: true");
     expect(source).not.toContain('"light-hc"');
     expect(source).toContain("surface(0)");
-    expect(source).toContain("disabled.emphasis(8)");
+    expect(source).toContain("emphasis(5)");
+    expect(source).toContain("emphasis(4.5)");
+    expect(source).toContain("emphasis(6)");
+    expect(source).toContain("disabled.emphasis(5)");
     expect(source).not.toContain("disabled(emphasis");
     expect(c.out()).toContain("Next steps");
 

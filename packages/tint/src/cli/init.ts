@@ -129,10 +129,10 @@ export default defineConfig({
     },
 
     action: {
-      DEFAULT: emphasis(8),
-      hover: emphasis(7),
-      pressed: emphasis(9),
-      disabled: disabled.emphasis(8),
+      DEFAULT: emphasis(5),
+      hover: emphasis(4.5),
+      pressed: emphasis(6),
+      disabled: disabled.emphasis(5),
       on: text(5, { on: "action" }),
       "on-disabled": disabled.text(5, { on: "action.disabled" }),
     },
