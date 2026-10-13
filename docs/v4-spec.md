@@ -186,11 +186,16 @@ A normalized token stores `states` as those canonical atoms in that order: `sele
 | Kind | One step |
 | --- | --- |
 | surface | 0.02 OKLCH L (light), 0.03 (dark), away from the backdrop |
-| emphasis 1–2 | 0.025 OKLCH L |
+| emphasis 1–2 | 0.025 OKLCH L (light), 0.0375 (dark), away from the backdrop |
 | emphasis 3–5, text, border | ΔLc 6 (apca) · ratio ×1.15 (wcag2), toward more contrast |
 
+The dark tint step is the light step scaled by the surface ratio: `0.025 × (0.03 / 0.02) = 0.0375`. One tint stays 1.25 surface steps in both modes. That size also applies to state steps on emphasis 1–2 and to a non-surface `step` override. `states.emphasis.step` overrides it with the same `{ light, dark }` shape as `states.surface.step`. An omitted side keeps that mode's default.
+
 ```ts
-states: { emphasis: { hover: 1, pressed: 3 }, surface: { step: { light: 0.02, dark: 0.035 } } }
+states: {
+  emphasis: { hover: 1, pressed: 3, step: { dark: 0.04 } },
+  surface: { step: { light: 0.02, dark: 0.035 } },
+}
 ```
 
 **State resolution:** a state token finds its rest token, meaning the token in the same group with the same kind and level and no state (or with the prefix state, for compounds). If none exists, the engine generates it internally and names it in diagnostics.
@@ -503,3 +508,4 @@ A preset supplies `levels` renames, optional state aliases, and optionally a tok
 | Oct 12, 2026 | **`nudge?: boolean`** is a `TokenOptions` field (§2.4). §6.4 already consumes `nudge: false` on emphasis tokens; the field is accepted on every kind. |
 | Oct 12, 2026 | **`light-hc` sets `mode: "light"`.** §2.3 requires `mode`; the §8 example had dropped it. |
 | Oct 12, 2026 | **`output.prefix`.** Optional CSS identifier. When set, every custom property is `--<prefix>-…`, including aliases. `@theme` `var()` references follow. `tint-<palette>` utility names do not. Default is no prefix. |
+| Oct 13, 2026 | **Tint step is mode-aware (§4).** Emphasis 1–2, state steps on those tints, and non-surface `step` overrides use 0.025 OKLCH L in light and 0.0375 in dark. Dark is `0.025 × (0.03 / 0.02)`, the surface dark/light ratio, so a tint stays 1.25 surface steps in both modes. Light output is unchanged. `states.emphasis.step: { light, dark }` overrides it the same way `states.surface.step` overrides a surface step. |

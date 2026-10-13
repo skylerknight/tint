@@ -198,8 +198,9 @@ export interface StateStepCounts {
 }
 
 /**
- * Size of one surface step in OKLCH lightness (§4).
- * The published defaults are 0.02 (light) and 0.03 (dark).
+ * Size of one step in OKLCH lightness, per mode (§4).
+ * Surface defaults are 0.02 (light) and 0.03 (dark).
+ * Emphasis tint defaults are 0.025 (light) and 0.0375 (dark).
  */
 export interface SurfaceStep {
   light?: number;
@@ -209,11 +210,20 @@ export interface SurfaceStep {
 /**
  * Surface state overrides (§4).
  *
- * `hover: 1` on emphasis is a step *count*. `step` here is the size of one
- * surface step. The spec's only `states` example uses counts for emphasis
- * and `step` for surface, so `step` is surface-only for now.
+ * `hover: 1` is a step *count*. `step` is the OKLCH size of one surface step.
  */
 export interface SurfaceStateSteps extends StateStepCounts {
+  step?: SurfaceStep;
+}
+
+/**
+ * Emphasis state overrides (§4).
+ *
+ * Counts apply to every emphasis level. `step` is the OKLCH size of one tint
+ * step: emphasis 1–2, state steps on those tints, and a non-surface `step`
+ * override. Text and border entries stay counts.
+ */
+export interface EmphasisStateSteps extends StateStepCounts {
   step?: SurfaceStep;
 }
 
@@ -222,7 +232,7 @@ export interface StateSteps {
   surface?: SurfaceStateSteps;
   text?: StateStepCounts;
   border?: StateStepCounts;
-  emphasis?: StateStepCounts;
+  emphasis?: EmphasisStateSteps;
 }
 
 /**

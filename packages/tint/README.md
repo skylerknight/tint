@@ -255,6 +255,12 @@ temporary state: `selected-hover`, `checked-disabled`. `disabled-hover` and
 `hover-selected` are rejected. `didYouMean` carries the legal spelling when
 there is one (`hovver` → `hover`, `hover-selected` → `selected-hover`).
 
+Emphasis levels 1–2 step by 0.025 OKLCH L in light mode and 0.0375 in dark
+mode (the light step times the surface dark/light ratio, so one tint stays
+1.25 surface steps). `states.emphasis.step` overrides that size the same way
+`states.surface.step` overrides a surface step. The tint size also applies to
+a non-surface `step` override.
+
 ```ts
 import { defineConfig, emphasis, generate, surface } from "@skylerknight/tint";
 
@@ -262,7 +268,7 @@ generate(
   defineConfig({
     palette: { neutral: "#71717a" },
     states: {
-      emphasis: { hover: 1, pressed: 3 },
+      emphasis: { hover: 1, pressed: 3, step: { dark: 0.04 } },
       surface: { step: { light: 0.02, dark: 0.035 } },
     },
     tokens: {

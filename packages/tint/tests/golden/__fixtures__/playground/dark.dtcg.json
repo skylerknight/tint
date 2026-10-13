@@ -515,11 +515,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.2,
+            0.22499999999999998,
             0.00574229190803655,
             285.9349365552322
           ],
-          "hex": "#161619"
+          "hex": "#1b1b1e"
         },
         "$description": "emphasis level 2, on surface.DEFAULT",
         "$extensions": {
@@ -539,11 +539,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.225,
+            0.26249999999999996,
             0.00574229190803655,
             285.9349365552322
           ],
-          "hex": "#1b1b1e"
+          "hex": "#242427"
         },
         "$description": "emphasis level 2, state hover, on surface.DEFAULT",
         "$extensions": {
@@ -564,11 +564,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.25,
+            0.3,
             0.00574229190803655,
             285.9349365552322
           ],
-          "hex": "#212124"
+          "hex": "#2d2d31"
         },
         "$description": "emphasis level 2, state pressed, on surface.DEFAULT",
         "$extensions": {
@@ -589,11 +589,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.8542348197411713,
+            0.8665436487756759,
             0.00574229190803655,
             285.9349365552322
           ],
-          "hex": "#cecfd3"
+          "hex": "#d2d3d7"
         },
         "$description": "text level 3, on soft.DEFAULT, soft.hover, soft.pressed",
         "$extensions": {
@@ -606,7 +606,7 @@
               "soft.pressed"
             ],
             "algorithm": "apca",
-            "achieved": 75.2124584233578,
+            "achieved": 75.41732234741444,
             "target": 75
           }
         }
@@ -1129,11 +1129,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.2,
-            0.11160427275577409,
+            0.22499999999999998,
+            0.12528279086511684,
             293.5411992313725
           ],
-          "hex": "#1c0042"
+          "hex": "#22004f"
         },
         "$description": "emphasis level 2, on surface.DEFAULT",
         "$extensions": {
@@ -1153,11 +1153,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.225,
-            0.12528279086511684,
+            0.26249999999999996,
+            0.14587828688202503,
             293.5411992313725
           ],
-          "hex": "#22004f"
+          "hex": "#2d0062"
         },
         "$description": "emphasis level 2, state hover, on surface.DEFAULT",
         "$extensions": {
@@ -1178,11 +1178,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.25,
-            0.13896130897445963,
+            0.3,
+            0.15916821072689785,
             293.5411992313725
           ],
-          "hex": "#29005c"
+          "hex": "#370673"
         },
         "$description": "emphasis level 2, state pressed, on surface.DEFAULT",
         "$extensions": {
@@ -1203,11 +1203,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.8624142793028655,
-            0.07468781763112736,
+            0.871536134636135,
+            0.06948065448722981,
             293.5411992313725
           ],
-          "hex": "#d3c9ff"
+          "hex": "#d6cdff"
         },
         "$description": "text level 3, on soft.DEFAULT, soft.hover, soft.pressed",
         "$extensions": {
@@ -1220,7 +1220,7 @@
               "soft.pressed"
             ],
             "algorithm": "apca",
-            "achieved": 75.20262634107354,
+            "achieved": 75.34468798485612,
             "target": 75
           }
         }
@@ -1743,11 +1743,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.2,
-            0.06608945353443776,
+            0.22499999999999998,
+            0.07400058515455583,
             254.6240213654337
           ],
-          "hex": "#001533"
+          "hex": "#001b3d"
         },
         "$description": "emphasis level 2, on surface.DEFAULT",
         "$extensions": {
@@ -1767,11 +1767,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.225,
-            0.07400058515455583,
+            0.26249999999999996,
+            0.0859022875919016,
             254.6240213654337
           ],
-          "hex": "#001b3d"
+          "hex": "#00244d"
         },
         "$description": "emphasis level 2, state hover, on surface.DEFAULT",
         "$extensions": {
@@ -1792,11 +1792,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.25,
-            0.0819117167746739,
+            0.3,
+            0.09794401005792205,
             254.6240213654337
           ],
-          "hex": "#002147"
+          "hex": "#002d5d"
         },
         "$description": "emphasis level 2, state pressed, on surface.DEFAULT",
         "$extensions": {
@@ -1817,11 +1817,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.8552074770000865,
-            0.07274040489648392,
+            0.8661422817581296,
+            0.0669295737064857,
             254.6240213654337
           ],
-          "hex": "#b0d2ff"
+          "hex": "#b6d6ff"
         },
         "$description": "text level 3, on soft.DEFAULT, soft.hover, soft.pressed",
         "$extensions": {
@@ -1834,7 +1834,7 @@
               "soft.pressed"
             ],
             "algorithm": "apca",
-            "achieved": 75.02859806765414,
+            "achieved": 75.0662471809884,
             "target": 75
           }
         }
@@ -2357,11 +2357,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.2,
-            0.053604693446529864,
+            0.22499999999999998,
+            0.06009415053043812,
             151.71103100007133
           ],
-          "hex": "#001d09"
+          "hex": "#00230c"
         },
         "$description": "emphasis level 2, on surface.DEFAULT",
         "$extensions": {
@@ -2381,11 +2381,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.225,
-            0.06009415053043812,
+            0.26249999999999996,
+            0.06987278449249165,
             151.71103100007133
           ],
-          "hex": "#00230c"
+          "hex": "#002e12"
         },
         "$description": "emphasis level 2, state hover, on surface.DEFAULT",
         "$extensions": {
@@ -2406,11 +2406,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.25,
-            0.06658360761434638,
+            0.3,
+            0.07974031512692752,
             151.71103100007133
           ],
-          "hex": "#002a10"
+          "hex": "#003918"
         },
         "$description": "emphasis level 2, state pressed, on surface.DEFAULT",
         "$extensions": {
@@ -2431,11 +2431,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.8358283991244203,
+            0.847233219151921,
             0.18206038503896046,
             151.71103100007133
           ],
-          "hex": "#58ea8b"
+          "hex": "#5dee8f"
         },
         "$description": "text level 3, on soft.DEFAULT, soft.hover, soft.pressed",
         "$extensions": {
@@ -2448,7 +2448,7 @@
               "soft.pressed"
             ],
             "algorithm": "apca",
-            "achieved": 75.37844808418738,
+            "achieved": 75.01204378256539,
             "target": 75
           }
         }
@@ -2971,11 +2971,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.2,
-            0.04174767055242652,
+            0.22499999999999998,
+            0.04672527742598506,
             84.4286279994804
           ],
-          "hex": "#1f1400"
+          "hex": "#261900"
         },
         "$description": "emphasis level 2, on surface.DEFAULT",
         "$extensions": {
@@ -2995,11 +2995,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.225,
-            0.04672527742598506,
+            0.26249999999999996,
+            0.054191687736322894,
             84.4286279994804
           ],
-          "hex": "#261900"
+          "hex": "#312200"
         },
         "$description": "emphasis level 2, state hover, on surface.DEFAULT",
         "$extensions": {
@@ -3020,11 +3020,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.25,
-            0.05170288429954362,
+            0.3,
+            0.06181866601032389,
             84.4286279994804
           ],
-          "hex": "#2d1f00"
+          "hex": "#3c2b00"
         },
         "$description": "emphasis level 2, state pressed, on surface.DEFAULT",
         "$extensions": {
@@ -3045,11 +3045,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.8569583006670869,
-            0.1547875169713045,
+            0.868556825129829,
+            0.14154065996909224,
             84.4286279994804
           ],
-          "hex": "#ffc742"
+          "hex": "#ffcc5a"
         },
         "$description": "text level 3, on soft.DEFAULT, soft.hover, soft.pressed",
         "$extensions": {
@@ -3062,7 +3062,7 @@
               "soft.pressed"
             ],
             "algorithm": "apca",
-            "achieved": 75.38206179595596,
+            "achieved": 75.38157633835985,
             "target": 75
           }
         }
@@ -3585,11 +3585,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.2,
-            0.08145142044244674,
+            0.22499999999999998,
+            0.09134890380298312,
             22.21622406540763
           ],
-          "hex": "#320004"
+          "hex": "#3c0006"
         },
         "$description": "emphasis level 2, on surface.DEFAULT",
         "$extensions": {
@@ -3609,11 +3609,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.225,
-            0.09134890380298312,
+            0.26249999999999996,
+            0.10627625575657894,
             22.21622406540763
           ],
-          "hex": "#3c0006"
+          "hex": "#4c000a"
         },
         "$description": "emphasis level 2, state hover, on surface.DEFAULT",
         "$extensions": {
@@ -3634,11 +3634,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.25,
-            0.10124638716351947,
+            0.3,
+            0.12128473462296605,
             22.21622406540763
           ],
-          "hex": "#470008"
+          "hex": "#5c000e"
         },
         "$description": "emphasis level 2, state pressed, on surface.DEFAULT",
         "$extensions": {
@@ -3659,11 +3659,11 @@
         "$value": {
           "colorSpace": "oklch",
           "components": [
-            0.865438687442944,
-            0.07212182547144935,
+            0.8769069009481782,
+            0.06522603788419043,
             22.21622406540763
           ],
-          "hex": "#ffc1bd"
+          "hex": "#ffc6c3"
         },
         "$description": "text level 3, on soft.DEFAULT, soft.hover, soft.pressed",
         "$extensions": {
@@ -3676,7 +3676,7 @@
               "soft.pressed"
             ],
             "algorithm": "apca",
-            "achieved": 75.19715033148623,
+            "achieved": 75.14778734657013,
             "target": 75
           }
         }

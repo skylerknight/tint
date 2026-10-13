@@ -30,8 +30,14 @@ import type { NormalizedToken } from "./normalize.js";
 /** One surface step in OKLCH lightness (§4). Overridable via `states.surface.step`. */
 export const SURFACE_STEP = { light: 0.02, dark: 0.03 } as const;
 
-/** Emphasis 1–2, and the lightness size of a non-surface `step` override (§4). */
-export const TINT_STEP = 0.025;
+/**
+ * Emphasis 1–2, state steps on those tints, and non-surface `step` overrides (§4).
+ * Overridable via `states.emphasis.step`.
+ *
+ * Dark keeps the light step's ratio to a surface step:
+ * `0.025 * (0.03 / 0.02) = 0.0375`. One tint stays 1.25 surface steps in both modes.
+ */
+export const TINT_STEP = { light: 0.025, dark: 0.0375 } as const;
 
 /** One contrast step for emphasis 3–5, text, and border (§4). */
 export const APCA_STATE_DELTA = 6;
@@ -65,6 +71,8 @@ export interface LowerContext {
   seed: OKLCH;
   /** Resolved size of one surface step for this theme's mode. */
   surfaceStep: number;
+  /** Resolved size of one emphasis tint step for this theme's mode. */
+  tintStep: number;
   states?: StateSteps;
 }
 
@@ -115,6 +123,13 @@ export function surfaceStepSize(mode: Mode, states: StateSteps | undefined): num
   const configured = states?.surface?.step;
   if (mode === "light") return configured?.light ?? SURFACE_STEP.light;
   return configured?.dark ?? SURFACE_STEP.dark;
+}
+
+/** Resolved tint step (§4). A missing side keeps {@link TINT_STEP}. */
+export function tintStepSize(mode: Mode, states: StateSteps | undefined): number {
+  const configured = states?.emphasis?.step;
+  if (mode === "light") return configured?.light ?? TINT_STEP.light;
+  return configured?.dark ?? TINT_STEP.dark;
 }
 
 /**
@@ -188,7 +203,7 @@ function fromCell(kind: Kind, ordinal: LevelOrdinal, ctx: LowerContext): Draft {
     target: 0,
     elevation: 0,
     away: 0,
-    stepSize: kind === "surface" ? ctx.surfaceStep : TINT_STEP,
+    stepSize: kind === "surface" ? ctx.surfaceStep : ctx.tintStep,
     chroma: 1,
     ordinal,
     seed: ctx.seed,
@@ -200,7 +215,7 @@ function fromCell(kind: Kind, ordinal: LevelOrdinal, ctx: LowerContext): Draft {
     draft.mode = "max";
   } else if (cell.type === "tint") {
     draft.away = cell.steps;
-    draft.stepSize = TINT_STEP;
+    draft.stepSize = ctx.tintStep;
   } else {
     draft.elevation = cell.offset;
     draft.stepSize = ctx.surfaceStep;
@@ -227,7 +242,7 @@ function applyStep(draft: Draft, token: NormalizedToken, ctx: LowerContext): voi
   }
   draft.elevation = 0;
   draft.away = Math.abs(step);
-  draft.stepSize = TINT_STEP;
+  draft.stepSize = ctx.tintStep;
   if (step < 0 && draft.direction === undefined) draft.direction = "darker";
 }
 

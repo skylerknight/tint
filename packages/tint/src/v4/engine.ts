@@ -34,6 +34,7 @@ import {
   pageLightness,
   realizeLightness,
   surfaceStepSize,
+  tintStepSize,
   type SolverIntent,
 } from "./lower.js";
 import { applyNudgeAndExact } from "./nudge.js";
@@ -138,6 +139,7 @@ export function generateV4(input: unknown): GenerationResultV4[] {
         theme: theme.name,
         algorithm,
         metric,
+        tintStep: tintStepSize(theme.mode, config.states),
         ...(config.states !== undefined ? { states: config.states } : {}),
         diagnostics,
       });
@@ -209,6 +211,7 @@ function solvePalette(
 ): PaletteResultV4 {
   const seed = publish(rgbToOKLCH(parseColor(expansion.color)));
   const step = surfaceStepSize(theme.mode, states);
+  const tint = tintStepSize(theme.mode, states);
   const page = publish({
     l: pageLightness(theme.mode, step),
     c: Math.min(seed.oklch.c, maxChromaForLs(0)),
@@ -224,6 +227,7 @@ function solvePalette(
     contrastLevel: expansion.contrastLevel,
     seed: seed.oklch,
     surfaceStep: step,
+    tintStep: tint,
     ...(states !== undefined ? { states } : {}),
   };
 
