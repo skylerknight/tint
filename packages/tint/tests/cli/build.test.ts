@@ -70,8 +70,8 @@ describe("tint build", () => {
       JSON.stringify({
         palette: { neutral: "#ffffff", brand: "#2563eb" },
         tokens: {
-          surface: { DEFAULT: { kind: "surface" } },
-          text: { strong: { kind: "text", level: "strong" } },
+          surface: { DEFAULT: { kind: "surface", scale: 0 } },
+          text: { strong: { kind: "text", scale: 4 } },
         },
         output: { prefix: "tint", formats: ["css", "tailwind", "dtcg", "flat"] },
       }),

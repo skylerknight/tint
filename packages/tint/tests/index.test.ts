@@ -18,6 +18,7 @@ describe("public API", () => {
       "calcAPCAabs",
       "calcAPCAraw",
       "defineConfig",
+      "disabled",
       "emphasis",
       "findDefaultConfig",
       "formatAuditTable",
@@ -75,8 +76,8 @@ describe("public API", () => {
     const config = tint.defineConfig({
       palette: { neutral: "#71717a", brand: "#7c3aed" },
       tokens: {
-        surface: { DEFAULT: tint.surface() },
-        text: { strong: tint.text("strong") },
+        surface: { DEFAULT: tint.surface(0) },
+        text: { strong: tint.text(8) },
       },
     });
     const result = tint.generate(config)[0];

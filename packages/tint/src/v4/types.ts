@@ -63,39 +63,44 @@ export type Direction = (typeof DIRECTIONS)[number];
 export type Hue = number | `+${number}` | `-${number}`;
 
 /**
- * Options shared by every kind (§2.4). `level` is a separate argument.
+ * Options shared by every kind on the numeric-scale prototype.
  *
- * `nudge: false` disables auto-nudge (§6.4). The spec describes that for
- * emphasis tokens; the field sits on the shared options object.
+ * Level names, `state`, `contrast`, `step`, and `direction` are gone.
+ * A state is another token with another number.
+ *
+ * `nudge: false` disables auto-nudge. The field sits on the shared options.
  */
 export interface TokenOptions {
-  /** Interaction layered on the rest token (§4). */
-  state?: State;
-  /** Single backdrop: `"group"` or `"group.token"` (§2.4, §6.2). */
+  /** Single backdrop: `"group"` or `"group.token"`. */
   on?: string;
-  /** Relative level nudge for this token only (§5). */
-  contrast?: ContrastNudge;
-  /** Force lighter or darker against the backdrop (§2.4). */
-  direction?: Direction;
   /** Multiplier on the palette color's chroma, 0..2 (default 1; surfaces capped). */
   chroma?: number;
-  /** Absolute hue, or a `+` / `-` shift in degrees (§2.4). */
+  /** Absolute hue, or a `+` / `-` shift in degrees. */
   hue?: Hue;
   /** Raw APCA target. Expert escape hatch; only with algorithm `apca`. */
   lc?: number;
   /** Raw WCAG ratio. Expert escape hatch; only with algorithm `wcag2`. */
   ratio?: number;
-  /** Raw lightness steps (surface) or a step offset (other kinds). */
-  step?: number;
-  /** `false` disables auto-nudge for this token (§2.4, §6.4). */
+  /** `false` disables auto-nudge for this token. */
   nudge?: boolean;
 }
 
-/** A token: its kind, plus an optional level and {@link TokenOptions}. */
+/**
+ * A token: its kind, a numeric scale, and {@link TokenOptions}.
+ *
+ * The scale is 0–10. Decimals are real steps. The unit depends on the kind.
+ * See `ladders.ts`.
+ */
 export interface Token extends TokenOptions {
   kind: Kind;
-  /** Omitted when the call omits it. The default ordinal is applied at build time. */
-  level?: Level;
+  /** `surface(0)`, `text(5)`, `emphasis(8.5)`. Decimals are allowed. */
+  scale: number;
+  /**
+   * Set by `disabled.emphasis(n)` and the other `disabled.<kind>(n)` constructors.
+   * `n` is how strong the color would have been. The scale stays at `n`; the
+   * engine then mutes it. JSON may set this directly. There is no `$role`.
+   */
+  disabled?: boolean;
 }
 
 /**
@@ -140,25 +145,30 @@ interface ThemeFields {
   /** Default `:root`. */
   selector?: string;
   /**
-   * `true` means `prefers-color-scheme` matching `mode`.
+   * `true` means `prefers-color-scheme` matching the resolved mode.
    * A string is a custom media query (§2.3).
    */
   media?: boolean | string;
   contrast?: ThemeContrastOptions;
   /** Per-theme palette deltas. Strings replace `color` (§2.3). */
   palette?: Record<string, string | Partial<PaletteColor>>;
+  /**
+   * Page lightness, 0..100. Replaces `mode` as the page lever.
+   * Polarity is inferred: 50 and above is light, below 50 is dark.
+   * `mode` remains shorthand for the current page values (light 96, dark 15).
+   */
+  lightness?: number;
 }
 
 /**
- * Theme options (§2.3).
+ * Theme options.
  *
- * §2.3 lists `mode` as required, and the §8 `light-hc` example sets it.
- * `extends` inherits another theme's options, so `mode` may be omitted when
- * `extends` is set and the parent supplies it.
+ * Set `lightness`, or `mode` as shorthand, or `extends` to inherit either.
  */
-export type ThemeOptions =
-  | (ThemeFields & { mode: Mode; extends?: string })
-  | (ThemeFields & { mode?: Mode; extends: string });
+export interface ThemeOptions extends ThemeFields {
+  mode?: Mode;
+  extends?: string;
+}
 
 /**
  * Aliases for one kind (§2.5). Values are ordinals 1–5.
@@ -281,16 +291,26 @@ export interface OutputOptions {
  * validator rule. Group and token names (`/^[a-zA-Z][a-zA-Z0-9_-]*$/`) are
  * too.
  */
+/**
+ * Top-level palette overrides. A key is one palette name, or several joined
+ * by commas (`"warning,info"`). Each value is a partial token tree: a token
+ * with `kind` replaces that token, options merge. Applied after `tune`.
+ */
+export type Overrides = Record<
+  string,
+  Record<string, Record<string, Token | Partial<TokenOptions>>>
+>;
+
 export interface Config {
   contrast?: ContrastOptions;
   /** At least one entry. The first is the default palette unless `default` is set. */
   palette: Record<string, string | PaletteColor>;
   /** Default when omitted: `{ light: { mode: "light" } }`. */
   themes?: Record<string, ThemeOptions>;
-  levels?: LevelNames;
-  states?: StateSteps;
   preset?: Preset;
   /** Groups contain only tokens. There are no group-level settings (§2.4). */
   tokens: Record<string, Record<string, Token>>;
+  /** Explicit per-palette replacements. Prefer this over palette `tune`. */
+  overrides?: Overrides;
   output?: OutputOptions;
 }

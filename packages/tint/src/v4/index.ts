@@ -42,7 +42,7 @@ export type {
 } from "./types.js";
 
 export { MODES, DIRECTIONS, PRESETS, OUTPUT_FORMATS, COLOR_FORMATS } from "./types.js";
-export { surface, text, border, emphasis } from "./kinds.js";
+export { surface, text, border, emphasis, disabled } from "./kinds.js";
 export { defineConfig } from "./define.js";
 export {
   KINDS,

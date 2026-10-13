@@ -1,12 +1,15 @@
 /**
- * Kind functions (docs/v4-spec.md §2.4, §3, §4).
+ * Kind functions for the 0–10 scale.
  *
- * Each call returns JSON-serializable data. Omitted arguments are omitted
- * from the object: `emphasis()` is `{ kind: "emphasis" }`, not level 3.
- * Names stay as written (`"bold"`, `"active"`, `"selected-hover"`).
+ * `surface(0)`, `text(5)`, `border(4.5)`, `emphasis(8)`.
+ * The number is the whole scale. Higher means more contrast against the backdrop.
+ * There are no level names and no `state`. Hover and pressed are other numbers.
+ * Options are `{ on?, chroma?, hue?, lc?, ratio?, nudge? }`.
+ * `disabled.emphasis(n)` and the other `disabled.<kind>(n)` build that kind at
+ * `n`, then the engine mutes it. There is no `disabled(token)` wrapper.
  */
 
-import type { Kind, Level, Token, TokenOptions } from "./types.js";
+import type { Kind, Token, TokenOptions } from "./types.js";
 
 /** Flatten an intersection into one object type so equality checks see a single shape. */
 type Flat<T> = { -readonly [K in keyof T]: T[K] };
@@ -21,65 +24,104 @@ type OnlyTokenOptions<O> = O & {
 };
 
 interface KindFn<K extends Kind> {
-  (): { kind: K };
-  <const L extends Level>(level: L): Flat<{ kind: K; level: L }>;
-  <const O extends TokenOptions>(options: OnlyTokenOptions<O>): Flat<{ kind: K } & O>;
-  <const L extends Level, const O extends TokenOptions>(
-    level: L,
+  (scale: number): { kind: K; scale: number };
+  <const O extends TokenOptions>(
+    scale: number,
     options: OnlyTokenOptions<O>,
-  ): Flat<{ kind: K; level: L } & O>;
+  ): Flat<{ kind: K; scale: number } & O>;
 }
 
 function isOptions(value: unknown): value is TokenOptions {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function buildToken(
-  kind: Kind,
-  level: Level | undefined,
-  options: TokenOptions | undefined,
-): Token {
-  const token = { kind } as Token;
-  if (level !== undefined) token.level = level;
+function buildToken(kind: Kind, scale: number, options: TokenOptions | undefined): Token {
+  const token = { kind, scale } as Token;
   if (options === undefined) return token;
-
-  // Copy defined fields only. `exactOptionalPropertyTypes` rejects assigning
-  // the indexed union in one statement, and JSON drops undefined anyway.
-  if (options.state !== undefined) token.state = options.state;
   if (options.on !== undefined) token.on = options.on;
-  if (options.contrast !== undefined) token.contrast = options.contrast;
-  if (options.direction !== undefined) token.direction = options.direction;
   if (options.chroma !== undefined) token.chroma = options.chroma;
   if (options.hue !== undefined) token.hue = options.hue;
   if (options.lc !== undefined) token.lc = options.lc;
   if (options.ratio !== undefined) token.ratio = options.ratio;
-  if (options.step !== undefined) token.step = options.step;
   if (options.nudge !== undefined) token.nudge = options.nudge;
   return token;
 }
 
 function kindFunction<K extends Kind>(kind: K): KindFn<K> {
-  function create(levelOrOptions?: Level | TokenOptions, options?: TokenOptions): Token {
-    if (typeof levelOrOptions === "string" || typeof levelOrOptions === "number") {
-      return buildToken(kind, levelOrOptions, options);
+  function create(scale: number, options?: TokenOptions): Token {
+    if (isOptions(scale)) {
+      throw new TypeError(
+        `${kind}() takes a scale number first. Options are the second argument.`,
+      );
     }
-    if (isOptions(levelOrOptions)) return buildToken(kind, undefined, levelOrOptions);
-    return buildToken(kind, undefined, undefined);
+    return buildToken(kind, scale, options);
   }
   return create as KindFn<K>;
 }
 
-/** Elevation. Higher sits closer to the light in both modes (§3). Default level `base`. */
+/**
+ * Contrast against the page, on the same 0–10 curve as the other kinds.
+ * `surface(0)` matches the page. One unit is +3 Lc in light, +4 Lc in dark,
+ * and ×2^0.1 on the WCAG ratio (1:1 at 0, 2:1 at 10).
+ */
 export const surface = kindFunction("surface");
 
-/** Legibility against its backdrop (§3). Default level `body`. */
+/**
+ * Contrast against its backdrop.
+ * `text(5)` is body text (APCA Lc 75, WCAG 4.5:1).
+ * One unit is +6 Lc, or ×1.15 on the WCAG ratio.
+ */
 export const text = kindFunction("text");
 
-/** Definition (§3). Levels 1–2 are decorative. Default level `default`. */
+/**
+ * Contrast against its backdrop.
+ * `border(5)` is the WCAG non-text 3:1 rung.
+ * One unit is +6 Lc, or ×2^0.2 on the WCAG ratio (1.5:1 at 0, 6:1 at 10).
+ */
 export const border = kindFunction("border");
 
 /**
- * Prominence (§3). Levels 1–2 are tinted surfaces; 3–5 are solids.
- * Default level `default`.
+ * Contrast against its surface (`on`, or the base surface).
+ * One pure curve: no tint branch and no polarity flip as the number grows.
+ * One unit is +9 Lc in light, +10 Lc in dark, or ×7^0.1 on the WCAG ratio
+ * (1:1 at 0, 7:1 at 10).
+ * Hover and pressed are other tokens (`emphasis(7)`, `emphasis(9)`).
  */
 export const emphasis = kindFunction("emphasis");
+
+interface DisabledFn<K extends Kind> {
+  (scale: number): { kind: K; scale: number; disabled: true };
+  <const O extends TokenOptions>(
+    scale: number,
+    options: OnlyTokenOptions<O>,
+  ): Flat<{ kind: K; scale: number; disabled: true } & O>;
+}
+
+function disabledKind<K extends Kind>(kind: K): DisabledFn<K> {
+  function create(scale: number, options?: TokenOptions): Token {
+    if (isOptions(scale)) {
+      throw new TypeError(
+        `disabled.${kind}() takes a scale number first. Options are the second argument.`,
+      );
+    }
+    const token = buildToken(kind, scale, options);
+    token.disabled = true;
+    return token;
+  }
+  return create as DisabledFn<K>;
+}
+
+/**
+ * Build a kind at scale `n` ("how strong it would have been"), then mark it
+ * for muting.
+ *
+ * The engine desaturates the solved color (chroma ×0.3) and steps lightness
+ * at most 0.06 toward the backdrop. The result is a solid color. The scale
+ * stays `n`. `opts` may set `on`, `chroma`, `hue`, `lc`, `ratio`, or `nudge`.
+ */
+export const disabled = {
+  emphasis: disabledKind("emphasis"),
+  text: disabledKind("text"),
+  surface: disabledKind("surface"),
+  border: disabledKind("border"),
+};
