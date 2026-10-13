@@ -1,5 +1,6 @@
 node_modules
 dist
+packages/tint/.readme-check
 coverage
 .tint
 *.log

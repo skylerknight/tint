@@ -1,5 +1,9 @@
 # Recipes
 
+**v3.** The fragments on this page are v3 configs (`colors`, `lc`, `ls`). Version
+4.0.0-alpha.0 replaces them. See the [package README](../packages/tint/README.md)
+and the [migration guide](migration-v4.md).
+
 Common patterns, each with a config fragment and the real output it produces (light mode
 unless stated). Hex values come from running the fragment through `generate`; your
 numbers will match for the same seeds.
