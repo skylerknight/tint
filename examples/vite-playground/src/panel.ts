@@ -122,10 +122,16 @@ function panelMarkup(state: EditorState): string {
         <button type="button" id="reset-config">Reset</button>
       </div>
     </header>
-    <section class="diagnostics" aria-live="polite">
-      <h3>Diagnostics <span id="diagnostic-count"></span></h3>
-      <div id="diagnostics"></div>
-    </section>
+    <button type="button" id="open-diagnostics" class="diagnostics-open" aria-haspopup="dialog" aria-controls="diagnostics-dialog">Diagnostics (0)</button>
+    <dialog id="diagnostics-dialog" aria-labelledby="diagnostics-title">
+      <div class="dialog-panel">
+        <header class="dialog-bar">
+          <h3 id="diagnostics-title">Diagnostics</h3>
+          <button type="button" id="close-diagnostics">Close</button>
+        </header>
+        <div id="diagnostics"></div>
+      </div>
+    </dialog>
     <section>
       <label class="share">
         <input type="checkbox" id="share-palette" ${state.sharePalette ? "checked" : ""} />
@@ -154,17 +160,21 @@ function panelMarkup(state: EditorState): string {
   </form>`;
 }
 
+function warningCount(result: LiveResult): number {
+  return result.diagnostics.filter((item) => item.severity === "warning").length;
+}
+
 function renderDiagnostics(result: LiveResult): void {
-  const count = document.querySelector("#diagnostic-count");
+  const opener = document.querySelector("#open-diagnostics");
   const list = document.querySelector("#diagnostics");
-  if (count === null || list === null) return;
+  if (opener instanceof HTMLButtonElement) {
+    opener.textContent = `Diagnostics (${warningCount(result)})`;
+  }
+  if (list === null) return;
   if (result.error !== undefined) {
-    count.textContent = "";
     list.innerHTML = `<p class="diagnostic error">${escapeHtml(result.error)}</p>`;
     return;
   }
-  count.textContent =
-    result.diagnostics.length === 0 ? "none" : String(result.diagnostics.length);
   if (result.diagnostics.length === 0) {
     list.innerHTML = `<p class="diagnostic quiet">No diagnostics.</p>`;
     return;
@@ -357,6 +367,21 @@ export function mountEditor(root: HTMLElement): EditorState {
   });
 
   root.addEventListener("submit", (event) => event.preventDefault());
+
+  const diagnosticsDialog = document.querySelector("#diagnostics-dialog");
+  if (diagnosticsDialog instanceof HTMLDialogElement) {
+    diagnosticsDialog.addEventListener("click", (event) => {
+      if (event.target === diagnosticsDialog) diagnosticsDialog.close();
+    });
+  }
+  document.querySelector("#open-diagnostics")?.addEventListener("click", () => {
+    if (diagnosticsDialog instanceof HTMLDialogElement && !diagnosticsDialog.open) {
+      diagnosticsDialog.showModal();
+    }
+  });
+  document.querySelector("#close-diagnostics")?.addEventListener("click", () => {
+    if (diagnosticsDialog instanceof HTMLDialogElement) diagnosticsDialog.close();
+  });
 
   document.querySelector("#copy-config")?.addEventListener("click", () => {
     void copyConfig(configSource(state));
