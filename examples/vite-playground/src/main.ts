@@ -1,5 +1,5 @@
 import "./app.css";
-import themes from "virtual:tint";
+import { mountEditor } from "./panel.ts";
 
 // Tailwind only emits classes it can see as literals, so spell the tint-* classes out.
 const palettes: Record<string, string> = {
@@ -72,7 +72,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <header class="mb-6 flex items-center justify-between">
     <div>
       <h1 class="text-strong text-2xl font-bold">tint playground</h1>
-      <p class="text-faint text-xs">unified prototype — signed surfaces, emphasis 0–10</p>
+      <p class="text-faint text-xs">unified prototype — edit the palette and scales live</p>
     </div>
     <button id="toggle" type="button" class="rounded-md border border-strong px-3 py-1.5 text-body hover:bg-surface-overlay">Toggle dark</button>
   </header>
@@ -80,13 +80,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <h2 class="text-strong text-sm font-medium uppercase tracking-wide">Emphasis 0–10</h2>
     ${rampRow()}
   </section>
-  <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">${Object.keys(palettes).map(card).join("")}</div>
-  <pre class="mt-8 overflow-auto rounded-lg bg-surface-sunken p-4 text-xs text-muted">${themes
-    .map(
-      (t) =>
-        `${t.name}: ${t.palettes.length} palettes, ${t.diagnostics.length} diagnostics`,
-    )
-    .join("\n")}</pre>`;
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">${Object.keys(palettes).map(card).join("")}</div>`;
 
 // Without a class the OS preference decides; a class forces a mode either way.
 const html = document.documentElement;
@@ -94,6 +88,8 @@ const isDark = () =>
   html.classList.contains("dark") ||
   (!html.classList.contains("light") &&
     matchMedia("(prefers-color-scheme: dark)").matches);
+
+mountEditor(document.querySelector<HTMLElement>("#editor")!);
 
 document.querySelector("#toggle")!.addEventListener("click", () => {
   const dark = isDark();

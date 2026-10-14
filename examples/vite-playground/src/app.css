@@ -5,4 +5,223 @@
 
 body {
   @apply bg-surface text-body;
+  margin: 0;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
+  align-items: start;
+}
+
+#app {
+  padding: 2rem;
+  min-width: 0;
+}
+
+.editor,
+#editor {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 0.9rem 0.85rem 1.5rem;
+  background: #f4f4f5;
+  color: #18181b;
+  border-right: 1px solid #d4d4d8;
+  font:
+    12.5px/1.4 ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+
+html.dark #editor {
+  background: #18181b;
+  color: #f4f4f5;
+  border-right-color: #3f3f46;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light) #editor {
+    background: #18181b;
+    color: #f4f4f5;
+    border-right-color: #3f3f46;
+  }
+}
+
+#editor h2,
+#editor h3 {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#editor h3 {
+  margin-bottom: 0.35rem;
+}
+
+#editor section {
+  margin-top: 0.9rem;
+}
+
+#editor .note,
+#editor .hint,
+#editor .quiet {
+  margin: 0 0 0.35rem;
+  color: #52525b;
+  font-size: 0.72rem;
+}
+
+html.dark #editor .note,
+html.dark #editor .hint,
+html.dark #editor .quiet {
+  color: #a1a1aa;
+}
+
+.editor-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+#editor button,
+#editor input[type="text"],
+#editor input[type="number"] {
+  font: inherit;
+  color: #18181b;
+  background: #fff;
+  border: 1px solid #a1a1aa;
+  border-radius: 4px;
+}
+
+#editor button {
+  padding: 0.25rem 0.45rem;
+  cursor: pointer;
+}
+
+#editor button:hover {
+  background: #e4e4e7;
+}
+
+html.dark #editor button,
+html.dark #editor input[type="text"],
+html.dark #editor input[type="number"] {
+  color: #f4f4f5;
+  background: #27272a;
+  border-color: #52525b;
+}
+
+.share {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+}
+
+.color,
+.scale {
+  display: grid;
+  gap: 0.35rem;
+  align-items: center;
+  margin-bottom: 0.28rem;
+}
+
+.scale {
+  grid-template-columns: 4.6rem minmax(0, 1fr) 4.1rem;
+}
+
+.color {
+  grid-template-columns: 4.6rem 1.8rem minmax(0, 1fr);
+}
+
+.color input[type="color"] {
+  width: 1.7rem;
+  height: 1.45rem;
+  padding: 0;
+  border: 1px solid #a1a1aa;
+  background: transparent;
+}
+
+.color input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.15rem 0.3rem;
+}
+
+.color input[aria-invalid="true"] {
+  border-color: #dc2626;
+}
+
+.scale input[type="number"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.12rem 0.25rem;
+}
+
+.diagnostics {
+  max-height: 11rem;
+  overflow: auto;
+  padding-right: 0.2rem;
+}
+
+.diagnostic {
+  margin: 0 0 0.45rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #e4e4e7;
+}
+
+.diagnostic p {
+  margin: 0;
+}
+
+.diagnostic.warning strong {
+  color: #a16207;
+}
+
+.diagnostic.error,
+.diagnostic.error strong {
+  color: #b91c1c;
+}
+
+html.dark .diagnostic {
+  border-bottom-color: #3f3f46;
+}
+
+html.dark .diagnostic.warning strong {
+  color: #fbbf24;
+}
+
+html.dark .diagnostic.error,
+html.dark .diagnostic.error strong {
+  color: #fca5a5;
+}
+
+#editor [hidden] {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  #editor {
+    position: relative;
+    height: auto;
+    max-height: 70vh;
+    border-right: 0;
+    border-bottom: 1px solid #d4d4d8;
+  }
+
+  html.dark #editor {
+    border-bottom-color: #3f3f46;
+  }
 }
