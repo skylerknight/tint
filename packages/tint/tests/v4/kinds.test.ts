@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { border, disabled, emphasis, surface, text } from "../../src/v4/kinds.js";
+import {
+  border,
+  decorative,
+  disabled,
+  emphasis,
+  surface,
+  text,
+} from "../../src/v4/kinds.js";
 
 describe("numeric kind functions", () => {
   it("stores the scale and copies only the supported options", () => {
@@ -51,5 +58,22 @@ describe("numeric kind functions", () => {
       hue: 20,
       disabled: true,
     });
+  });
+
+  it("decorative.text/border/emphasis marks the token and does not mute", () => {
+    expect(decorative.text(1)).toEqual({ kind: "text", scale: 1, decorative: true });
+    expect(decorative.border(0, { on: "surface" })).toEqual({
+      kind: "border",
+      scale: 0,
+      on: "surface",
+      decorative: true,
+    });
+    expect(decorative.emphasis(2, { nudge: false })).toEqual({
+      kind: "emphasis",
+      scale: 2,
+      nudge: false,
+      decorative: true,
+    });
+    expect(decorative).not.toHaveProperty("surface");
   });
 });

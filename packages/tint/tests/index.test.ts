@@ -17,6 +17,7 @@ describe("public API", () => {
       "calcAPCA",
       "calcAPCAabs",
       "calcAPCAraw",
+      "decorative",
       "defineConfig",
       "disabled",
       "emphasis",

@@ -12,6 +12,7 @@ import type { EngineDiagnosticV4 } from "../../../packages/tint/src/v4/diagnosti
 import type { GenerationResultV4 } from "../../../packages/tint/src/v4/engine.ts";
 import {
   border,
+  decorative,
   disabled,
   emphasis,
   surface,
@@ -54,7 +55,7 @@ export const SCALE_RANGE = { min: 0, max: 10, step: 0.5 } as const;
 export const SURFACE_RANGE = { min: -10, max: 10, step: 0.5 } as const;
 export const LIGHTNESS_RANGE = { min: 0, max: 100, step: 1 } as const;
 
-const STORAGE_KEY = "tint-playground-editor-v1";
+const STORAGE_KEY = "tint-playground-editor-v2";
 
 export const DEFAULT_STATE: EditorState = {
   sharePalette: false,
@@ -81,9 +82,9 @@ export const DEFAULT_STATE: EditorState = {
     },
   },
   action: { rest: 5, hover: 4.5, pressed: 6 },
-  soft: { rest: 2, hover: 3, pressed: 4 },
-  surface: { sunken: -1, raised: 1, overlay: 2 },
-  text: { faint: 1, muted: 3, body: 5, strong: 8 },
+  soft: { rest: 2, hover: 3.5, pressed: 4 },
+  surface: { sunken: -1, raised: 1, overlay: 3 },
+  text: { faint: 1, muted: 3, body: 5, strong: 7 },
   border: { subtle: 1, default: 3, strong: 7, focus: 8 },
 };
 
@@ -233,6 +234,7 @@ ${paletteBlock(state.dark.palette, "        ")}
       },`;
   return `import {
   border,
+  decorative,
   defineConfig,
   disabled,
   emphasis,
@@ -302,6 +304,16 @@ ${paletteBlock(state.light.palette, "    ")}
       on: text(${num(state.text.body)}, { on: "soft" }),
       "on-disabled": disabled.text(${num(state.text.body)}, { on: "soft.disabled" }),
     },
+
+    input: {
+      DEFAULT: border(4),
+      placeholder: decorative.text(0),
+      focus: border(${num(state.border.focus)}),
+    },
+
+    divider: { DEFAULT: decorative.border(0) },
+
+    icon: { DEFAULT: decorative.text(2) },
 
     ramp: {
       n0: emphasis(0),
@@ -388,6 +400,13 @@ function buildConfig(state: EditorState) {
         on: text(state.text.body, { on: "soft" }),
         "on-disabled": disabled.text(state.text.body, { on: "soft.disabled" }),
       },
+      input: {
+        DEFAULT: border(4),
+        placeholder: decorative.text(0),
+        focus: border(state.border.focus),
+      },
+      divider: { DEFAULT: decorative.border(0) },
+      icon: { DEFAULT: decorative.text(2) },
       ramp: {
         n0: emphasis(0),
         n1: emphasis(1),

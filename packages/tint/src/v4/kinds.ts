@@ -9,6 +9,9 @@
  * Options are `{ on?, chroma?, hue?, lc?, ratio?, nudge? }`.
  * `disabled.emphasis(n)` and the other `disabled.<kind>(n)` build that kind at
  * `n`, then the engine mutes it. There is no `disabled(token)` wrapper.
+ * `decorative.text(n)`, `decorative.border(n)`, and `decorative.emphasis(n)`
+ * are the same kind and scale with no muting. Contrast-floor and out-of-range
+ * warnings are suppressed. There is no `decorative.surface`.
  */
 
 import type { Kind, Token, TokenOptions } from "./types.js";
@@ -71,8 +74,11 @@ export const surface = kindFunction("surface");
 
 /**
  * Contrast against its backdrop.
- * `text(5)` is body text (APCA Lc 75, WCAG 4.5:1).
- * One unit is +6 Lc, or ×1.15 on the WCAG ratio.
+ * `text(0)` is the lowest compliant text (APCA Lc 45, WCAG 3:1).
+ * `text(5)` is body text (APCA Lc 75, WCAG 4.5:1). `text(10)` is the top.
+ * One unit is +6 Lc, or ×(4.5/3)^(1/5) on the WCAG ratio
+ * (3:1 at 0, 4.5:1 at 5, 6.75:1 at 10).
+ * Scales below 5 are muted or faint, not a body-text failure.
  */
 export const text = kindFunction("text");
 
@@ -123,12 +129,51 @@ function disabledKind<K extends Kind>(kind: K): DisabledFn<K> {
  * for muting.
  *
  * The engine desaturates the solved color (chroma ×0.3) and steps lightness
- * at most 0.06 toward the backdrop. The result is a solid color. The scale
- * stays `n`. `opts` may set `on`, `chroma`, `hue`, `lc`, `ratio`, or `nudge`.
+ * toward the backdrop by at most 0.06, and by at most a quarter of the gap,
+ * so a nearby surface does not land on the page. The result is a solid color.
+ * The scale stays `n`. `opts` may set `on`, `chroma`, `hue`, `lc`, `ratio`,
+ * or `nudge`.
  */
 export const disabled = {
   emphasis: disabledKind("emphasis"),
   text: disabledKind("text"),
   surface: disabledKind("surface"),
   border: disabledKind("border"),
+};
+
+interface DecorativeFn<K extends Exclude<Kind, "surface">> {
+  (scale: number): { kind: K; scale: number; decorative: true };
+  <const O extends TokenOptions>(
+    scale: number,
+    options: OnlyTokenOptions<O>,
+  ): Flat<{ kind: K; scale: number; decorative: true } & O>;
+}
+
+function decorativeKind<K extends Exclude<Kind, "surface">>(kind: K): DecorativeFn<K> {
+  function create(scale: number, options?: TokenOptions): Token {
+    if (isOptions(scale)) {
+      throw new TypeError(
+        `decorative.${kind}() takes a scale number first. Options are the second argument.`,
+      );
+    }
+    const token = buildToken(kind, scale, options);
+    token.decorative = true;
+    return token;
+  }
+  return create as DecorativeFn<K>;
+}
+
+/**
+ * Build a kind at scale `n` and mark it decorative.
+ *
+ * The color is the same kind and scale, with no muting. Contrast-floor
+ * warnings (body text, non-text 3:1) and out-of-range warnings are
+ * suppressed. The color must still be visibly distinct from its backdrop.
+ * There is no `decorative.surface`. `opts` may set `on`, `chroma`, `hue`,
+ * `lc`, `ratio`, or `nudge`.
+ */
+export const decorative = {
+  emphasis: decorativeKind("emphasis"),
+  text: decorativeKind("text"),
+  border: decorativeKind("border"),
 };

@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { wcag2Ratio } from "../../src/contrast/wcag2.js";
-import { disabled, emphasis, generate, surface, text, toCSS } from "../../src/index.js";
+import {
+  decorative,
+  disabled,
+  emphasis,
+  generate,
+  surface,
+  text,
+  toCSS,
+} from "../../src/index.js";
 import { border } from "../../src/v4/kinds.js";
 import {
   BORDER_APCA_UNIT,
@@ -40,6 +48,8 @@ describe("contrast ladders", () => {
     expect(textTarget("apca", TEXT_BODY_SCALE)).toBe(75);
     expect(textTarget("wcag2", TEXT_BODY_SCALE)).toBe(4.5);
     expect(textTarget("apca", 0)).toBe(45);
+    expect(textTarget("wcag2", 0)).toBeCloseTo(3, 8);
+    expect(textTarget("wcag2", 10)).toBeCloseTo(6.75, 8);
     expect(borderTarget("wcag2", BORDER_NON_TEXT_SCALE)).toBeCloseTo(3, 8);
     expect(borderTarget("apca", 0)).toBe(15);
     expect(emphasisTarget("apca", "light", 0)).toBe(53.5);
@@ -216,6 +226,35 @@ describe("disabled treatment", () => {
     expect(muted.color.rgb).not.toHaveProperty("a");
   });
 
+  it("does not park disabled.surface(2) on the page", () => {
+    const themes = generate(
+      defineConfig({
+        palette: { neutral: "#ffffff" },
+        themes: { light: { lightness: 92 }, dark: { mode: "dark" } },
+        tokens: {
+          surface: {
+            page: surface(0),
+            raised: surface(1),
+            soft: disabled.surface(2),
+          },
+        },
+      }),
+    );
+    for (const theme of themes) {
+      const palette = theme.palettes[0];
+      const soft = palette?.tokens.find((token) => token.id === "surface.soft");
+      const page = palette?.page.oklch.l ?? 0;
+      const raised =
+        palette?.tokens.find((token) => token.id === "surface.raised")?.color.oklch.l ??
+        0;
+      const lightness = soft?.color.oklch.l ?? 0;
+      expect(Math.abs(lightness - page), theme.name).toBeGreaterThanOrEqual(0.01 - 1e-9);
+      expect(Math.abs(lightness - raised), theme.name).toBeGreaterThanOrEqual(
+        0.01 - 1e-9,
+      );
+    }
+  });
+
   it("writes only solid colors", () => {
     const themes = generate(
       defineConfig({
@@ -385,25 +424,38 @@ describe("lightness polarity", () => {
 });
 
 describe("kind lints", () => {
-  it("warns when text is under the body stop and names the lowest passing scale", () => {
+  it("does not treat muted or faint text as a body-text failure", () => {
     const [theme] = generate(
       defineConfig({
         palette: { neutral: "#ffffff" },
         themes: { light: { mode: "light" } },
         tokens: {
           surface: { DEFAULT: surface(0) },
-          text: { DEFAULT: text(5), faint: text(1) },
+          text: { DEFAULT: text(5), faint: text(1), muted: text(3) },
         },
       }),
     );
-    const faint = theme?.diagnostics.find((item) => item.code === "text-below-body");
-    expect(faint?.message).toContain("APCA body text");
-    expect(faint?.message).toContain("Lc 75");
-    expect(faint?.message).toContain(`Lowest passing scale is ${TEXT_BODY_SCALE}`);
-    expect(faint?.path).toBe("neutral.text.faint");
-    expect(theme?.diagnostics.some((item) => item.path === "neutral.text.DEFAULT")).toBe(
+    expect(theme?.diagnostics.some((item) => item.code === "text-below-body")).toBe(
       false,
     );
+  });
+
+  it("still warns when a body-or-higher scale targets below body text", () => {
+    const [theme] = generate(
+      defineConfig({
+        palette: { neutral: "#ffffff" },
+        themes: { light: { mode: "light" } },
+        tokens: {
+          surface: { DEFAULT: surface(0) },
+          text: { forced: text(6, { lc: 30 }) },
+        },
+      }),
+    );
+    const lint = theme?.diagnostics.find((item) => item.code === "text-below-body");
+    expect(lint?.message).toContain("APCA body text");
+    expect(lint?.message).toContain("Lc 75");
+    expect(lint?.message).toContain(`Lowest passing scale is ${TEXT_BODY_SCALE}`);
+    expect(lint?.path).toBe("neutral.text.forced");
   });
 
   it("warns when a solid emphasis fill misses non-text 3:1", () => {
@@ -633,16 +685,10 @@ describe("scale range", () => {
     }
   });
 
-  it("rejects emphasis, text, and border outside 0..10", () => {
+  it("accepts emphasis, text, and border outside 0..10", () => {
     for (const kind of ["emphasis", "text", "border"] as const) {
       for (const scale of [-0.1, -1, 10.1, 11]) {
-        const issues = issuesFor({ kind, scale });
-        expect(issues.length, `${kind}(${scale})`).toBeGreaterThan(0);
-        const scaleIssue = issues.find((issue) => issue.path.endsWith(".scale"));
-        expect(scaleIssue?.message, `${kind}(${scale})`).toContain(
-          `outside ${SCALE_MIN}..${SCALE_MAX}`,
-        );
-        expect(scaleIssue?.message).toContain(kind);
+        expect(issuesFor({ kind, scale }), `${kind}(${scale})`).toEqual([]);
       }
     }
   });
@@ -658,15 +704,7 @@ describe("scale range", () => {
     }
   });
 
-  it("fails generation with that message", () => {
-    expect(() =>
-      generate(
-        defineConfig({
-          palette: { neutral: "#ffffff" },
-          tokens: { action: { DEFAULT: emphasis(11) } },
-        }),
-      ),
-    ).toThrow(/emphasis\(n\) is a contrast step from 0 to 10/);
+  it("fails generation when surface leaves -10..10", () => {
     expect(() =>
       generate(
         defineConfig({
@@ -675,6 +713,99 @@ describe("scale range", () => {
         }),
       ),
     ).toThrow(/surface\(n\) is signed lightness steps from the page/);
+  });
+
+  it("warns when a plain contrast scale leaves 0..10", () => {
+    const [theme] = generate(
+      defineConfig({
+        palette: { neutral: "#ffffff" },
+        themes: { light: { mode: "light" } },
+        tokens: {
+          sample: {
+            low: text(-1),
+            high: emphasis(11),
+            mark: decorative.text(-1),
+          },
+        },
+      }),
+    );
+    const warnings = theme?.diagnostics.filter(
+      (item) => item.code === "scale-out-of-range",
+    );
+    expect(warnings?.map((item) => item.path).sort()).toEqual([
+      "neutral.sample.high",
+      "neutral.sample.low",
+    ]);
+    expect(
+      warnings?.find((item) => item.path === "neutral.sample.low")?.message,
+    ).toContain("below the accessible floor for text");
+    expect(
+      warnings?.find((item) => item.path === "neutral.sample.high")?.message,
+    ).toContain("above the achievable ceiling for emphasis");
+    expect(warnings?.some((item) => item.path === "neutral.sample.mark")).toBe(false);
+  });
+
+  it("does not warn when scale 10 is past the achievable contrast", () => {
+    const [theme] = generate(
+      defineConfig({
+        palette: { brand: "#7c3aed" },
+        themes: { light: { lightness: 92 } },
+        tokens: { sample: { strong: text(10), edge: emphasis(10) } },
+      }),
+    );
+    expect(
+      theme?.diagnostics.some(
+        (item) =>
+          item.code === "contrast-unreachable" &&
+          (item.path === "brand.sample.strong" || item.path === "brand.sample.edge"),
+      ),
+    ).toBe(false);
+  });
+
+  it("warns when a decorative color matches its backdrop and skips the contrast floor", () => {
+    const [theme] = generate(
+      defineConfig({
+        palette: { neutral: "#ffffff" },
+        themes: { light: { mode: "light" } },
+        tokens: {
+          sample: {
+            hairline: decorative.border(0),
+            flat: decorative.border(-10),
+            faint: decorative.text(1),
+          },
+        },
+      }),
+    );
+    const flat = theme?.diagnostics.find(
+      (item) => item.code === "decorative-indistinguishable",
+    );
+    expect(flat?.path).toBe("neutral.sample.flat");
+    expect(flat?.message).toContain("not visibly distinct");
+    expect(
+      theme?.diagnostics.some(
+        (item) =>
+          item.path === "neutral.sample.hairline" &&
+          (item.code === "decorative-indistinguishable" ||
+            item.code === "border-non-text" ||
+            item.code === "scale-out-of-range"),
+      ),
+    ).toBe(false);
+    expect(theme?.diagnostics.some((item) => item.code === "text-below-body")).toBe(
+      false,
+    );
+  });
+
+  it("rejects decorative.surface", () => {
+    expect(() =>
+      generate(
+        defineConfig({
+          palette: { neutral: "#ffffff" },
+          tokens: {
+            bad: { DEFAULT: { kind: "surface", scale: 0, decorative: true } },
+          },
+        }),
+      ),
+    ).toThrow(/no decorative\.surface/);
   });
 });
 

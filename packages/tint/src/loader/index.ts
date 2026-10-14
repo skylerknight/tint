@@ -222,8 +222,9 @@ async function loadWithEsbuild(
  * Stand-in for `@skylerknight/tint` when the package cannot be resolved.
  * Kind functions match the v4 return shape so the loaded object validates.
  * Validation still happens in the loader, against the real validator.
- * `emphasis`, `text`, and `border` scales are 0..10 contrast steps.
+ * `emphasis`, `text`, and `border` are contrast steps. Outside 0..10 warns.
  * `surface` is −10..10, signed lightness steps from the page (0 is the page).
+ * `decorative` covers text, border, and emphasis. There is no decorative.surface.
  */
 const TINT_STUB = `function __tintKind(kind) {
   return function (scale, options) {
@@ -251,7 +252,20 @@ export const disabled = {
   surface: __tintDisabled("surface"),
   border: __tintDisabled("border"),
 };
-export default { defineConfig, surface, text, border, emphasis, disabled };
+function __tintDecorative(kind) {
+  return function (scale, options) {
+    const token = { kind: kind, scale: scale, decorative: true };
+    if (options && typeof options === "object") Object.assign(token, options);
+    token.decorative = true;
+    return token;
+  };
+}
+export const decorative = {
+  emphasis: __tintDecorative("emphasis"),
+  text: __tintDecorative("text"),
+  border: __tintDecorative("border"),
+};
+export default { defineConfig, surface, text, border, emphasis, disabled, decorative };
 `;
 
 /**

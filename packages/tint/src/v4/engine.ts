@@ -22,6 +22,7 @@ import {
 } from "../contrast/solve.js";
 import { maxChromaForLs } from "../engine/generate.js";
 import { kindLints, modeLightnessLint, pageLightnessLint } from "./a11y.js";
+import { SCALE_MAX } from "./ladders.js";
 import {
   colorOutOfGamutLint,
   duplicateTokenLints,
@@ -70,6 +71,8 @@ export interface SolvedTokenV4 {
   readonly states: readonly CanonicalState[];
   /** True when the token was built with `disabled.<kind>(n)`. The scale is unchanged. */
   readonly disabled?: boolean;
+  /** True when the token was built with `decorative.<kind>(n)`. The color is not muted. */
+  readonly decorative?: boolean;
   /** Backdrop ids in graph order. {@link PAGE} is the theme page. */
   readonly backdrop: readonly string[];
   readonly color: GeneratedColorV4;
@@ -311,9 +314,16 @@ function realize(
   color = maybeMute(token, color, background);
   const across = minContrast(metric, color.rgb, rgbs);
   const worst = backs[across.index];
-  const reached = intent.mode === "max" ? true : across.min + 1e-6 >= intent.target;
+  // Scale 10 is the top of the curve. If the backdrop cannot reach the
+  // requested contrast, the request becomes whatever contrast is achievable,
+  // so exactly 10 does not warn.
+  const atCeiling = token.value.scale === SCALE_MAX;
+  const reachedTarget = across.min + 1e-6 >= intent.target;
+  const clamped = atCeiling && !reachedTarget;
+  const reached = intent.mode === "max" ? true : reachedTarget || clamped;
+  const reportedTarget = intent.mode === "max" || clamped ? across.min : intent.target;
   return finish(token, intent.mode, color, across.min, {
-    target: intent.mode === "max" ? across.min : intent.target,
+    target: reportedTarget,
     polarity: solved.polarity,
     reached,
     ...(worst !== undefined ? { worst } : {}),
@@ -352,6 +362,7 @@ function finish(
     ordinal: displayOrdinal(token.value.scale),
     states: token.value.states,
     ...(token.value.disabled === true ? { disabled: true } : {}),
+    ...(token.value.decorative === true ? { decorative: true } : {}),
     backdrop: token.backdrop,
     color,
     mode,

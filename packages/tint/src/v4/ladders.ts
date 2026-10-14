@@ -10,7 +10,10 @@
  * `surface` is not on that curve. It is signed lightness steps from the page
  * (−10..10). See {@link SURFACE_STEP} in `lower.ts`. `surface(0)` is the page.
  *
- * `text(5)` is body text (APCA Lc 75, WCAG 4.5:1).
+ * `text(0)` is the lowest compliant text (APCA Lc 45, WCAG 3:1).
+ * `text(5)` is body text (APCA Lc 75, WCAG 4.5:1). `text(10)` is the top of
+ * the curve. A request at exactly 10 is clamped to the contrast the backdrop
+ * can actually reach, so that step does not warn for being past the gamut.
  */
 
 import type { ContrastAlgorithm, Kind, Mode } from "./types.js";
@@ -26,16 +29,25 @@ export const SCALE_MAX = 10;
 export const SURFACE_SCALE_MIN = -10;
 export const SURFACE_SCALE_MAX = 10;
 
-/** `text(5)` / the body-text stop. Below this, text lints. */
+/**
+ * `text(5)` / the body-text stop.
+ * Scales below this are muted or faint. They are compliant text, not a lint.
+ */
 export const TEXT_BODY_SCALE = 5;
 
 /** APCA: text(n) = 45 + 6n. text(0) = Lc 45, text(5) = Lc 75, text(10) = Lc 105. */
 export const TEXT_APCA_AT_0 = 45;
 export const TEXT_APCA_UNIT = 6;
 
-/** WCAG: text(n) = 4.5 × 1.15^(n−5). One unit multiplies the ratio by 1.15. */
+/**
+ * WCAG: text(n) = 4.5 × (4.5/3)^((n−5)/5), which is 3:1 at n = 0.
+ * text(0) = 3:1 (the minimum for text), text(5) = 4.5:1, text(10) = 6.75:1.
+ * One unit multiplies the ratio by (4.5/3)^(1/5). Anchoring on 4.5 keeps
+ * text(5) exact; raising 3 to the fifth power does not.
+ */
+export const TEXT_WCAG_AT_0 = 3;
 export const TEXT_WCAG_BODY = 4.5;
-export const TEXT_WCAG_UNIT = 1.15;
+export const TEXT_WCAG_UNIT = (TEXT_WCAG_BODY / TEXT_WCAG_AT_0) ** (1 / TEXT_BODY_SCALE);
 
 /** APCA: border(n) = 15 + 6n. border(0) = Lc 15, border(5) = Lc 45, border(10) = Lc 75. */
 export const BORDER_APCA_AT_0 = 15;

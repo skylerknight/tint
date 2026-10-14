@@ -100,7 +100,7 @@ export function renderConfig(options: { brand: string; dark: boolean }): string 
     light: { mode: "light", selector: ".light", media: true },
   }`;
 
-  return `import { border, defineConfig, disabled, emphasis, surface, text } from "@skylerknight/tint";
+  return `import { border, defineConfig, decorative, disabled, emphasis, surface, text } from "@skylerknight/tint";
 
 // v4 starter (docs/v4-spec.md §8, without the light-hc theme).
 // Every palette color gets the same tokens. \`tint-danger\` re-skins a subtree.
@@ -153,6 +153,9 @@ export default defineConfig({
       firm: border(5),
       focus: border(8, { on: "action" }),
     },
+
+    divider: { DEFAULT: decorative.border(0) },
+    placeholder: { DEFAULT: decorative.text(0) },
 
     text: {
       DEFAULT: text(5),

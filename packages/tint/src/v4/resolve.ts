@@ -865,6 +865,7 @@ function cloneToken(token: NormalizedToken): NormalizedToken {
 
 function copyOptions(target: NormalizedToken, source: NormalizedToken): void {
   if (source.disabled === true) target.disabled = true;
+  if (source.decorative === true) target.decorative = true;
   if (source.on !== undefined) target.on = source.on;
   if (source.chroma !== undefined) target.chroma = source.chroma;
   if (source.hue !== undefined) target.hue = source.hue;

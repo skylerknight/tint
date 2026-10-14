@@ -79,10 +79,28 @@ describe("v4 JSON Schema (numeric scale)", () => {
     ).toBe(true);
     expect(
       validate(base({ tokens: { text: { DEFAULT: { kind: "text", scale: -1 } } } })),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       validate(
         base({ tokens: { action: { DEFAULT: { kind: "emphasis", scale: 11 } } } }),
+      ),
+    ).toBe(true);
+    expect(
+      validate(
+        base({
+          tokens: {
+            hint: { DEFAULT: { kind: "text", scale: -2, decorative: true } },
+          },
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      validate(
+        base({
+          tokens: {
+            bad: { DEFAULT: { kind: "surface", scale: 1, decorative: true } },
+          },
+        }),
       ),
     ).toBe(false);
     expect(

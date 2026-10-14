@@ -60,6 +60,16 @@ export const DISABLED_CHROMA = 0.3;
 export const DISABLED_APPROACH = 0.06;
 
 /**
+ * Share of the gap to the backdrop that a disabled color may close.
+ *
+ * Closing the whole gap parked `disabled.surface(2)` on the page. Half of
+ * that gap is exactly one surface step, so the muted color would match
+ * `surface(1)`. A quarter of the gap stays off the page and off that
+ * neighbor (0.01 in light, 0.015 in dark).
+ */
+export const DISABLED_GAP_FRACTION = 0.25;
+
+/**
  * Dark page lightness. Matches the v3 dark foundation offset so the page sits
  * off black. Spec Q1 / Q7 leave the baseline open; see {@link pageLightness}.
  */
@@ -203,7 +213,8 @@ function fromScale(kind: Kind, scale: number, ctx: LowerContext): Draft {
  */
 export function muteDisabled(color: OKLCH, backdropL: number): OKLCH {
   const distance = backdropL - color.l;
-  const step = Math.min(DISABLED_APPROACH, Math.abs(distance));
+  const gap = Math.abs(distance);
+  const step = Math.min(DISABLED_APPROACH, gap * DISABLED_GAP_FRACTION);
   return {
     l: clamp01(color.l + Math.sign(distance) * step),
     c: Math.max(0, color.c * DISABLED_CHROMA),

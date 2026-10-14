@@ -74,6 +74,7 @@ const TOKEN_FIELDS: readonly string[] = [
   "kind",
   "scale",
   "disabled",
+  "decorative",
   "on",
   "chroma",
   "hue",
@@ -1514,7 +1515,7 @@ function absorb(
         ...(suggestion !== undefined
           ? { didYouMean: suggestion, hint: `Did you mean "${suggestion}"?` }
           : {
-              hint: "Valid token fields are kind, scale, disabled, on, chroma, hue, lc, ratio, and nudge. disabled is the boolean set by disabled.<kind>(n).",
+              hint: "Valid token fields are kind, scale, disabled, decorative, on, chroma, hue, lc, ratio, and nudge. disabled is set by disabled.<kind>(n). decorative is set by decorative.text/border/emphasis(n).",
             }),
       }),
     );

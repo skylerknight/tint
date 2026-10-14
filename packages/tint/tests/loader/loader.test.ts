@@ -225,21 +225,25 @@ describe("loadConfig — bundling details", () => {
     });
   });
 
-  it("rejects an out-of-range scale from the stub with a clear message", async () => {
+  it("loads an open contrast scale and still rejects surface outside -10..10", async () => {
     writeFileSync(
       join(dir, "tint.config.ts"),
-      `import { defineConfig, emphasis, surface } from "@skylerknight/tint";
+      `import { defineConfig, decorative, emphasis } from "@skylerknight/tint";
 export default defineConfig({
   palette: { neutral: "#abcdef" },
   tokens: {
     action: { DEFAULT: emphasis(11) },
-    surface: { DEFAULT: surface(-11) },
+    hint: { DEFAULT: decorative.text(0) },
   },
 });`,
     );
-    await expect(loadConfig({ root: dir, configPath: "tint.config.ts" })).rejects.toThrow(
-      /scale 11 is outside 0\.\.10/,
-    );
+    const open = await loadConfig({ root: dir, configPath: "tint.config.ts" });
+    expect(open.config.tokens.action?.DEFAULT).toEqual({ kind: "emphasis", scale: 11 });
+    expect(open.config.tokens.hint?.DEFAULT).toEqual({
+      kind: "text",
+      scale: 0,
+      decorative: true,
+    });
     writeFileSync(
       join(dir, "tint.config.ts"),
       `import { defineConfig, surface } from "@skylerknight/tint";

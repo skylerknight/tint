@@ -24,6 +24,8 @@ export const DIAGNOSTIC_CODES = [
   "emphasis-non-text",
   "border-non-text",
   "surface-indistinguishable",
+  "scale-out-of-range",
+  "decorative-indistinguishable",
   "page-lightness",
   "mode-lightness",
 ] as const;

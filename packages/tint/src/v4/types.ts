@@ -102,6 +102,12 @@ export interface Token extends TokenOptions {
    * engine then mutes it. JSON may set this directly. There is no `$role`.
    */
   disabled?: boolean;
+  /**
+   * Set by `decorative.text(n)`, `decorative.border(n)`, or `decorative.emphasis(n)`.
+   * The kind and scale are unchanged and the color is not muted. Contrast-floor
+   * and out-of-range warnings are suppressed. There is no `decorative.surface`.
+   */
+  decorative?: boolean;
 }
 
 /**

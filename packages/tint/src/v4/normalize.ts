@@ -1,13 +1,14 @@
 /**
  * Token normalization for the numeric-scale prototype.
  *
- * A token is `{ kind, scale, ...options }`. `scale` is a finite number in range:
- * 0..10 for emphasis, text, and border, and −10..10 for surface.
+ * A token is `{ kind, scale, ...options }`. `scale` is a finite number.
+ * Surface stays inside −10..10. Emphasis, text, and border may leave 0..10;
+ * that is a warning from the engine, not an error here.
  * Level names, `state`, `contrast`, `step`, and `direction` are rejected
  * with a pointer at the replacement. This function does not throw.
  */
 
-import { SCALE_MAX, SCALE_MIN, SURFACE_SCALE_MAX, SURFACE_SCALE_MIN } from "./ladders.js";
+import { SURFACE_SCALE_MAX, SURFACE_SCALE_MIN } from "./ladders.js";
 import {
   isKind,
   isPlainObject,
@@ -24,6 +25,7 @@ const TOKEN_KEYS = new Set([
   "kind",
   "scale",
   "disabled",
+  "decorative",
   "on",
   "chroma",
   "hue",
@@ -59,6 +61,8 @@ export interface NormalizedToken {
   states: CanonicalState[];
   /** Muting treatment. The scale is the token's own scale. */
   disabled?: boolean;
+  /** Decorative intent. Contrast-floor and out-of-range warnings are suppressed. */
+  decorative?: boolean;
   on?: string;
   chroma?: number;
   hue?: Hue;
@@ -115,12 +119,14 @@ export function normalizeToken(
       ),
     );
   } else if (typeof token.scale === "number" && Number.isFinite(token.scale)) {
-    const bounds = scaleBounds(kind);
-    if (token.scale < bounds.min || token.scale > bounds.max) {
+    if (
+      kind === "surface" &&
+      (token.scale < SURFACE_SCALE_MIN || token.scale > SURFACE_SCALE_MAX)
+    ) {
       issues.push(
         normalizeIssue(
           joinPath(path, "scale"),
-          scaleRangeMessage(kind, token.scale, bounds),
+          `scale ${token.scale} is outside ${SURFACE_SCALE_MIN}..${SURFACE_SCALE_MAX}. surface(n) is signed lightness steps from the page: 0 is the page, positive is raised, negative is sunken.`,
         ),
       );
     } else {
@@ -136,23 +142,6 @@ export function normalizeToken(
   const normalized: NormalizedToken = { kind, scale, states: [] };
   assignOptions(normalized, extra);
   return { ok: true, token: normalized };
-}
-
-function scaleBounds(kind: Kind): { min: number; max: number } {
-  if (kind === "surface") return { min: SURFACE_SCALE_MIN, max: SURFACE_SCALE_MAX };
-  return { min: SCALE_MIN, max: SCALE_MAX };
-}
-
-function scaleRangeMessage(
-  kind: Kind,
-  scale: number,
-  bounds: { min: number; max: number },
-): string {
-  const range = `${bounds.min}..${bounds.max}`;
-  if (kind === "surface") {
-    return `scale ${scale} is outside ${range}. surface(n) is signed lightness steps from the page: 0 is the page, positive is raised, negative is sunken.`;
-  }
-  return `scale ${scale} is outside ${range}. ${kind}(n) is a contrast step from ${SCALE_MIN} to ${SCALE_MAX}. Higher n is more contrast against the backdrop.`;
 }
 
 function kindIssue(path: string, kind: unknown): NormalizeIssue {
@@ -173,6 +162,7 @@ function kindIssue(path: string, kind: unknown): NormalizeIssue {
 
 interface TokenExtras {
   disabled?: boolean;
+  decorative?: boolean;
   on?: string;
   chroma?: number;
   hue?: Hue;
@@ -191,6 +181,21 @@ function readOptions(
   if (present(token, "disabled")) {
     if (typeof token.disabled === "boolean") extra.disabled = token.disabled;
     else issues.push(normalizeIssue(joinPath(path, "disabled"), "Expected a boolean."));
+  }
+
+  if (present(token, "decorative")) {
+    if (typeof token.decorative !== "boolean") {
+      issues.push(normalizeIssue(joinPath(path, "decorative"), "Expected a boolean."));
+    } else if (token.decorative === true && token.kind === "surface") {
+      issues.push(
+        normalizeIssue(
+          joinPath(path, "decorative"),
+          "There is no decorative.surface. decorative covers text, border, and emphasis.",
+        ),
+      );
+    } else if (token.decorative === true) {
+      extra.decorative = true;
+    }
   }
 
   if (present(token, "on")) {
@@ -226,6 +231,7 @@ function readOptions(
 
 function assignOptions(token: NormalizedToken, extra: TokenExtras): void {
   if (extra.disabled === true) token.disabled = true;
+  if (extra.decorative === true) token.decorative = true;
   if (extra.on !== undefined) token.on = extra.on;
   if (extra.chroma !== undefined) token.chroma = extra.chroma;
   if (extra.hue !== undefined) token.hue = extra.hue;

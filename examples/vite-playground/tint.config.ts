@@ -1,5 +1,6 @@
 import {
   border,
+  decorative,
   defineConfig,
   disabled,
   emphasis,
@@ -16,8 +17,10 @@ import {
  *
  * The light page is lightness 92, not the mode shorthand 96. At 96, surface(2)
  * is already white, so surface(3) and surface(4) would clip to the same color.
- * 92 leaves those soft steps 0.02 apart (surface(4) lands on white).
+ * 92 leaves overlay surface(3), soft hover surface(3.5), and soft pressed
+ * surface(4) 0.01 apart (pressed lands on white).
  * Soft fills are surfaces; the label is text(5) on that surface.
+ * text(7) is strong: text(8) asks for Lc 93, which this page cannot reach.
  */
 export default defineConfig({
   contrast: { algorithm: "apca", level: "standard" },
@@ -59,14 +62,14 @@ export default defineConfig({
       sunken: surface(-1),
       DEFAULT: surface(0),
       raised: surface(1),
-      overlay: surface(2),
+      overlay: surface(3),
     },
 
     text: {
       faint: text(1),
       muted: text(3),
       body: text(5),
-      strong: text(8),
+      strong: text(7),
     },
 
     border: {
@@ -87,12 +90,22 @@ export default defineConfig({
 
     soft: {
       DEFAULT: surface(2),
-      hover: surface(3),
+      hover: surface(3.5),
       pressed: surface(4),
       disabled: disabled.surface(2),
       on: text(5, { on: "soft" }),
       "on-disabled": disabled.text(5, { on: "soft.disabled" }),
     },
+
+    input: {
+      DEFAULT: border(4),
+      placeholder: decorative.text(0),
+      focus: border(8),
+    },
+
+    divider: { DEFAULT: decorative.border(0) },
+
+    icon: { DEFAULT: decorative.text(2) },
 
     ramp: {
       n0: emphasis(0),

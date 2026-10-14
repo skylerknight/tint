@@ -95,7 +95,7 @@ interface Schema {
   title?: string;
   description?: string;
   type?: "object" | "string" | "number" | "integer" | "boolean" | "array";
-  const?: string;
+  const?: string | number | boolean;
   enum?: readonly (string | number)[];
   properties?: Record<string, Schema>;
   patternProperties?: Record<string, Schema>;
@@ -211,8 +211,9 @@ function stateDescription(): string {
 function scaleSchema(): Schema {
   return {
     description:
-      "Numeric scale. emphasis, text, and border are contrast steps from " +
-      `${SCALE_MIN} to ${SCALE_MAX} (higher is more contrast; decimals interpolate, APCA in Lc and WCAG by ratio; text(5) is body text). ` +
+      "Numeric scale. emphasis, text, and border are contrast steps. " +
+      `${SCALE_MIN} to ${SCALE_MAX} is the curve (higher is more contrast; decimals interpolate, APCA in Lc and WCAG by ratio; text(0) is the lowest compliant text, text(5) is body text, text(10) is the top). ` +
+      "A plain token outside that range is a warning, not an error. " +
       "surface is signed lightness steps from the page, " +
       `${SURFACE_SCALE_MIN} to ${SURFACE_SCALE_MAX} ` +
       "(0 is the page, positive is raised, negative is sunken; one step is 0.02 in light and 0.03 in dark). " +
@@ -221,7 +222,7 @@ function scaleSchema(): Schema {
   };
 }
 
-/** Bounds depend on kind. Surface is signed; the other kinds are 0..10. */
+/** Surface stays inside −10..10. Contrast kinds are open; out of 0..10 warns. */
 function scaleBoundsSchema(): Schema {
   return {
     if: {
@@ -237,9 +238,19 @@ function scaleBoundsSchema(): Schema {
         },
       },
     },
-    else: {
+  };
+}
+
+/** `decorative: true` is text, border, or emphasis. There is no decorative.surface. */
+function decorativeKindSchema(): Schema {
+  return {
+    if: {
+      properties: { decorative: { const: true } },
+      required: ["decorative"],
+    },
+    then: {
       properties: {
-        scale: { type: "number", minimum: SCALE_MIN, maximum: SCALE_MAX },
+        kind: { enum: ["text", "border", "emphasis"] },
       },
     },
   };
@@ -288,14 +299,22 @@ function tokenSchema(): Schema {
         description:
           "Set by disabled.emphasis(n), disabled.text(n), disabled.surface(n), or disabled.border(n). " +
           "n is how strong the color would have been. The scale does not change. " +
-          "The engine mutes it (chroma ×0.3, lightness at most 0.06 toward the backdrop). Solid color, no alpha.",
+          "The engine mutes it (chroma ×0.3, lightness at most 0.06 toward the backdrop, and at most a quarter of the gap). Solid color, no alpha.",
+        type: "boolean",
+      },
+      decorative: {
+        description:
+          "Set by decorative.text(n), decorative.border(n), or decorative.emphasis(n). " +
+          "The kind and scale are unchanged and the color is not muted. " +
+          "Contrast-floor and out-of-range warnings are suppressed. " +
+          "There is no decorative.surface.",
         type: "boolean",
       },
       ...optionProperties(),
     },
     required: ["kind", "scale"],
     additionalProperties: false,
-    allOf: [scaleBoundsSchema()],
+    allOf: [scaleBoundsSchema(), decorativeKindSchema()],
   };
 }
 
