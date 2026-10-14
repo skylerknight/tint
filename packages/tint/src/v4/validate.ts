@@ -248,9 +248,9 @@ const V3_MIGRATIONS: Readonly<Record<string, { expected: string; detail: string 
     detail: "`$scale` became the `states` step config, or `surface({ step })`.",
   },
   $decorative: {
-    expected: "a decorative kind, level, or state",
+    expected: "decorative(n)",
     detail:
-      '`$decorative` is implied by border levels 1–2, state "disabled", emphasis levels 1–2, and surfaces.',
+      "`$decorative` was removed. Use decorative(n), a signed lightness step away from its backdrop. It is not a flag on text, border, or emphasis.",
   },
   $reference: {
     expected: "nothing",

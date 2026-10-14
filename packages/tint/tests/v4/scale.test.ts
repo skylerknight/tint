@@ -595,16 +595,23 @@ describe("surface lightness steps", () => {
           );
           expect(token?.mode, `${theme.name} ${scale}`).toBe("lightness");
           const linear = pageL + scale * step;
-          const expected =
-            linear > 1 ? surfaceLightness(pageL, scale, step) : clamp01(linear);
+          const expected = surfaceLightness(pageL, scale, step);
+          expect(expected, `${theme.name} ${scale}`).toBeCloseTo(clamp01(linear), 6);
           expect(
             token?.color.oklch.l,
             `${theme.name} ${palette.name} ${scale}`,
           ).toBeCloseTo(expected, 4);
-          if (linear > 1) {
-            expect(token?.color.oklch.l, `${theme.name} ${scale} folds`).toBeLessThan(
-              pageL,
-            );
+          if (scale > 0) {
+            expect(
+              token?.color.oklch.l,
+              `${theme.name} ${scale} stays at or above the anchor`,
+            ).toBeGreaterThanOrEqual(pageL - 1e-6);
+          }
+          if (scale < 0) {
+            expect(
+              token?.color.oklch.l,
+              `${theme.name} ${scale} stays at or below the anchor`,
+            ).toBeLessThanOrEqual(pageL + 1e-6);
           }
         }
       }
@@ -661,10 +668,12 @@ describe("surface lightness steps", () => {
     expect(at(-0.5)).toBeGreaterThan(at(-1));
   });
 
-  it("keeps surface(1) lighter than the lightness 97 page and folds surface(2)", () => {
+  it("clamps a step past white and keeps it at or above the lightness 97 page", () => {
     const light = themes.find((theme) => theme.name === "light");
+    const dark = themes.find((theme) => theme.name === "dark");
     const neutral = light?.palettes.find((entry) => entry.name === "neutral");
     const brand = light?.palettes.find((entry) => entry.name === "brand");
+    const darkNeutral = dark?.palettes.find((entry) => entry.name === "neutral");
     const at = (palette: typeof neutral, scale: number) =>
       palette?.tokens.find((entry) => entry.id === `surface.${stepName(scale)}`)?.color
         .oklch.l ?? 0;
@@ -673,14 +682,24 @@ describe("surface lightness steps", () => {
     expect(at(neutral, -1)).toBeCloseTo(0.95, 4);
     expect(at(neutral, 0)).toBeCloseTo(0.97, 4);
     expect(at(neutral, 1)).toBeCloseTo(0.99, 4);
-    expect(at(neutral, 1)).toBeGreaterThan(pageL);
-    expect(at(neutral, 1)).toBeLessThanOrEqual(1);
-    expect(at(neutral, 2)).toBeCloseTo(0.93, 4);
-    expect(at(neutral, 2)).toBeLessThan(pageL);
-    expect(at(neutral, 3)).toBeCloseTo(0.91, 4);
-    const folded = brand?.tokens.find((entry) => entry.id === "surface.n2");
-    expect(folded?.color.oklch.c).toBeGreaterThan(0.01);
-    expect(folded?.color.hex).not.toBe("#ffffff");
+    expect(at(neutral, 1.5)).toBeCloseTo(1, 4);
+    expect(at(neutral, 2)).toBeCloseTo(1, 4);
+    expect(at(neutral, 2)).toBeGreaterThanOrEqual(pageL);
+    expect(at(neutral, 3)).toBeCloseTo(1, 4);
+    expect(at(neutral, 5)).toBeCloseTo(1, 4);
+    const clamped = brand?.tokens.find((entry) => entry.id === "surface.n2");
+    expect(clamped?.color.hex).toBe("#ffffff");
+    const headroom = (theme: typeof light, id: string) =>
+      theme?.diagnostics.some(
+        (item) => item.code === "surface-no-headroom" && item.path.endsWith(id),
+      );
+    expect(headroom(light, "surface.n1_5")).toBe(false);
+    expect(headroom(light, "surface.n2")).toBe(true);
+    expect(at(darkNeutral, -1)).toBeCloseTo(0.15, 4);
+    expect(at(darkNeutral, 0)).toBeCloseTo(0.18, 4);
+    expect(at(darkNeutral, 5)).toBeCloseTo(0.33, 4);
+    expect(headroom(dark, "surface.n5")).toBe(false);
+    expect(headroom(dark, "surface.n-7")).toBe(true);
   });
 
   it("paints surface.DEFAULT and re-solves body text against that step", () => {
@@ -732,6 +751,145 @@ describe("surface lightness steps", () => {
       anchor.token("text.body")?.color.hex,
     );
     expect(sunken.token("text.body")?.backdrop).toEqual(["surface.DEFAULT"]);
+  });
+
+  it("keeps sibling surfaces on the theme anchor when surface.DEFAULT moves", () => {
+    const [theme] = generate(
+      defineConfig({
+        palette: { neutral: "#ffffff" },
+        themes: { light: { mode: "light" } },
+        tokens: {
+          surface: {
+            DEFAULT: surface(1),
+            anchor: surface(0),
+            sunken: surface(-1),
+          },
+          text: { body: text(5) },
+        },
+      }),
+    );
+    const palette = theme?.palettes[0];
+    const token = (id: string) => palette?.tokens.find((entry) => entry.id === id);
+    expect(palette?.page.oklch.l).toBeCloseTo(0.97, 4);
+    expect(token("surface.anchor")?.color.oklch.l).toBeCloseTo(0.97, 4);
+    expect(token("surface.anchor")?.color.hex).toBe(palette?.page.hex);
+    expect(token("surface.DEFAULT")?.color.oklch.l).toBeCloseTo(0.99, 4);
+    expect(token("surface.DEFAULT")?.color.hex).not.toBe(palette?.page.hex);
+    expect(token("surface.sunken")?.color.oklch.l).toBeCloseTo(0.95, 4);
+    expect(token("text.body")?.backdrop).toEqual(["surface.DEFAULT"]);
+    expect(token("text.body")?.worst).toBe("surface.DEFAULT");
+  });
+
+  it("orders raised, page, and sunken at the lightness extremes", () => {
+    for (const lightness of [0, 50, 97, 100]) {
+      const [theme] = generate(
+        defineConfig({
+          palette: { neutral: "#ffffff" },
+          themes: { paper: { lightness } },
+          tokens: {
+            surface: {
+              sunken: surface(-1),
+              DEFAULT: surface(0),
+              raised: surface(1),
+            },
+          },
+        }),
+      );
+      const palette = theme?.palettes[0];
+      const lightnessOf = (id: string) =>
+        palette?.tokens.find((entry) => entry.id === id)?.color.oklch.l ?? -1;
+      const sunken = lightnessOf("surface.sunken");
+      const page = lightnessOf("surface.DEFAULT");
+      const raised = lightnessOf("surface.raised");
+      const anchor = lightness / 100;
+      const step = theme?.mode === "dark" ? SURFACE_STEP.dark : SURFACE_STEP.light;
+      const label = `lightness ${lightness}`;
+      expect(raised, label).toBeGreaterThanOrEqual(page - 1e-6);
+      expect(page, label).toBeGreaterThanOrEqual(sunken - 1e-6);
+      expect(page, label).toBeCloseTo(anchor, 4);
+      const headroom = (id: string) =>
+        theme?.diagnostics.some(
+          (item) => item.code === "surface-no-headroom" && item.path.endsWith(id),
+        );
+      if (anchor + step <= 1 + 1e-9) {
+        expect(raised, label).toBeGreaterThan(page);
+        expect(headroom("surface.raised"), label).toBe(false);
+      } else {
+        expect(raised, label).toBeCloseTo(page, 4);
+        expect(headroom("surface.raised"), label).toBe(true);
+      }
+      if (anchor - step >= -1e-9) {
+        expect(page, label).toBeGreaterThan(sunken);
+        expect(headroom("surface.sunken"), label).toBe(false);
+      } else {
+        expect(sunken, label).toBeCloseTo(page, 4);
+        expect(headroom("surface.sunken"), label).toBe(true);
+      }
+    }
+  });
+
+  it("steps surface(n, { on }) from that surface and rejects a cycle", () => {
+    const nested = generate(
+      defineConfig({
+        palette: { neutral: "#ffffff" },
+        themes: { lifted: { lightness: 92 }, light: { mode: "light" } },
+        tokens: {
+          panel: { DEFAULT: surface(1) },
+          card: {
+            DEFAULT: surface(2, { on: "panel" }),
+            sunken: surface(-1, { on: "panel" }),
+          },
+          plain: { DEFAULT: surface(2), sunken: surface(-1) },
+        },
+      }),
+    );
+    const lifted = nested.find((entry) => entry.name === "lifted");
+    const palette = lifted?.palettes[0];
+    const at = (id: string) =>
+      palette?.tokens.find((entry) => entry.id === id)?.color.oklch.l ?? -1;
+    expect(at("panel.DEFAULT")).toBeCloseTo(0.94, 4);
+    expect(at("card.DEFAULT")).toBeCloseTo(0.98, 4);
+    expect(at("card.sunken")).toBeCloseTo(0.92, 4);
+    expect(at("plain.DEFAULT")).toBeCloseTo(0.96, 4);
+    expect(at("plain.sunken")).toBeCloseTo(0.9, 4);
+    expect(at("card.DEFAULT")).toBeGreaterThan(at("panel.DEFAULT"));
+    expect(at("card.DEFAULT")).not.toBeCloseTo(at("plain.DEFAULT"), 3);
+
+    const [tight] = generate(
+      defineConfig({
+        palette: { neutral: "#ffffff" },
+        themes: { light: { mode: "light" } },
+        tokens: {
+          panel: { DEFAULT: surface(1) },
+          card: { DEFAULT: surface(1, { on: "panel" }) },
+        },
+      }),
+    );
+    const tightPalette = tight?.palettes[0];
+    const tightAt = (id: string) =>
+      tightPalette?.tokens.find((entry) => entry.id === id)?.color.oklch.l ?? -1;
+    expect(tightAt("panel.DEFAULT")).toBeCloseTo(0.99, 4);
+    expect(tightAt("card.DEFAULT")).toBeCloseTo(1, 4);
+    expect(tightAt("card.DEFAULT")).toBeGreaterThanOrEqual(tightAt("panel.DEFAULT"));
+    expect(
+      tight?.diagnostics.some(
+        (item) =>
+          item.code === "surface-no-headroom" && item.path.endsWith("card.DEFAULT"),
+      ),
+    ).toBe(true);
+
+    expect(() =>
+      generate(
+        defineConfig({
+          palette: { neutral: "#ffffff" },
+          themes: { light: { mode: "light" } },
+          tokens: {
+            a: { DEFAULT: surface(1, { on: "b" }) },
+            b: { DEFAULT: surface(1, { on: "a" }) },
+          },
+        }),
+      ),
+    ).toThrow(/Backdrop cycle/);
   });
 
   it("keeps soft surface(2), surface(3), and surface(4) distinct when the page has room", () => {

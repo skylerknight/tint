@@ -260,6 +260,17 @@ function solvePalette(
         unreachable(theme.name, expansion.palette, algorithm, row, intent.direction),
       );
     }
+    if (
+      token.value.kind === "surface" &&
+      intent.stepSize > 0 &&
+      intent.direction === undefined
+    ) {
+      const host = colorAt(colors, hostId(token));
+      const raw = host.oklch.l + intent.elevation * intent.stepSize;
+      if (raw > 1 + 1e-9 || raw < -1e-9) {
+        diagnostics.push(surfaceNoHeadroom(theme.name, expansion.palette, row.id, raw));
+      }
+    }
   }
 
   const tokens: SolvedTokenV4[] = [];
@@ -388,6 +399,28 @@ function hostId(token: ResolvedToken): string {
     return token.value.kind === "surface" ? PAGE : (token.backdrop[0] ?? PAGE);
   }
   return on.includes(".") ? on : `${on}.DEFAULT`;
+}
+
+function surfaceNoHeadroom(
+  theme: string,
+  palette: string,
+  id: string,
+  raw: number,
+): EngineDiagnosticV4 {
+  const pastWhite = raw > 1;
+  const edge = pastWhite ? "white" : "black";
+  return {
+    severity: "warning",
+    code: "surface-no-headroom",
+    path: `${palette}.${id}`,
+    theme,
+    palette,
+    message: `${palette}.${id} steps to OKLCH lightness ${raw.toFixed(3)}, past ${edge}, and is clamped to ${edge}.`,
+    hint: pastWhite
+      ? "Positive surface steps stay at or above their anchor and stop at white. A smaller step, or a lower anchor, keeps them distinct."
+      : "Negative surface steps stay at or below their anchor and stop at black. A smaller step, or a higher anchor, keeps them distinct.",
+    data: { target: raw, achieved: pastWhite ? 1 : 0 },
+  };
 }
 
 function unreachable(

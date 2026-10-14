@@ -8,9 +8,12 @@
  * backdrop's preferred side, so the lightness move never reverses as n grows.
  *
  * `surface` is not on that curve. It is signed lightness steps from the theme
- * lightness (−10..10). See {@link SURFACE_STEP} in `lower.ts`. `surface(0)` is
- * that anchor. The painted page is `surface.DEFAULT`, an ordinary step on the
- * same scale. Text, border, and emphasis with no `on` solve against it.
+ * lightness (−10..10), or from the surface named by `on`. See
+ * {@link SURFACE_STEP} in `lower.ts`. `surface(0)` is that anchor. The painted
+ * page is `surface.DEFAULT`, an ordinary step on the same scale. Text, border,
+ * and emphasis with no `on` solve against it. Positive steps stay at or above
+ * the anchor and clamp at white. Negative steps stay at or below it and clamp
+ * at black. The formula is the same in both modes.
  *
  * `decorative` is not on that curve either, and it is not a surface. It is
  * signed lightness steps away from its backdrop (`on`, or `surface.DEFAULT`).

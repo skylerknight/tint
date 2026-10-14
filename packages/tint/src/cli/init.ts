@@ -137,8 +137,9 @@ export default defineConfig({
       "on-disabled": disabled.text(5, { on: "action.disabled" }),
     },
 
-    // Light shorthand is L 0.97. surface(1) fits (L 0.99). surface(1.5) is white.
-    // A step past white folds darker instead of clipping onto white.
+    // Light shorthand is L 0.97. surface(1) is L 0.99. surface(1.5) is white.
+    // A larger step clamps to white and warns surface-no-headroom.
+    // Positive steps stay at or above the anchor. They do not fold darker.
     soft: {
       DEFAULT: surface(1),
       hover: surface(1.5),

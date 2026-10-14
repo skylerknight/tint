@@ -64,11 +64,22 @@ function kindFunction<K extends Kind>(kind: K): KindFn<K> {
 }
 
 /**
- * Signed lightness steps from the theme lightness.
- * `0` is that anchor, positive is raised, negative is sunken.
- * `surface.DEFAULT` is an ordinary step. It is the painted page.
- * One step is 0.02 in light mode and 0.03 in dark mode. Decimals are real steps.
- * Valid range is −10..10.
+ * Signed lightness steps from an anchor.
+ *
+ * With no `on`, the anchor is the theme lightness. `surface(0)` matches it.
+ * `surface(n, { on })` steps from that surface's resolved lightness, so a
+ * card can sit on another card. `on` is `"group"` (`group.DEFAULT`) or
+ * `"group.token"`. A cycle is an error.
+ *
+ * `surface.DEFAULT` is an ordinary step. It is the painted page. Text,
+ * border, and emphasis with no `on` solve against it. Other surfaces stay
+ * on the theme anchor unless they set `on`.
+ *
+ * Positive is raised (lighter) and stays at or above the anchor. Negative
+ * is sunken (darker) and stays at or below it. One step is 0.02 in light
+ * mode and 0.03 in dark mode. Decimals are real steps. A step past white
+ * or black clamps to that edge and warns `surface-no-headroom`. Valid
+ * range is −10..10. Options are {@link TokenOptions}, including `on`.
  */
 export const surface = kindFunction("surface");
 

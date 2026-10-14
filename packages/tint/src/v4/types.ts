@@ -89,8 +89,9 @@ export interface TokenOptions {
  * A token: its kind, a numeric scale, and {@link TokenOptions}.
  *
  * `emphasis`, `text`, and `border` are 0–10 contrast steps. `surface` is
- * signed lightness steps from the page, −10..10. `decorative` is signed
- * lightness steps away from its backdrop, −10..10. Decimals are real steps.
+ * signed lightness steps from the theme lightness, or from the surface
+ * named by `on`, −10..10. `decorative` is signed lightness steps away from
+ * its backdrop, −10..10. Decimals are real steps.
  * See `ladders.ts` and `lower.ts`.
  */
 export interface Token extends TokenOptions {

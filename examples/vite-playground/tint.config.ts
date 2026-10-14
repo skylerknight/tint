@@ -14,7 +14,8 @@ import {
  * The page is surface.DEFAULT. The card sits on surface.raised.
  * Card and divider are decorative(1.5). The input border is decorative(3).
  * Placeholder is decorative(8). The icon is decorative(10).
- * Action is the primary button. Soft is the secondary button.
+ * Action is the primary button. Soft is the secondary button, sunk one
+ * and two steps so it stays under white on the lightness 97 page.
  * Light and dark follow the mode shorthands (lightness 97 and 18).
  * The selectors match the playground's light/dark radios.
  */
@@ -82,8 +83,8 @@ export default defineConfig({
     },
 
     soft: {
-      DEFAULT: surface(2),
-      hover: surface(3.5),
+      DEFAULT: surface(-1),
+      hover: surface(-2),
       on: text(5, { on: "soft" }),
     },
 

@@ -218,9 +218,10 @@ function scaleSchema(): Schema {
       "Numeric scale. emphasis, text, and border are contrast steps. " +
       `${SCALE_MIN} to ${SCALE_MAX} is the curve (higher is more contrast; decimals interpolate, APCA in Lc and WCAG by ratio; text(0) is the lowest compliant text, text(5) is body text, text(10) is the top). ` +
       "A plain token outside that range is a warning, not an error. " +
-      "surface is signed lightness steps from the page, " +
+      "surface is signed lightness steps from the theme lightness, or from the surface named by on, " +
       `${SURFACE_SCALE_MIN} to ${SURFACE_SCALE_MAX} ` +
-      "(0 is the page, positive is raised, negative is sunken; one step is 0.02 in light and 0.03 in dark). " +
+      "(0 is that anchor, positive is raised and stays at or above it, negative is sunken and stays at or below it; " +
+      "one step is 0.02 in light and 0.03 in dark; a step past white or black clamps there and warns surface-no-headroom). " +
       "decorative is signed lightness steps away from its backdrop, " +
       `${DECORATIVE_SCALE_MIN} to ${DECORATIVE_SCALE_MAX} ` +
       `(positive is more distinct: darker on light, lighter on dark; one step is ${DECORATIVE_STEP} OKLCH lightness in both modes; 1–2 is a hairline under 1.3:1, about 10 is icon strength). ` +
@@ -252,7 +253,8 @@ function scaleBoundsSchema(): Schema {
 function optionProperties(): Record<string, Schema> {
   return {
     on: {
-      description: 'Single backdrop: "group" or "group.token" (§2.4, §6.2).',
+      description:
+        'Single backdrop: "group" or "group.token" (§2.4, §6.2). A surface steps from that surface\'s resolved lightness.',
       type: "string",
       pattern: ON_PATTERN,
     },

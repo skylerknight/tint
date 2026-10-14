@@ -1,20 +1,23 @@
 /**
  * Lower a normalized token into a solver intent.
  *
- * `surface(n)` is signed lightness steps from the theme lightness (`elevation`).
- * One step is {@link SURFACE_STEP}: 0.02 in light, 0.03 in dark. Positive is
- * raised (lighter), negative is sunken, and 0 matches the anchor. Decimals are
- * real steps. `surface.DEFAULT` uses the same scale. This is not a contrast
- * solve, so small steps are not clipped by APCA.
+ * `surface(n)` is signed lightness steps from an anchor (`elevation`). With no
+ * `on`, the anchor is the theme lightness. With `on`, it is that surface's
+ * resolved lightness. One step is {@link SURFACE_STEP}: 0.02 in light, 0.03 in
+ * dark. Positive is raised (lighter), negative is sunken, and 0 matches the
+ * anchor. Decimals are real steps. `surface.DEFAULT` uses the same scale.
+ * This is not a contrast solve.
  *
- * A positive step that fits under white stays lighter than the page. A step
- * that passes white folds darker, clear of the first sunken step, and keeps
- * the palette chroma. See {@link surfaceLightness}.
+ * Lightness is `clamp(anchor + elevation * step, 0, 1)` in both modes. A
+ * positive step stays at or above the anchor. A negative step stays at or
+ * below it. A step past white or black stops on that edge. See
+ * {@link surfaceLightness}.
  *
  * `decorative(n)` is also lightness, but the steps leave the backdrop rather
  * than the theme anchor. One step is {@link DECORATIVE_STEP} (0.04) in both
  * modes. Positive is more distinct (darker on light, lighter on dark).
- * Negative goes the other way. It does not fold. Decimals are real steps.
+ * Negative goes the other way. The result clamps at black and white. Decimals
+ * are real steps.
  *
  * `emphasis`, `text`, and `border` are contrast targets from `ladders.ts`.
  * `lc` / `ratio` replace that target. Disabled tokens are solved, then muted.
@@ -122,7 +125,7 @@ export interface SolverIntent {
   readonly direction?: Direction;
   /**
    * When false, a missed contrast target is not a `contrast-unreachable`
-   * diagnostic. Disabled tokens, border 1–2, surfaces, tints, and `max`.
+   * diagnostic. Disabled tokens and lightness kinds (surface, decorative).
    */
   readonly report: boolean;
 }
@@ -154,14 +157,16 @@ export function pageLightness(mode: Mode, step: number): number {
 /**
  * Lightness for a surface step.
  *
- * Unclipped steps are `anchor + elevation * step` and stay lighter than the
- * page. On the lightness 97 page that includes `surface(1)` (L 0.99) and
- * `surface(1.5)` (white). A step past white folds darker than the anchor:
- * one sunken step, plus half a step, plus the overflow. `surface(2)` is
- * 0.01 past white, so it folds. Parking it on white would leave
- * `disabled.surface(2)` inside the 0.01 band between that white and
- * `surface(1)`. The folded color stays off the page and off `surface(-1)`,
- * and it keeps the palette chroma that white would have crushed.
+ * `clamp(anchor + elevation * step, 0, 1)`. Positive steps stay at or above
+ * the anchor. Negative steps stay at or below it. The same formula is used
+ * in light and dark; only {@link SURFACE_STEP} differs. A step that would
+ * pass white or black stops on that edge. Landing exactly on 0 or 1 does
+ * not. The engine warns `surface-no-headroom` when the unclamped value is
+ * outside that range.
+ *
+ * On the lightness 97 page (step 0.02), `surface(1)` is L 0.99 and
+ * `surface(1.5)` is white. `surface(2)` is 0.01 past white, so it clamps
+ * to white. It does not fold darker, and it cannot cross `surface(-1)`.
  */
 export function surfaceLightness(
   anchorL: number,
@@ -169,11 +174,7 @@ export function surfaceLightness(
   step: number,
 ): number {
   if (!(step > 0)) return clamp01(anchorL);
-  const raw = anchorL + elevation * step;
-  if (raw >= 0 && raw <= 1) return raw;
-  if (raw < 0 || elevation <= 0) return clamp01(raw);
-  const extra = elevation - (1 - anchorL) / step;
-  return clamp01(anchorL - step * (extra + 1.5));
+  return clamp01(anchorL + elevation * step);
 }
 
 export function surfaceStepSize(mode: Mode, states: StateSteps | undefined): number {
@@ -305,7 +306,7 @@ function applyOptions(draft: Draft, token: NormalizedToken): void {
 }
 
 /**
- * `lc` / `ratio` replace the folded target, including a disabled state's
+ * `lc` / `ratio` replace the scale target, including a disabled state's
  * Lc 15 / 1.5:1. Disabled chroma and the "never lint" rule still apply.
  */
 function applyContrastBypass(

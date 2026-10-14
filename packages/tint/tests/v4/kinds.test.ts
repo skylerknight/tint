@@ -12,6 +12,16 @@ describe("numeric kind functions", () => {
   it("stores the scale and copies only the supported options", () => {
     expect(surface(0)).toEqual({ kind: "surface", scale: 0 });
     expect(surface(4.5)).toEqual({ kind: "surface", scale: 4.5 });
+    expect(surface(1, { on: "panel" })).toEqual({
+      kind: "surface",
+      scale: 1,
+      on: "panel",
+    });
+    expect(surface(-1, { on: "panel.raised" })).toEqual({
+      kind: "surface",
+      scale: -1,
+      on: "panel.raised",
+    });
     expect(emphasis(2.5, { on: "surface", chroma: 1.5 })).toEqual({
       kind: "emphasis",
       scale: 2.5,
