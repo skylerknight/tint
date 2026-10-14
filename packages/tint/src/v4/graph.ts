@@ -14,7 +14,10 @@ import type { Kind } from "./types.js";
 import type { NormalizedToken } from "./normalize.js";
 
 /**
- * Theme page. Used when a surface omits `on`, and when no base surface exists.
+ * Theme-lightness anchor. Surfaces with no `on` step from this color, so
+ * `surface(0)` is the anchor and every other surface shares that scale.
+ * Text, border, and emphasis with no `on` use {@link findBaseSurface}
+ * (`surface.DEFAULT` when that token exists), not this anchor.
  * Token ids are `group.token`, so this sentinel does not collide with one.
  */
 export const PAGE = "page";
@@ -42,7 +45,7 @@ export interface ResolvedToken {
   readonly value: NormalizedToken;
   /**
    * Backdrop members in config order.
-   * {@link PAGE} is the theme page. Disabled tokens point at one member.
+   * {@link PAGE} is the theme-lightness anchor. Disabled tokens point at one member.
    */
   readonly backdrop: readonly string[];
   /**
@@ -208,11 +211,11 @@ function generatedName(spec: RestSpec): string {
 }
 
 /**
- * Base surface.
+ * Painted page for tokens that omit `on`.
  *
  * The first surface group's `DEFAULT` wins when that token is a surface.
- * Otherwise the surface whose scale is closest to 0 (the page). Otherwise
- * the page itself.
+ * That step can be any signed number. Otherwise the surface whose scale is
+ * closest to 0. Otherwise the lightness anchor itself.
  */
 function findBaseSurface(nodes: readonly Node[]): string {
   let firstSurfaceGroup: string | undefined;

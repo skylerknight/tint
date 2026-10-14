@@ -676,6 +676,57 @@ describe("surface lightness steps", () => {
     expect(folded?.color.hex).not.toBe("#ffffff");
   });
 
+  it("paints surface.DEFAULT and re-solves body text against that step", () => {
+    function paint(scale: number) {
+      const [theme] = generate(
+        defineConfig({
+          palette: { neutral: "#ffffff" },
+          themes: { light: { mode: "light" } },
+          tokens: {
+            surface: { DEFAULT: surface(scale), raised: surface(1) },
+            text: { body: text(5) },
+          },
+        }),
+      );
+      const palette = theme?.palettes[0];
+      const token = (id: string) => palette?.tokens.find((entry) => entry.id === id);
+      return { palette, token };
+    }
+
+    const anchor = paint(0);
+    const raised = paint(1);
+    const sunken = paint(-0.5);
+    expect(anchor.palette?.page.oklch.l).toBeCloseTo(0.97, 4);
+    expect(anchor.token("surface.DEFAULT")?.color.oklch.l).toBeCloseTo(0.97, 4);
+    expect(anchor.token("surface.DEFAULT")?.color.hex).toBe(anchor.palette?.page.hex);
+
+    expect(raised.token("surface.DEFAULT")?.color.oklch.l).toBeCloseTo(0.99, 4);
+    expect(raised.token("surface.DEFAULT")?.color.hex).not.toBe(raised.palette?.page.hex);
+    expect(raised.token("surface.raised")?.color.hex).toBe(
+      raised.token("surface.DEFAULT")?.color.hex,
+    );
+    const body = raised.token("text.body");
+    expect(body?.backdrop).toEqual(["surface.DEFAULT"]);
+    expect(body?.worst).toBe("surface.DEFAULT");
+    expect(body?.color.hex).not.toBe(anchor.token("text.body")?.color.hex);
+    expect(body?.achieved).toBeGreaterThan(70);
+    const againstAnchor = wcag2Ratio(
+      body?.color.rgb ?? { r: 0, g: 0, b: 0 },
+      raised.palette?.page.rgb ?? { r: 0, g: 0, b: 0 },
+    );
+    const againstDefault = wcag2Ratio(
+      body?.color.rgb ?? { r: 0, g: 0, b: 0 },
+      raised.token("surface.DEFAULT")?.color.rgb ?? { r: 0, g: 0, b: 0 },
+    );
+    expect(againstDefault).not.toBeCloseTo(againstAnchor, 2);
+
+    expect(sunken.token("surface.DEFAULT")?.color.oklch.l).toBeCloseTo(0.96, 4);
+    expect(sunken.token("text.body")?.color.hex).not.toBe(
+      anchor.token("text.body")?.color.hex,
+    );
+    expect(sunken.token("text.body")?.backdrop).toEqual(["surface.DEFAULT"]);
+  });
+
   it("keeps soft surface(2), surface(3), and surface(4) distinct when the page has room", () => {
     for (const name of ["lifted", "dark"] as const) {
       const theme = themes.find((entry) => entry.name === name);

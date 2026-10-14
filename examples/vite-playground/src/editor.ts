@@ -44,18 +44,134 @@ export interface EditorState {
   sharePalette: boolean;
   light: { lightness: number; palette: PaletteColors };
   dark: { lightness: number; palette: PaletteColors };
-  action: { rest: number; hover: number; pressed: number };
-  soft: { rest: number; hover: number; pressed: number };
-  surface: { page: number; sunken: number; raised: number; overlay: number };
+  surface: { default: number; sunken: number; raised: number; overlay: number };
   text: { faint: number; muted: number; body: number; strong: number };
   border: { subtle: number; default: number; strong: number; focus: number };
+  action: {
+    rest: number;
+    hover: number;
+    pressed: number;
+    disabled: number;
+    on: number;
+    onDisabled: number;
+  };
+  soft: {
+    rest: number;
+    hover: number;
+    pressed: number;
+    disabled: number;
+    on: number;
+    onDisabled: number;
+  };
+  input: { border: number; placeholder: number; focus: number };
+  card: { border: number };
+  divider: { border: number };
+  icon: { text: number };
 }
+
+export type ScaleGroup = Exclude<keyof EditorState, "sharePalette" | "light" | "dark">;
+
+/** Editor rows. min/max are the signed surface range or the 0–10 contrast range. */
+export const EDITOR_SECTIONS: readonly {
+  group: ScaleGroup;
+  title: string;
+  note: string;
+  fields: readonly { name: string; label: string; min: number; max: number }[];
+}[] = [
+  {
+    group: "surface",
+    title: "Surface",
+    note: "surface(n), signed. Default is the painted page. surface(0) is the theme lightness.",
+    fields: [
+      { name: "default", label: "Default", min: -10, max: 10 },
+      { name: "sunken", label: "Sunken", min: -10, max: 10 },
+      { name: "raised", label: "Raised", min: -10, max: 10 },
+      { name: "overlay", label: "Overlay", min: -10, max: 10 },
+    ],
+  },
+  {
+    group: "text",
+    title: "Text",
+    note: "text(n), 0–10. These sit on surface.DEFAULT.",
+    fields: [
+      { name: "faint", label: "Faint", min: 0, max: 10 },
+      { name: "muted", label: "Muted", min: 0, max: 10 },
+      { name: "body", label: "Body", min: 0, max: 10 },
+      { name: "strong", label: "Strong", min: 0, max: 10 },
+    ],
+  },
+  {
+    group: "border",
+    title: "Border",
+    note: "border(n), 0–10. These sit on surface.DEFAULT.",
+    fields: [
+      { name: "subtle", label: "Subtle", min: 0, max: 10 },
+      { name: "default", label: "Default", min: 0, max: 10 },
+      { name: "strong", label: "Strong", min: 0, max: 10 },
+      { name: "focus", label: "Focus", min: 0, max: 10 },
+    ],
+  },
+  {
+    group: "action",
+    title: "Action",
+    note: "Rest, hover, and pressed are emphasis(n). Disabled is disabled.emphasis(n). On is text(n). On disabled is disabled.text(n). Warning and error rest stay at 8.5.",
+    fields: [
+      { name: "rest", label: "Rest", min: 0, max: 10 },
+      { name: "hover", label: "Hover", min: 0, max: 10 },
+      { name: "pressed", label: "Pressed", min: 0, max: 10 },
+      { name: "disabled", label: "Disabled", min: 0, max: 10 },
+      { name: "on", label: "On", min: 0, max: 10 },
+      { name: "onDisabled", label: "On disabled", min: 0, max: 10 },
+    ],
+  },
+  {
+    group: "soft",
+    title: "Soft",
+    note: "Rest, hover, and pressed are surface(n). Disabled is disabled.surface(n). On is text(n). On disabled is disabled.text(n).",
+    fields: [
+      { name: "rest", label: "Rest", min: -10, max: 10 },
+      { name: "hover", label: "Hover", min: -10, max: 10 },
+      { name: "pressed", label: "Pressed", min: -10, max: 10 },
+      { name: "disabled", label: "Disabled", min: -10, max: 10 },
+      { name: "on", label: "On", min: 0, max: 10 },
+      { name: "onDisabled", label: "On disabled", min: 0, max: 10 },
+    ],
+  },
+  {
+    group: "input",
+    title: "Input",
+    note: "Border is decorative.border(n). Placeholder is decorative.text(n). Focus is border(n).",
+    fields: [
+      { name: "border", label: "Border", min: 0, max: 10 },
+      { name: "placeholder", label: "Placeholder", min: 0, max: 10 },
+      { name: "focus", label: "Focus", min: 0, max: 10 },
+    ],
+  },
+  {
+    group: "card",
+    title: "Card",
+    note: "decorative.border(n).",
+    fields: [{ name: "border", label: "Border", min: 0, max: 10 }],
+  },
+  {
+    group: "divider",
+    title: "Divider",
+    note: "decorative.border(n).",
+    fields: [{ name: "border", label: "Border", min: 0, max: 10 }],
+  },
+  {
+    group: "icon",
+    title: "Icon",
+    note: "decorative.text(n).",
+    fields: [{ name: "text", label: "Text", min: 0, max: 10 }],
+  },
+];
 
 export const SCALE_RANGE = { min: 0, max: 10, step: 0.5 } as const;
 export const SURFACE_RANGE = { min: -10, max: 10, step: 0.5 } as const;
 export const LIGHTNESS_RANGE = { min: 0, max: 100, step: 1 } as const;
 
-const STORAGE_KEY = "tint-playground-editor-v4";
+const STORAGE_KEY = "tint-playground-editor-v5";
 
 export const DEFAULT_STATE: EditorState = {
   sharePalette: false,
@@ -81,11 +197,15 @@ export const DEFAULT_STATE: EditorState = {
       error: "#f87171",
     },
   },
-  action: { rest: 5, hover: 4.5, pressed: 6 },
-  soft: { rest: 2, hover: 3.5, pressed: 4 },
-  surface: { page: 0, sunken: -1, raised: 1, overlay: 3 },
+  surface: { default: 0, sunken: -1, raised: 1, overlay: 3 },
   text: { faint: 1, muted: 3, body: 5, strong: 7 },
   border: { subtle: 1, default: 3, strong: 7, focus: 8 },
+  action: { rest: 5, hover: 4.5, pressed: 6, disabled: 5, on: 5, onDisabled: 5 },
+  soft: { rest: 2, hover: 3.5, pressed: 4, disabled: 2, on: 5, onDisabled: 5 },
+  input: { border: 1, placeholder: 0, focus: 8 },
+  card: { border: 0 },
+  divider: { border: 0 },
+  icon: { text: 2 },
 };
 
 export interface LiveDiagnostic {
@@ -161,15 +281,14 @@ function normalizeState(value: unknown): EditorState | null {
   if (typeof light.lightness !== "number" || typeof dark.lightness !== "number")
     return null;
   if (!isPalette(light.palette) || !isPalette(dark.palette)) return null;
-  if (!isScaleGroup(raw.action, ["rest", "hover", "pressed"], 0, 10)) return null;
-  if (!isScaleGroup(raw.soft, ["rest", "hover", "pressed"], -10, 10)) return null;
-  if (!isScaleGroup(raw.surface, ["page", "sunken", "raised", "overlay"], -10, 10))
-    return null;
-  if (!isScaleGroup(raw.text, ["faint", "muted", "body", "strong"], 0, 10)) return null;
-  if (!isScaleGroup(raw.border, ["subtle", "default", "strong", "focus"], 0, 10))
-    return null;
+  for (const section of EDITOR_SECTIONS) {
+    const keys = section.fields.map((field) => field.name);
+    const min = Math.min(...section.fields.map((field) => field.min));
+    const max = Math.max(...section.fields.map((field) => field.max));
+    if (!isScaleGroup(raw[section.group], keys, min, max)) return null;
+  }
 
-  const state = clone(raw) as EditorState;
+  const state = clone(raw) as unknown as EditorState;
   state.light.lightness = snapLightness(state.light.lightness);
   state.dark.lightness = snapLightness(state.dark.lightness);
   for (const name of PALETTES) {
@@ -178,24 +297,12 @@ function normalizeState(value: unknown): EditorState | null {
     state.dark.palette[name] =
       normalizeHex(state.dark.palette[name]) ?? DEFAULT_STATE.dark.palette[name];
   }
-  state.action.rest = snapScale(state.action.rest, 0, 10);
-  state.action.hover = snapScale(state.action.hover, 0, 10);
-  state.action.pressed = snapScale(state.action.pressed, 0, 10);
-  state.soft.rest = snapScale(state.soft.rest, -10, 10);
-  state.soft.hover = snapScale(state.soft.hover, -10, 10);
-  state.soft.pressed = snapScale(state.soft.pressed, -10, 10);
-  state.surface.page = snapScale(state.surface.page, -10, 10);
-  state.surface.sunken = snapScale(state.surface.sunken, -10, 10);
-  state.surface.raised = snapScale(state.surface.raised, -10, 10);
-  state.surface.overlay = snapScale(state.surface.overlay, -10, 10);
-  state.text.faint = snapScale(state.text.faint, 0, 10);
-  state.text.muted = snapScale(state.text.muted, 0, 10);
-  state.text.body = snapScale(state.text.body, 0, 10);
-  state.text.strong = snapScale(state.text.strong, 0, 10);
-  state.border.subtle = snapScale(state.border.subtle, 0, 10);
-  state.border.default = snapScale(state.border.default, 0, 10);
-  state.border.strong = snapScale(state.border.strong, 0, 10);
-  state.border.focus = snapScale(state.border.focus, 0, 10);
+  for (const section of EDITOR_SECTIONS) {
+    const group = state[section.group] as Record<string, number>;
+    for (const field of section.fields) {
+      group[field.name] = snapScale(group[field.name] ?? 0, field.min, field.max);
+    }
+  }
   return state;
 }
 
@@ -270,7 +377,7 @@ ${paletteBlock(state.light.palette, "    ")}
   tokens: {
     surface: {
       sunken: surface(${num(state.surface.sunken)}),
-      DEFAULT: surface(${num(state.surface.page)}),
+      DEFAULT: surface(${num(state.surface.default)}),
       raised: surface(${num(state.surface.raised)}),
       overlay: surface(${num(state.surface.overlay)}),
     },
@@ -293,31 +400,31 @@ ${paletteBlock(state.light.palette, "    ")}
       DEFAULT: emphasis(${num(state.action.rest)}),
       hover: emphasis(${num(state.action.hover)}),
       pressed: emphasis(${num(state.action.pressed)}),
-      disabled: disabled.emphasis(${num(state.action.rest)}),
-      on: text(${num(state.text.body)}, { on: "action" }),
-      "on-disabled": disabled.text(${num(state.text.body)}, { on: "action.disabled" }),
+      disabled: disabled.emphasis(${num(state.action.disabled)}),
+      on: text(${num(state.action.on)}, { on: "action" }),
+      "on-disabled": disabled.text(${num(state.action.onDisabled)}, { on: "action.disabled" }),
     },
 
     soft: {
       DEFAULT: surface(${num(state.soft.rest)}),
       hover: surface(${num(state.soft.hover)}),
       pressed: surface(${num(state.soft.pressed)}),
-      disabled: disabled.surface(${num(state.soft.rest)}),
-      on: text(${num(state.text.body)}, { on: "soft" }),
-      "on-disabled": disabled.text(${num(state.text.body)}, { on: "soft.disabled" }),
+      disabled: disabled.surface(${num(state.soft.disabled)}),
+      on: text(${num(state.soft.on)}, { on: "soft" }),
+      "on-disabled": disabled.text(${num(state.soft.onDisabled)}, { on: "soft.disabled" }),
     },
 
     input: {
-      DEFAULT: decorative.border(1),
-      placeholder: decorative.text(0),
-      focus: border(${num(state.border.focus)}),
+      DEFAULT: decorative.border(${num(state.input.border)}),
+      placeholder: decorative.text(${num(state.input.placeholder)}),
+      focus: border(${num(state.input.focus)}),
     },
 
-    card: { DEFAULT: decorative.border(0) },
+    card: { DEFAULT: decorative.border(${num(state.card.border)}) },
 
-    divider: { DEFAULT: decorative.border(0) },
+    divider: { DEFAULT: decorative.border(${num(state.divider.border)}) },
 
-    icon: { DEFAULT: decorative.text(2) },
+    icon: { DEFAULT: decorative.text(${num(state.icon.text)}) },
 
     ramp: {
       n0: emphasis(0),
@@ -372,7 +479,7 @@ function buildConfig(state: EditorState) {
     tokens: {
       surface: {
         sunken: surface(state.surface.sunken),
-        DEFAULT: surface(state.surface.page),
+        DEFAULT: surface(state.surface.default),
         raised: surface(state.surface.raised),
         overlay: surface(state.surface.overlay),
       },
@@ -392,26 +499,26 @@ function buildConfig(state: EditorState) {
         DEFAULT: emphasis(state.action.rest),
         hover: emphasis(state.action.hover),
         pressed: emphasis(state.action.pressed),
-        disabled: disabled.emphasis(state.action.rest),
-        on: text(state.text.body, { on: "action" }),
-        "on-disabled": disabled.text(state.text.body, { on: "action.disabled" }),
+        disabled: disabled.emphasis(state.action.disabled),
+        on: text(state.action.on, { on: "action" }),
+        "on-disabled": disabled.text(state.action.onDisabled, { on: "action.disabled" }),
       },
       soft: {
         DEFAULT: surface(state.soft.rest),
         hover: surface(state.soft.hover),
         pressed: surface(state.soft.pressed),
-        disabled: disabled.surface(state.soft.rest),
-        on: text(state.text.body, { on: "soft" }),
-        "on-disabled": disabled.text(state.text.body, { on: "soft.disabled" }),
+        disabled: disabled.surface(state.soft.disabled),
+        on: text(state.soft.on, { on: "soft" }),
+        "on-disabled": disabled.text(state.soft.onDisabled, { on: "soft.disabled" }),
       },
       input: {
-        DEFAULT: decorative.border(1),
-        placeholder: decorative.text(0),
-        focus: border(state.border.focus),
+        DEFAULT: decorative.border(state.input.border),
+        placeholder: decorative.text(state.input.placeholder),
+        focus: border(state.input.focus),
       },
-      card: { DEFAULT: decorative.border(0) },
-      divider: { DEFAULT: decorative.border(0) },
-      icon: { DEFAULT: decorative.text(2) },
+      card: { DEFAULT: decorative.border(state.card.border) },
+      divider: { DEFAULT: decorative.border(state.divider.border) },
+      icon: { DEFAULT: decorative.text(state.icon.text) },
       ramp: {
         n0: emphasis(0),
         n1: emphasis(1),

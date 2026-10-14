@@ -1,11 +1,11 @@
 /**
  * Lower a normalized token into a solver intent.
  *
- * `surface(n)` is signed lightness steps from the page (`elevation`).
+ * `surface(n)` is signed lightness steps from the theme lightness (`elevation`).
  * One step is {@link SURFACE_STEP}: 0.02 in light, 0.03 in dark. Positive is
- * raised (lighter), negative is sunken, and 0 matches the page. Decimals are
- * real steps. This is not a contrast solve, so small steps are not clipped
- * by APCA.
+ * raised (lighter), negative is sunken, and 0 matches the anchor. Decimals are
+ * real steps. `surface.DEFAULT` uses the same scale. This is not a contrast
+ * solve, so small steps are not clipped by APCA.
  *
  * A positive step that fits under white stays lighter than the page. A step
  * that passes white folds darker, clear of the first sunken step, and keeps

@@ -65,8 +65,9 @@ function kindFunction<K extends Kind>(kind: K): KindFn<K> {
 }
 
 /**
- * Signed lightness steps from the page.
- * `0` is the page, positive is raised, negative is sunken.
+ * Signed lightness steps from the theme lightness.
+ * `0` is that anchor, positive is raised, negative is sunken.
+ * `surface.DEFAULT` is an ordinary step. It is the painted page.
  * One step is 0.02 in light mode and 0.03 in dark mode. Decimals are real steps.
  * Valid range is −10..10.
  */

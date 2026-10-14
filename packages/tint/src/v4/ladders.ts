@@ -7,8 +7,10 @@
  * kinds switches to a tint or the other polarity. The solver stays on the
  * backdrop's preferred side, so the lightness move never reverses as n grows.
  *
- * `surface` is not on that curve. It is signed lightness steps from the page
- * (−10..10). See {@link SURFACE_STEP} in `lower.ts`. `surface(0)` is the page.
+ * `surface` is not on that curve. It is signed lightness steps from the theme
+ * lightness (−10..10). See {@link SURFACE_STEP} in `lower.ts`. `surface(0)` is
+ * that anchor. The painted page is `surface.DEFAULT`, an ordinary step on the
+ * same scale. Text, border, and emphasis with no `on` solve against it.
  *
  * `text(0)` is the lowest compliant text (APCA Lc 45, WCAG 3:1).
  * `text(5)` is body text (APCA Lc 75, WCAG 4.5:1). `text(10)` is the top of
@@ -24,7 +26,7 @@ export const SCALE_MAX = 10;
 
 /**
  * Inclusive range for `surface`.
- * Negative is sunken, 0 is the page, positive is raised.
+ * Negative is sunken, 0 is the theme lightness, positive is raised.
  */
 export const SURFACE_SCALE_MIN = -10;
 export const SURFACE_SCALE_MAX = 10;

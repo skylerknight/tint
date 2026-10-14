@@ -27,10 +27,10 @@ const ramp = [
 ] as const;
 
 const surfaces = [
-  ["sunken −1", "bg-surface-sunken"],
-  ["page 0", "bg-surface"],
-  ["raised 1", "bg-surface-raised"],
-  ["overlay 3", "bg-surface-overlay"],
+  ["sunken", "bg-surface-sunken"],
+  ["default", "bg-surface"],
+  ["raised", "bg-surface-raised"],
+  ["overlay", "bg-surface-overlay"],
 ] as const;
 
 function swatch(label: string, bg: string): string {

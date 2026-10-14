@@ -141,11 +141,11 @@ html.dark #editor input[type="number"] {
 }
 
 .scale {
-  grid-template-columns: 4.6rem minmax(0, 1fr) 4.1rem;
+  grid-template-columns: 5.8rem minmax(0, 1fr) 4.1rem;
 }
 
 .color {
-  grid-template-columns: 4.6rem 1.8rem minmax(0, 1fr);
+  grid-template-columns: 5.8rem 1.8rem minmax(0, 1fr);
 }
 
 .color input[type="color"] {

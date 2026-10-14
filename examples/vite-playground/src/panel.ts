@@ -1,8 +1,7 @@
 import {
+  EDITOR_SECTIONS,
   LIGHTNESS_RANGE,
   PALETTES,
-  SCALE_RANGE,
-  SURFACE_RANGE,
   applyState,
   configSource,
   defaultState,
@@ -14,40 +13,8 @@ import {
   type EditorState,
   type LiveResult,
   type PaletteName,
+  type ScaleGroup,
 } from "./editor.ts";
-
-const ACTION_FIELDS = [
-  ["rest", "Rest"],
-  ["hover", "Hover"],
-  ["pressed", "Pressed"],
-] as const;
-
-const SOFT_FIELDS = [
-  ["rest", "Rest"],
-  ["hover", "Hover"],
-  ["pressed", "Pressed"],
-] as const;
-
-const SURFACE_FIELDS = [
-  ["page", "Page"],
-  ["sunken", "Sunken"],
-  ["raised", "Raised"],
-  ["overlay", "Overlay"],
-] as const;
-
-const TEXT_FIELDS = [
-  ["faint", "Faint"],
-  ["muted", "Muted"],
-  ["body", "Body"],
-  ["strong", "Strong"],
-] as const;
-
-const BORDER_FIELDS = [
-  ["subtle", "Subtle"],
-  ["default", "Default"],
-  ["strong", "Strong"],
-  ["focus", "Focus"],
-] as const;
 
 function escapeHtml(value: string): string {
   return value
@@ -55,6 +22,16 @@ function escapeHtml(value: string): string {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+function isScaleGroup(value: string): value is ScaleGroup {
+  return EDITOR_SECTIONS.some((section) => section.group === value);
+}
+
+function scaleField(group: string, name: string) {
+  return EDITOR_SECTIONS.find((section) => section.group === group)?.fields.find(
+    (field) => field.name === name,
+  );
 }
 
 function colorRows(
@@ -86,31 +63,35 @@ function scaleRow(
   </label>`;
 }
 
-function scaleSection(
-  title: string,
-  note: string,
-  group: string,
-  fields: readonly (readonly [string, string])[],
-  values: Record<string, number>,
-  min: number,
-  max: number,
-): string {
-  const rows = fields
-    .map(([name, label]) => scaleRow(group, name, label, values[name] ?? 0, min, max))
-    .join("");
-  return `<section>
-    <h3>${title}</h3>
-    <p class="note">${note}</p>
-    ${rows}
-  </section>`;
+function scaleSections(state: EditorState): string {
+  return EDITOR_SECTIONS.map((section) => {
+    const values = state[section.group] as Record<string, number>;
+    const rows = section.fields
+      .map((field) =>
+        scaleRow(
+          section.group,
+          field.name,
+          field.label,
+          values[field.name] ?? 0,
+          field.min,
+          field.max,
+        ),
+      )
+      .join("");
+    return `<section>
+      <h3>${escapeHtml(section.title)}</h3>
+      <p class="note">${escapeHtml(section.note)}</p>
+      ${rows}
+    </section>`;
+  }).join("");
 }
 
 function lightnessRow(theme: "light" | "dark", value: number): string {
   const label = theme === "light" ? "Light" : "Dark";
   return `<label class="scale">
     <span>${label}</span>
-    <input type="range" min="${LIGHTNESS_RANGE.min}" max="${LIGHTNESS_RANGE.max}" step="${LIGHTNESS_RANGE.step}" value="${value}" data-lightness="${theme}" data-role="range" aria-label="${label} page lightness" />
-    <input type="number" min="${LIGHTNESS_RANGE.min}" max="${LIGHTNESS_RANGE.max}" step="${LIGHTNESS_RANGE.step}" value="${value}" data-lightness="${theme}" data-role="number" aria-label="${label} page lightness value" />
+    <input type="range" min="${LIGHTNESS_RANGE.min}" max="${LIGHTNESS_RANGE.max}" step="${LIGHTNESS_RANGE.step}" value="${value}" data-lightness="${theme}" data-role="range" aria-label="${label} theme lightness" />
+    <input type="number" min="${LIGHTNESS_RANGE.min}" max="${LIGHTNESS_RANGE.max}" step="${LIGHTNESS_RANGE.step}" value="${value}" data-lightness="${theme}" data-role="number" aria-label="${label} theme lightness value" />
   </label>`;
 }
 
@@ -148,16 +129,12 @@ function panelMarkup(state: EditorState): string {
       ${colorRows("dark", state.dark.palette)}
     </section>
     <section>
-      <h3>Page lightness</h3>
-      <p class="note">0–100. The light and dark selectors stay on the toggle.</p>
+      <h3>Theme lightness</h3>
+      <p class="note">The anchor, 0–100. surface(0) is this level. Defaults are 97 light and 18 dark. The painted page is surface.DEFAULT.</p>
       ${lightnessRow("light", state.light.lightness)}
       ${lightnessRow("dark", state.dark.lightness)}
     </section>
-    ${scaleSection("Action", "Emphasis, 0–10. Warning and error rest stay at 8.5.", "action", ACTION_FIELDS, state.action, SCALE_RANGE.min, SCALE_RANGE.max)}
-    ${scaleSection("Soft", "Surface steps, −10–10.", "soft", SOFT_FIELDS, state.soft, SURFACE_RANGE.min, SURFACE_RANGE.max)}
-    ${scaleSection("Surface", "Signed steps. Page is surface.DEFAULT. The lightness slider still moves the theme page under it.", "surface", SURFACE_FIELDS, state.surface, SURFACE_RANGE.min, SURFACE_RANGE.max)}
-    ${scaleSection("Text", "Contrast steps, 0–10. Button labels use the body step.", "text", TEXT_FIELDS, state.text, SCALE_RANGE.min, SCALE_RANGE.max)}
-    ${scaleSection("Border", "Contrast steps, 0–10.", "border", BORDER_FIELDS, state.border, SCALE_RANGE.min, SCALE_RANGE.max)}
+    ${scaleSections(state)}
   </form>`;
 }
 
@@ -235,11 +212,12 @@ function syncForm(state: EditorState): void {
   }
   writeLightness("light", state.light.lightness);
   writeLightness("dark", state.dark.lightness);
-  for (const [name] of ACTION_FIELDS) writeScale("action", name, state.action[name]);
-  for (const [name] of SOFT_FIELDS) writeScale("soft", name, state.soft[name]);
-  for (const [name] of SURFACE_FIELDS) writeScale("surface", name, state.surface[name]);
-  for (const [name] of TEXT_FIELDS) writeScale("text", name, state.text[name]);
-  for (const [name] of BORDER_FIELDS) writeScale("border", name, state.border[name]);
+  for (const section of EDITOR_SECTIONS) {
+    const values = state[section.group] as Record<string, number>;
+    for (const field of section.fields) {
+      writeScale(section.group, field.name, values[field.name] ?? 0);
+    }
+  }
 }
 
 let publishFrame = 0;
@@ -254,14 +232,12 @@ function publish(state: EditorState): void {
 
 function setScale(
   state: EditorState,
-  group: string,
+  group: ScaleGroup,
   name: string,
   value: number,
   source?: HTMLInputElement,
 ): void {
-  const target = state[
-    group as "action" | "soft" | "surface" | "text" | "border"
-  ] as Record<string, number>;
+  const target = state[group] as Record<string, number>;
   target[name] = value;
   const skip = source?.dataset.role === "number" ? source : undefined;
   writeScale(group, name, value, skip);
@@ -330,11 +306,13 @@ export function mountEditor(root: HTMLElement): EditorState {
 
     const group = target.dataset.group;
     const name = target.dataset.name;
-    if (group === undefined || name === undefined || target.value === "") return;
+    if (group === undefined || name === undefined || !isScaleGroup(group)) return;
+    if (target.value === "") return;
     const numeric = Number(target.value);
     if (!Number.isFinite(numeric)) return;
-    const range = group === "soft" || group === "surface" ? SURFACE_RANGE : SCALE_RANGE;
-    setScale(state, group, name, snapScale(numeric, range.min, range.max), target);
+    const field = scaleField(group, name);
+    if (field === undefined) return;
+    setScale(state, group, name, snapScale(numeric, field.min, field.max), target);
   });
 
   root.addEventListener("focusout", (event) => {
@@ -360,10 +338,8 @@ export function mountEditor(root: HTMLElement): EditorState {
     }
     const group = target.dataset.group;
     const name = target.dataset.name;
-    if (group === undefined || name === undefined) return;
-    const values = state[
-      group as "action" | "soft" | "surface" | "text" | "border"
-    ] as Record<string, number>;
+    if (group === undefined || name === undefined || !isScaleGroup(group)) return;
+    const values = state[group] as Record<string, number>;
     writeScale(group, name, values[name] ?? 0);
   });
 
@@ -390,22 +366,27 @@ export function mountEditor(root: HTMLElement): EditorState {
 
   document.querySelector("#reset-config")?.addEventListener("click", () => {
     const next = defaultState();
-    Object.assign(state, next);
+    state.sharePalette = next.sharePalette;
     state.light = next.light;
     state.dark = next.dark;
-    state.action = next.action;
-    state.soft = next.soft;
-    state.surface = next.surface;
-    state.text = next.text;
-    state.border = next.border;
+    for (const section of EDITOR_SECTIONS) replaceGroup(state, next, section.group);
     syncForm(state);
     localStorage.removeItem("tint-playground-editor-v1");
     localStorage.removeItem("tint-playground-editor-v2");
     localStorage.removeItem("tint-playground-editor-v3");
+    localStorage.removeItem("tint-playground-editor-v4");
     publish(state);
   });
 
   return state;
+}
+
+function replaceGroup<G extends ScaleGroup>(
+  state: EditorState,
+  next: EditorState,
+  group: G,
+): void {
+  state[group] = next[group];
 }
 
 function isPaletteName(value: string): value is PaletteName {
@@ -446,5 +427,3 @@ async function copyConfig(source: string): Promise<void> {
     button.textContent = label ?? "Copy config";
   }, 1500);
 }
-
-export { DEFAULT_STATE };

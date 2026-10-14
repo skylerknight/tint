@@ -12,15 +12,18 @@ import {
  * Unified prototype.
  *
  * Emphasis, text, and border stay on the 0–10 contrast curve.
- * Surface is signed lightness steps from the page: 0 is the page, positive
- * is raised, negative is sunken. One step is 0.02 in light and 0.03 in dark.
+ * Surface is signed lightness steps from the theme lightness. surface(0) is
+ * that anchor, positive is raised, negative is sunken. One step is 0.02 in
+ * light and 0.03 in dark.
  *
  * Light and dark use the mode shorthands: lightness 97 and 18.
- * One light step is 0.02. surface(1) is L 0.99, still lighter than the page.
+ * surface.DEFAULT is an ordinary step on the same scale and is the painted
+ * page. Text, border, and emphasis with no `on` solve against it. One light
+ * step is 0.02, so surface(1) is L 0.99.
  * surface(1.5) is white. surface(2) is 0.01 past white, so it folds darker
  * and keeps palette chroma. Clamping that step onto white would park
  * disabled.surface(2) inside the 0.01 band between white and surface(1).
- * Dark has room, so the same positive steps stay lighter than the page.
+ * Dark has room, so the same positive steps stay lighter than the anchor.
  * Soft fills are surfaces; the label is text(5) on that surface.
  */
 export default defineConfig({
