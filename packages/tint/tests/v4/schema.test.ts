@@ -90,7 +90,7 @@ describe("v4 JSON Schema (numeric scale)", () => {
         base({
           tokens: {
             hint: { DEFAULT: { kind: "decorative", scale: 1.5 } },
-            rule: { DEFAULT: { kind: "decorative", scale: -1.5 } },
+            rule: { DEFAULT: { kind: "decorative", scale: -1.5, on: "surface" } },
           },
         }),
       ),
@@ -101,6 +101,13 @@ describe("v4 JSON Schema (numeric scale)", () => {
           tokens: {
             bad: { DEFAULT: { kind: "text", scale: 1, decorative: true } },
           },
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      validate(
+        base({
+          tokens: { mark: { DEFAULT: { kind: "decorative", scale: 2, chroma: 1 } } },
         }),
       ),
     ).toBe(false);

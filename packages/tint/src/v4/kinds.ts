@@ -154,9 +154,46 @@ export const disabled = {
  * is about `decorative(2.5)`. `decorative(10)` is about 4:1, roughly an icon.
  * Valid range is −10..10.
  *
- * Chroma and hue follow the palette the way surfaces do. Contrast checks do
- * not apply (a non-essential mark). `decorative(0)` is the backdrop itself,
- * and that exact match is the one sanity warning.
- * `opts` may set `on`, `chroma`, `hue`, `lc`, `ratio`, or `nudge`.
+ * Chroma and hue follow the palette on their own, the way surfaces do.
+ * There is no contrast check, no level name, and no variant.
+ * `decorative(0)` is the backdrop itself, and that exact match is the one
+ * sanity warning. The only option is `on`.
  */
-export const decorative = kindFunction("decorative");
+export const decorative = decorativeFunction();
+
+interface DecorativeOptions {
+  on?: string;
+}
+
+type OnlyOn<O> = O & {
+  [K in keyof O]: K extends "on" ? O[K] : never;
+};
+
+interface DecorativeFn {
+  (scale: number): { kind: "decorative"; scale: number };
+  <const O extends DecorativeOptions>(
+    scale: number,
+    options: OnlyOn<O>,
+  ): Flat<{ kind: "decorative"; scale: number } & O>;
+}
+
+function decorativeFunction(): DecorativeFn {
+  function create(scale: number, options?: DecorativeOptions): Token {
+    if (isOptions(scale)) {
+      throw new TypeError(
+        "decorative() takes a scale number first. Options are the second argument.",
+      );
+    }
+    if (options !== undefined) {
+      for (const key of Object.keys(options)) {
+        if (key !== "on") {
+          throw new TypeError(
+            `decorative() only accepts { on }. Unexpected option "${key}".`,
+          );
+        }
+      }
+    }
+    return buildToken("decorative", scale, options);
+  }
+  return create as DecorativeFn;
+}

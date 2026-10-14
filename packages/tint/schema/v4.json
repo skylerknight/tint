@@ -293,6 +293,44 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "decorative"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "disabled": {
+                "description": "decorative(n) takes a scale and an optional on. This field is not an option.",
+                "not": {}
+              },
+              "chroma": {
+                "description": "decorative(n) takes a scale and an optional on. This field is not an option.",
+                "not": {}
+              },
+              "hue": {
+                "description": "decorative(n) takes a scale and an optional on. This field is not an option.",
+                "not": {}
+              },
+              "lc": {
+                "description": "decorative(n) takes a scale and an optional on. This field is not an option.",
+                "not": {}
+              },
+              "ratio": {
+                "description": "decorative(n) takes a scale and an optional on. This field is not an option.",
+                "not": {}
+              },
+              "nudge": {
+                "description": "decorative(n) takes a scale and an optional on. This field is not an option.",
+                "not": {}
+              }
+            }
+          }
         }
       ]
     },

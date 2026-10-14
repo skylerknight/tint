@@ -151,7 +151,7 @@ function nonTextLints(theme: string, palette: PaletteResultV4): EngineDiagnostic
       message: `${palette.name}.${token.id} is below non-text contrast (WCAG 3:1) against ${token.worst ?? PAGE} (${ratio.toFixed(2)}:1).`,
       hint: emphasis
         ? `Every emphasis scale is a solid fill (the curve starts at the non-text floor) and is held to non-text contrast.`
-        : `border(${BORDER_NON_TEXT_SCALE}) is the 3:1 rung. A lower scale is decorative and is not held to non-text contrast.`,
+        : `border(${BORDER_NON_TEXT_SCALE}) is the 3:1 rung. A lower border scale is not held to non-text contrast.`,
       data: { target: NON_TEXT_RATIO, achieved: ratio },
     });
   }

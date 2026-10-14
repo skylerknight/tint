@@ -896,6 +896,14 @@ describe("scale range", () => {
         }),
       ),
     ).toThrow(/decorative\(n\) is signed lightness steps away from its backdrop/);
+    expect(() =>
+      generate(
+        defineConfig({
+          palette: { neutral: "#ffffff" },
+          tokens: { mark: { DEFAULT: { kind: "decorative", scale: 2, chroma: 1 } } },
+        }),
+      ),
+    ).toThrow(/takes a scale and an optional on/);
   });
 
   it("steps decorative lightness away from the backdrop in both modes", () => {

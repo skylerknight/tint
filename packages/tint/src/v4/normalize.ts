@@ -133,7 +133,7 @@ export function normalizeToken(
     issues.push(normalizeIssue(joinPath(path, "scale"), "Expected a finite number."));
   }
 
-  const extra = readOptions(token, path, issues);
+  const extra = readOptions(token, path, kind, issues);
   if (issues.length > 0 || scale === undefined) return { ok: false, issues };
 
   const normalized: NormalizedToken = { kind, scale, states: [] };
@@ -180,12 +180,34 @@ interface TokenExtras {
   nudge?: boolean;
 }
 
+const DECORATIVE_REJECTED = [
+  "disabled",
+  "chroma",
+  "hue",
+  "lc",
+  "ratio",
+  "nudge",
+] as const;
+
 function readOptions(
   token: Record<string, unknown>,
   path: string,
+  kind: Kind,
   issues: NormalizeIssue[],
 ): TokenExtras {
   const extra: TokenExtras = {};
+
+  if (kind === "decorative") {
+    for (const key of DECORATIVE_REJECTED) {
+      if (!present(token, key)) continue;
+      issues.push(
+        normalizeIssue(
+          joinPath(path, key),
+          `decorative(n) takes a scale and an optional on. "${key}" is not an option.`,
+        ),
+      );
+    }
+  }
 
   if (present(token, "disabled")) {
     if (typeof token.disabled === "boolean") extra.disabled = token.disabled;

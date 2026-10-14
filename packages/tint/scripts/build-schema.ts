@@ -163,11 +163,11 @@ function expandAliases(states: readonly string[]): string[] {
 }
 
 function builtinLevels(): string {
-  return KINDS.map((kind) => {
-    const names = Object.entries(DEFAULT_LEVEL_NAMES[kind])
-      .map(([name, ordinal]) => `${name} (${ordinal})`)
-      .join(", ");
-    return `${kind}: ${names}`;
+  return KINDS.flatMap((kind) => {
+    const names = Object.entries(DEFAULT_LEVEL_NAMES[kind]);
+    if (names.length === 0) return [];
+    const listed = names.map(([name, ordinal]) => `${name} (${ordinal})`).join(", ");
+    return [`${kind}: ${listed}`];
   }).join("; ");
 }
 
@@ -299,7 +299,32 @@ function tokenSchema(): Schema {
     },
     required: ["kind", "scale"],
     additionalProperties: false,
-    allOf: [scaleBoundsSchema()],
+    allOf: [scaleBoundsSchema(), decorativeOptionsSchema()],
+  };
+}
+
+/** `decorative(n)` is a scale plus an optional `on`. No other fields. */
+function decorativeOptionsSchema(): Schema {
+  const rejected: Schema = {
+    description:
+      "decorative(n) takes a scale and an optional on. This field is not an option.",
+    not: {},
+  };
+  return {
+    if: {
+      properties: { kind: { const: "decorative" } },
+      required: ["kind"],
+    },
+    then: {
+      properties: {
+        disabled: rejected,
+        chroma: rejected,
+        hue: rejected,
+        lc: rejected,
+        ratio: rejected,
+        nudge: rejected,
+      },
+    },
   };
 }
 

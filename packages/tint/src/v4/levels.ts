@@ -34,8 +34,8 @@ export const DEFAULT_LEVEL_NAMES = {
   text: { faint: 1, muted: 2, body: 3, strong: 4, max: 5, default: 3 },
   border: { hairline: 1, soft: 2, default: 3, firm: 4, heavy: 5 },
   emphasis: { quiet: 1, subtle: 2, default: 3, bold: 4, loud: 5 },
-  // Unused by the numeric-scale prototype. The record has to cover every kind.
-  decorative: { hairline: 1, soft: 2, default: 3, ornament: 4, icon: 5 },
+  // No names. decorative(n) is only a signed number, plus an optional `on`.
+  decorative: {},
 } as const satisfies Record<Kind, Record<string, LevelOrdinal>>;
 
 /**

@@ -67,11 +67,10 @@ describe("numeric kind functions", () => {
       scale: 1.5,
       on: "surface",
     });
-    expect(decorative(-2, { nudge: false })).toEqual({
-      kind: "decorative",
-      scale: -2,
-      nudge: false,
-    });
+    expect(decorative(-2)).toEqual({ kind: "decorative", scale: -2 });
+    expect(() => decorative(1, { chroma: 1 } as { on?: string })).toThrow(
+      /only accepts \{ on \}/,
+    );
     expect(typeof decorative).toBe("function");
     expect(decorative).not.toHaveProperty("text");
     expect(decorative).not.toHaveProperty("border");
