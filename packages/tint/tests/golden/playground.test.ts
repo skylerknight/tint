@@ -14,7 +14,7 @@ describe("playground golden output", () => {
     expect(themes.map((theme) => theme.name)).toEqual(["light", "dark"]);
   });
 
-  it("still emits the playground token names", () => {
+  it("emits the sample-card tokens and drops the removed demo groups", () => {
     const light = themes.find((theme) => theme.name === "light");
     const ids = light?.palettes[0]?.tokens.map((token) => token.id) ?? [];
     expect(ids).toEqual(
@@ -22,20 +22,32 @@ describe("playground golden output", () => {
         "surface.DEFAULT",
         "surface.raised",
         "text.body",
+        "text.muted",
+        "text.strong",
         "action.DEFAULT",
         "action.hover",
-        "action.pressed",
         "action.disabled",
+        "action.on",
         "soft.DEFAULT",
         "soft.hover",
-        "soft.pressed",
+        "soft.on",
+        "input.DEFAULT",
+        "card.DEFAULT",
+        "divider.DEFAULT",
       ]),
     );
+    expect(ids).not.toContain("ramp.n0");
+    expect(ids).not.toContain("surface.sunken");
+    expect(ids).not.toContain("icon.DEFAULT");
   });
 
-  it("excludes the other theme's class from the automatic block", () => {
+  it("excludes the other theme's radio selector from the automatic block", () => {
     const css = toCSS(themes);
-    expect(css).toContain("@media (prefers-color-scheme: light) {\n  :root:not(.dark) {");
-    expect(css).toContain("@media (prefers-color-scheme: dark) {\n  :root:not(.light) {");
+    expect(css).toContain(
+      "@media (prefers-color-scheme: light) {\n  :root:not(:root:has(#scheme-dark:checked)) {",
+    );
+    expect(css).toContain(
+      "@media (prefers-color-scheme: dark) {\n  :root:not(:root:has(#scheme-light:checked)) {",
+    );
   });
 });
