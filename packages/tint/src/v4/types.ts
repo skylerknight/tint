@@ -13,7 +13,7 @@ export const MODES = ["light", "dark"] as const;
 export type Mode = (typeof MODES)[number];
 
 /** Token kind. The name is the token's role (§2.4, §3). */
-export type Kind = "surface" | "text" | "border" | "emphasis";
+export type Kind = "surface" | "text" | "border" | "emphasis" | "decorative";
 
 /** Ordinal prominence, 1 (least) through 5 (most) (§3). */
 export type LevelOrdinal = 1 | 2 | 3 | 4 | 5;
@@ -89,12 +89,13 @@ export interface TokenOptions {
  * A token: its kind, a numeric scale, and {@link TokenOptions}.
  *
  * `emphasis`, `text`, and `border` are 0–10 contrast steps. `surface` is
- * signed lightness steps from the page, −10..10. Decimals are real steps.
+ * signed lightness steps from the page, −10..10. `decorative` is signed
+ * lightness steps away from its backdrop, −10..10. Decimals are real steps.
  * See `ladders.ts` and `lower.ts`.
  */
 export interface Token extends TokenOptions {
   kind: Kind;
-  /** `surface(-1)`, `text(5)`, `emphasis(8.5)`. Decimals are allowed. */
+  /** `surface(-1)`, `text(5)`, `decorative(1.5)`. Decimals are allowed. */
   scale: number;
   /**
    * Set by `disabled.emphasis(n)` and the other `disabled.<kind>(n)` constructors.
@@ -102,12 +103,6 @@ export interface Token extends TokenOptions {
    * engine then mutes it. JSON may set this directly. There is no `$role`.
    */
   disabled?: boolean;
-  /**
-   * Set by `decorative.text(n)`, `decorative.border(n)`, or `decorative.emphasis(n)`.
-   * The kind and scale are unchanged and the color is not muted. Contrast-floor
-   * and out-of-range warnings are suppressed. There is no `decorative.surface`.
-   */
-  decorative?: boolean;
 }
 
 /**

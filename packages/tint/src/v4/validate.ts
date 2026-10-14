@@ -74,7 +74,6 @@ const TOKEN_FIELDS: readonly string[] = [
   "kind",
   "scale",
   "disabled",
-  "decorative",
   "on",
   "chroma",
   "hue",
@@ -1444,7 +1443,8 @@ function checkTokens(value: unknown, ctx: Ctx): void {
           issue({
             path: tokenPath,
             message: "Expected a token object.",
-            expected: '{ kind: "surface" | "text" | "border" | "emphasis" }',
+            expected:
+              '{ kind: "surface" | "text" | "border" | "emphasis" | "decorative" }',
             hint: "Kind functions return this object. JSON configs write it directly.",
           }),
         );
@@ -1515,7 +1515,7 @@ function absorb(
         ...(suggestion !== undefined
           ? { didYouMean: suggestion, hint: `Did you mean "${suggestion}"?` }
           : {
-              hint: "Valid token fields are kind, scale, disabled, decorative, on, chroma, hue, lc, ratio, and nudge. disabled is set by disabled.<kind>(n). decorative is set by decorative.text/border/emphasis(n).",
+              hint: "Valid token fields are kind, scale, disabled, on, chroma, hue, lc, ratio, and nudge. disabled is set by disabled.<kind>(n). decorative(n) is its own kind.",
             }),
       }),
     );

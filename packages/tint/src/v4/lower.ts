@@ -11,6 +11,11 @@
  * that passes white folds darker, clear of the first sunken step, and keeps
  * the palette chroma. See {@link surfaceLightness}.
  *
+ * `decorative(n)` is also lightness, but the steps leave the backdrop rather
+ * than the theme anchor. One step is {@link DECORATIVE_STEP} (0.04) in both
+ * modes. Positive is more distinct (darker on light, lighter on dark).
+ * Negative goes the other way. It does not fold. Decimals are real steps.
+ *
  * `emphasis`, `text`, and `border` are contrast targets from `ladders.ts`.
  * `lc` / `ratio` replace that target. Disabled tokens are solved, then muted.
  *
@@ -22,7 +27,7 @@ import { maxChromaForLs } from "../engine/generate.js";
 import type { Polarity } from "../contrast/types.js";
 import { preferredPolarity } from "../contrast/solve.js";
 import { GLOBAL_CONTRAST_SHIFT } from "./constants.js";
-import { MODE_PAGE_LIGHTNESS, contrastAt } from "./ladders.js";
+import { DECORATIVE_STEP, MODE_PAGE_LIGHTNESS, contrastAt } from "./ladders.js";
 import type { CanonicalState } from "./states.js";
 import type {
   ContrastAlgorithm,
@@ -205,7 +210,8 @@ export function lowerToken(
 
 /**
  * `contrast.level` still shifts text and border scales (`more` +1, `max` +2).
- * Surface and emphasis scales are literal step counts and are not shifted.
+ * Surface, decorative, and emphasis scales are literal step counts and are
+ * not shifted.
  */
 function shiftedScale(token: NormalizedToken, ctx: LowerContext): number {
   if (token.kind !== "text" && token.kind !== "border") return token.scale;
@@ -220,6 +226,18 @@ function fromScale(kind: Kind, scale: number, ctx: LowerContext): Draft {
       elevation: scale,
       away: 0,
       stepSize: ctx.surfaceStep,
+      chroma: 1,
+      scale,
+      seed: ctx.seed,
+    };
+  }
+  if (kind === "decorative") {
+    return {
+      mode: "lightness",
+      target: 0,
+      elevation: 0,
+      away: scale,
+      stepSize: DECORATIVE_STEP,
       chroma: 1,
       scale,
       seed: ctx.seed,
@@ -328,6 +346,7 @@ export function stateStepCount(
   state: CanonicalState,
   states: StateSteps | undefined,
 ): number {
+  if (kind === "decorative") return DEFAULT_STATE_COUNT[state];
   const table = states?.[kind];
   if (table !== undefined) {
     if (state === "pressed") {
@@ -343,7 +362,7 @@ export function stateStepCount(
 
 function paintSeed(palette: OKLCH, draft: Draft, kind: Kind): OKLCH {
   let chroma = Math.max(0, palette.c * draft.chroma);
-  if (kind === "surface") {
+  if (kind === "surface" || kind === "decorative") {
     chroma = Math.min(chroma, maxChromaForLs(Math.abs(draft.scale)));
   }
   return {

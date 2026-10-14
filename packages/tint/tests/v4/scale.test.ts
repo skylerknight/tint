@@ -20,6 +20,9 @@ import {
   SCALE_MIN,
   SOLID_EMPHASIS_SCALE,
   SURFACE_DISTINCT_DELTA,
+  DECORATIVE_SCALE_MAX,
+  DECORATIVE_SCALE_MIN,
+  DECORATIVE_STEP,
   SURFACE_SCALE_MAX,
   SURFACE_SCALE_MIN,
   TEXT_APCA_UNIT,
@@ -108,7 +111,11 @@ describe("contrast ladders", () => {
   it("is strictly monotonic for every kind, in both algorithms and both modes", () => {
     const algorithms: ContrastAlgorithm[] = ["apca", "wcag2"];
     const modes: Mode[] = ["light", "dark"];
-    const kinds: Exclude<Kind, "surface">[] = ["text", "border", "emphasis"];
+    const kinds: Exclude<Kind, "surface" | "decorative">[] = [
+      "text",
+      "border",
+      "emphasis",
+    ];
     for (const algorithm of algorithms) {
       for (const mode of modes) {
         for (const kind of kinds) {
@@ -805,7 +812,7 @@ describe("scale range", () => {
           sample: {
             low: text(-1),
             high: emphasis(11),
-            mark: decorative.text(-1),
+            mark: decorative(-1),
           },
         },
       }),
@@ -843,40 +850,34 @@ describe("scale range", () => {
     ).toBe(false);
   });
 
-  it("warns when a decorative color matches its backdrop and skips the contrast floor", () => {
+  it("warns only when decorative resolves to the same color as its backdrop", () => {
     const [theme] = generate(
       defineConfig({
         palette: { neutral: "#ffffff" },
         themes: { light: { mode: "light" } },
         tokens: {
           sample: {
-            hairline: decorative.border(0),
-            flat: decorative.border(-10),
-            faint: decorative.text(1),
+            flat: decorative(0),
+            hairline: decorative(1.5),
+            faint: decorative(1),
           },
         },
       }),
     );
-    const flat = theme?.diagnostics.find(
+    const flat = theme?.diagnostics.filter(
       (item) => item.code === "decorative-indistinguishable",
     );
-    expect(flat?.path).toBe("neutral.sample.flat");
-    expect(flat?.message).toContain("not visibly distinct");
+    expect(flat?.map((item) => item.path)).toEqual(["neutral.sample.flat"]);
+    expect(flat?.[0]?.message).toContain("same color");
     expect(
       theme?.diagnostics.some(
         (item) =>
-          item.path === "neutral.sample.hairline" &&
-          (item.code === "decorative-indistinguishable" ||
-            item.code === "border-non-text" ||
-            item.code === "scale-out-of-range"),
+          item.path === "neutral.sample.hairline" || item.path === "neutral.sample.faint",
       ),
     ).toBe(false);
-    expect(theme?.diagnostics.some((item) => item.code === "text-below-body")).toBe(
-      false,
-    );
   });
 
-  it("rejects decorative.surface", () => {
+  it("rejects a decorative flag and a scale outside -10..10", () => {
     expect(() =>
       generate(
         defineConfig({
@@ -886,7 +887,71 @@ describe("scale range", () => {
           },
         }),
       ),
-    ).toThrow(/no decorative\.surface/);
+    ).toThrow(/decorative is its own kind/);
+    expect(() =>
+      generate(
+        defineConfig({
+          palette: { neutral: "#ffffff" },
+          tokens: { mark: { DEFAULT: decorative(11) } },
+        }),
+      ),
+    ).toThrow(/decorative\(n\) is signed lightness steps away from its backdrop/);
+  });
+
+  it("steps decorative lightness away from the backdrop in both modes", () => {
+    const steps = [1, 2, 5, 10] as const;
+    const themes = generate(
+      defineConfig({
+        palette: { neutral: "#ffffff" },
+        themes: {
+          light: { mode: "light" },
+          dark: { mode: "dark" },
+        },
+        tokens: {
+          surface: { DEFAULT: surface(0) },
+          mark: {
+            n1: decorative(1),
+            n2: decorative(2),
+            n5: decorative(5),
+            n10: decorative(10),
+            back: decorative(-1),
+          },
+        },
+      }),
+    );
+    for (const theme of themes) {
+      const palette = theme.palettes[0];
+      if (palette === undefined) throw new Error("missing palette");
+      const anchor = theme.mode === "light" ? 0.97 : 0.18;
+      const sign = theme.mode === "light" ? -1 : 1;
+      const lights: number[] = [];
+      for (const step of steps) {
+        const token = palette.tokens.find((entry) => entry.id === `mark.n${step}`);
+        if (token === undefined) throw new Error(`missing mark.n${step}`);
+        expect(token.kind).toBe("decorative");
+        expect(token.backdrop).toEqual(["surface.DEFAULT"]);
+        expect(token.color.oklch.l).toBeCloseTo(
+          anchor + sign * step * DECORATIVE_STEP,
+          4,
+        );
+        expect(token.color.oklch.c).toBeLessThan(1e-6);
+        const ratio = wcag2Ratio(token.color.rgb, palette.page.rgb);
+        if (step <= 2) expect(ratio).toBeLessThan(1.3);
+        if (step === 10) {
+          expect(ratio).toBeGreaterThan(3);
+          expect(ratio).toBeLessThan(7);
+        }
+        lights.push(token.color.oklch.l);
+      }
+      for (let i = 1; i < lights.length; i++) {
+        expect(sign * ((lights[i] ?? 0) - (lights[i - 1] ?? 0))).toBeGreaterThan(0);
+      }
+      const back = palette.tokens.find((entry) => entry.id === "mark.back");
+      if (back === undefined) throw new Error("missing mark.back");
+      expect(sign * (back.color.oklch.l - anchor)).toBeLessThan(0);
+    }
+    expect(DECORATIVE_SCALE_MIN).toBe(-10);
+    expect(DECORATIVE_SCALE_MAX).toBe(10);
   });
 });
 
@@ -897,7 +962,7 @@ function clamp01(value: number): number {
 }
 
 function targetOf(
-  kind: Exclude<Kind, "surface">,
+  kind: Exclude<Kind, "surface" | "decorative">,
   algorithm: ContrastAlgorithm,
   mode: Mode,
   scale: number,

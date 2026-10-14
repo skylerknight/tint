@@ -155,8 +155,10 @@ export default defineConfig({
       focus: border(8, { on: "action" }),
     },
 
-    divider: { DEFAULT: decorative.border(0) },
-    placeholder: { DEFAULT: decorative.text(0) },
+    // decorative(n) steps lightness away from its backdrop.
+    // 1–2 is a hairline. About 8–10 is placeholder or icon strength.
+    divider: { DEFAULT: decorative(1.5) },
+    placeholder: { DEFAULT: decorative(8) },
 
     text: {
       DEFAULT: text(5),

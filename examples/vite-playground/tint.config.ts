@@ -12,6 +12,8 @@ import {
  * Sample card for the unified prototype.
  *
  * The page is surface.DEFAULT. The card sits on surface.raised.
+ * Card and divider are decorative(1.5). The input border is decorative(3).
+ * Placeholder is decorative(8). The icon is decorative(10).
  * Action is the primary button. Soft is the secondary button.
  * Light and dark follow the mode shorthands (lightness 97 and 18).
  * The selectors match the playground's light/dark radios.
@@ -86,13 +88,15 @@ export default defineConfig({
     },
 
     input: {
-      DEFAULT: decorative.border(1),
-      placeholder: decorative.text(0),
+      DEFAULT: decorative(3),
+      placeholder: decorative(8),
       focus: border(8),
     },
 
-    card: { DEFAULT: decorative.border(0) },
+    card: { DEFAULT: decorative(1.5) },
 
-    divider: { DEFAULT: decorative.border(0) },
+    divider: { DEFAULT: decorative(1.5) },
+
+    icon: { DEFAULT: decorative(10) },
   },
 });

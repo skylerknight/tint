@@ -226,18 +226,14 @@
       "properties": {
         "kind": {
           "description": "What the token is (§2.4, §3).",
-          "enum": ["surface", "text", "border", "emphasis"]
+          "enum": ["surface", "text", "border", "emphasis", "decorative"]
         },
         "scale": {
-          "description": "Numeric scale. emphasis, text, and border are contrast steps. 0 to 10 is the curve (higher is more contrast; decimals interpolate, APCA in Lc and WCAG by ratio; text(0) is the lowest compliant text, text(5) is body text, text(10) is the top). A plain token outside that range is a warning, not an error. surface is signed lightness steps from the page, -10 to 10 (0 is the page, positive is raised, negative is sunken; one step is 0.02 in light and 0.03 in dark). Decimals are real steps.",
+          "description": "Numeric scale. emphasis, text, and border are contrast steps. 0 to 10 is the curve (higher is more contrast; decimals interpolate, APCA in Lc and WCAG by ratio; text(0) is the lowest compliant text, text(5) is body text, text(10) is the top). A plain token outside that range is a warning, not an error. surface is signed lightness steps from the page, -10 to 10 (0 is the page, positive is raised, negative is sunken; one step is 0.02 in light and 0.03 in dark). decorative is signed lightness steps away from its backdrop, -10 to 10 (positive is more distinct: darker on light, lighter on dark; one step is 0.04 OKLCH lightness in both modes; 1–2 is a hairline under 1.3:1, about 10 is icon strength). It is not a contrast step and is exempt from contrast checks. Decimals are real steps.",
           "type": "number"
         },
         "disabled": {
           "description": "Set by disabled.emphasis(n), disabled.text(n), disabled.surface(n), or disabled.border(n). n is how strong the color would have been. The scale does not change. The engine mutes it (chroma ×0.3, lightness at most 0.06 toward the backdrop, and at most a quarter of the gap). Solid color, no alpha.",
-          "type": "boolean"
-        },
-        "decorative": {
-          "description": "Set by decorative.text(n), decorative.border(n), or decorative.emphasis(n). The kind and scale are unchanged and the color is not muted. Contrast-floor and out-of-range warnings are suppressed. There is no decorative.surface.",
           "type": "boolean"
         },
         "on": {
@@ -246,7 +242,7 @@
           "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*(?:\\.[a-zA-Z][a-zA-Z0-9_-]*)?$"
         },
         "chroma": {
-          "description": "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces capped) (§2.4).",
+          "description": "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces and decorative colors capped) (§2.4).",
           "type": "number",
           "minimum": 0,
           "maximum": 2
@@ -283,7 +279,7 @@
           "if": {
             "properties": {
               "kind": {
-                "const": "surface"
+                "enum": ["surface", "decorative"]
               }
             },
             "required": ["kind"]
@@ -294,23 +290,6 @@
                 "type": "number",
                 "minimum": -10,
                 "maximum": 10
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "decorative": {
-                "const": true
-              }
-            },
-            "required": ["decorative"]
-          },
-          "then": {
-            "properties": {
-              "kind": {
-                "enum": ["text", "border", "emphasis"]
               }
             }
           }
@@ -328,7 +307,7 @@
           "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*(?:\\.[a-zA-Z][a-zA-Z0-9_-]*)?$"
         },
         "chroma": {
-          "description": "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces capped) (§2.4).",
+          "description": "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces and decorative colors capped) (§2.4).",
           "type": "number",
           "minimum": 0,
           "maximum": 2

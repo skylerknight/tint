@@ -9,9 +9,8 @@
  * Options are `{ on?, chroma?, hue?, lc?, ratio?, nudge? }`.
  * `disabled.emphasis(n)` and the other `disabled.<kind>(n)` build that kind at
  * `n`, then the engine mutes it. There is no `disabled(token)` wrapper.
- * `decorative.text(n)`, `decorative.border(n)`, and `decorative.emphasis(n)`
- * are the same kind and scale with no muting. Contrast-floor and out-of-range
- * warnings are suppressed. There is no `decorative.surface`.
+ * `decorative(n)` is its own lightness kind. It is not a wrapper on text,
+ * border, or emphasis, and it is not muted.
  */
 
 import type { Kind, Token, TokenOptions } from "./types.js";
@@ -142,39 +141,22 @@ export const disabled = {
   border: disabledKind("border"),
 };
 
-interface DecorativeFn<K extends Exclude<Kind, "surface">> {
-  (scale: number): { kind: K; scale: number; decorative: true };
-  <const O extends TokenOptions>(
-    scale: number,
-    options: OnlyTokenOptions<O>,
-  ): Flat<{ kind: K; scale: number; decorative: true } & O>;
-}
-
-function decorativeKind<K extends Exclude<Kind, "surface">>(kind: K): DecorativeFn<K> {
-  function create(scale: number, options?: TokenOptions): Token {
-    if (isOptions(scale)) {
-      throw new TypeError(
-        `decorative.${kind}() takes a scale number first. Options are the second argument.`,
-      );
-    }
-    const token = buildToken(kind, scale, options);
-    token.decorative = true;
-    return token;
-  }
-  return create as DecorativeFn<K>;
-}
-
 /**
- * Build a kind at scale `n` and mark it decorative.
+ * Signed lightness steps away from the backdrop (`on`, or `surface.DEFAULT`).
  *
- * The color is the same kind and scale, with no muting. Contrast-floor
- * warnings (body text, non-text 3:1) and out-of-range warnings are
- * suppressed. The color must still be visibly distinct from its backdrop.
- * There is no `decorative.surface`. `opts` may set `on`, `chroma`, `hue`,
- * `lc`, `ratio`, or `nudge`.
+ * Positive is more distinct from that backdrop: darker on a light page,
+ * lighter on a dark page. Negative steps the other way. Decimals are real
+ * steps. One step is 0.04 OKLCH lightness in both modes. The result clamps
+ * at black and white. It does not fold, and it is not a contrast solve.
+ *
+ * `decorative(1)` and `decorative(2)` are hairlines, under 1.3:1 on the mode
+ * pages (lightness 97 and 18). A dark hairline near #29292c on the 18 page
+ * is about `decorative(2.5)`. `decorative(10)` is about 4:1, roughly an icon.
+ * Valid range is −10..10.
+ *
+ * Chroma and hue follow the palette the way surfaces do. Contrast checks do
+ * not apply (a non-essential mark). `decorative(0)` is the backdrop itself,
+ * and that exact match is the one sanity warning.
+ * `opts` may set `on`, `chroma`, `hue`, `lc`, `ratio`, or `nudge`.
  */
-export const decorative = {
-  emphasis: decorativeKind("emphasis"),
-  text: decorativeKind("text"),
-  border: decorativeKind("border"),
-};
+export const decorative = kindFunction("decorative");

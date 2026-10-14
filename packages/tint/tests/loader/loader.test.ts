@@ -233,16 +233,15 @@ export default defineConfig({
   palette: { neutral: "#abcdef" },
   tokens: {
     action: { DEFAULT: emphasis(11) },
-    hint: { DEFAULT: decorative.text(0) },
+    hint: { DEFAULT: decorative(1.5) },
   },
 });`,
     );
     const open = await loadConfig({ root: dir, configPath: "tint.config.ts" });
     expect(open.config.tokens.action?.DEFAULT).toEqual({ kind: "emphasis", scale: 11 });
     expect(open.config.tokens.hint?.DEFAULT).toEqual({
-      kind: "text",
-      scale: 0,
-      decorative: true,
+      kind: "decorative",
+      scale: 1.5,
     });
     writeFileSync(
       join(dir, "tint.config.ts"),

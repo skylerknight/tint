@@ -8,7 +8,7 @@
 
 import { oklchToRGBGamut } from "../color/gamut.js";
 import type { RGB } from "../color/types.js";
-import { APCA_THRESHOLDS, calcAPCAabs } from "../contrast/apca.js";
+import { calcAPCAabs } from "../contrast/apca.js";
 import { wcag2Ratio } from "../contrast/wcag2.js";
 import {
   BODY_TEXT_RULE,
@@ -28,12 +28,6 @@ import type { ContrastAlgorithm, Mode } from "./types.js";
 
 const BLACK: RGB = { r: 0, g: 0, b: 0 };
 const WHITE: RGB = { r: 255, g: 255, b: 255 };
-
-/**
- * WCAG ratio below which a decorative color is treated as the same as its backdrop.
- * APCA uses {@link APCA_THRESHOLDS.minimum} (Lc 8), the point contrast stops being visible.
- */
-const DECORATIVE_DISTINCT_RATIO = 1.2;
 
 export function isDisabledName(name: string): boolean {
   return name === "disabled" || name.endsWith("-disabled");
@@ -106,7 +100,7 @@ export function kindLints(
   lints.push(...nonTextLints(theme, palette));
   lints.push(...surfaceLints(theme, palette));
   lints.push(...scaleOutOfRangeLints(theme, palette));
-  lints.push(...decorativeDistinctLints(theme, algorithm, palette));
+  lints.push(...decorativeDistinctLints(theme, palette));
   return lints;
 }
 
@@ -119,7 +113,6 @@ function textLints(
   const lints: EngineDiagnosticV4[] = [];
   for (const token of palette.tokens) {
     if (token.generated || token.kind !== "text" || token.disabled === true) continue;
-    if (token.decorative === true) continue;
     if (isDisabledName(token.name)) continue;
     if (token.scale < TEXT_BODY_SCALE) continue;
     if (token.mode !== "contrast" || token.target === undefined) continue;
@@ -141,7 +134,7 @@ function textLints(
 function nonTextLints(theme: string, palette: PaletteResultV4): EngineDiagnosticV4[] {
   const lints: EngineDiagnosticV4[] = [];
   for (const token of palette.tokens) {
-    if (token.generated || token.disabled === true || token.decorative === true) continue;
+    if (token.generated || token.disabled === true) continue;
     if (isDisabledName(token.name)) continue;
     const emphasis = token.kind === "emphasis" && token.scale >= SOLID_EMPHASIS_SCALE;
     const border = token.kind === "border" && token.scale >= BORDER_NON_TEXT_SCALE;
@@ -197,7 +190,7 @@ function scaleOutOfRangeLints(
 ): EngineDiagnosticV4[] {
   const lints: EngineDiagnosticV4[] = [];
   for (const token of palette.tokens) {
-    if (token.generated || token.decorative === true || token.kind === "surface")
+    if (token.generated || token.kind === "surface" || token.kind === "decorative")
       continue;
     if (token.scale >= SCALE_MIN && token.scale <= SCALE_MAX) continue;
     const below = token.scale < SCALE_MIN;
@@ -212,7 +205,7 @@ function scaleOutOfRangeLints(
         ? `${palette.name}.${token.id} is below the accessible floor for ${token.kind} (scale ${shown}).`
         : `${palette.name}.${token.id} is above the achievable ceiling for ${token.kind} (scale ${shown}).`,
       hint: below
-        ? `${token.kind}(0) is the lowest step on the curve. Use decorative.${token.kind}(n) when a lower scale is intentional.`
+        ? `${token.kind}(0) is the lowest step on the curve. decorative(n) is a separate lightness kind for non-essential marks.`
         : `${token.kind}(10) is the top of the curve. A higher scale asks for more contrast than the scale can promise.`,
       data: { target: token.scale },
     });
@@ -220,30 +213,30 @@ function scaleOutOfRangeLints(
   return lints;
 }
 
+/**
+ * One sanity check: a decorative color that resolves to the same hex as its
+ * backdrop is invisible. Hairlines under 1.3:1 are exempt. WCAG does not
+ * require contrast for non-essential marks.
+ */
 function decorativeDistinctLints(
   theme: string,
-  algorithm: ContrastAlgorithm,
   palette: PaletteResultV4,
 ): EngineDiagnosticV4[] {
-  const floor =
-    algorithm === "apca" ? APCA_THRESHOLDS.minimum : DECORATIVE_DISTINCT_RATIO;
-  const unit = algorithm === "apca" ? "Lc" : "ratio";
   const lints: EngineDiagnosticV4[] = [];
   for (const token of palette.tokens) {
-    if (token.generated || token.decorative !== true) continue;
-    if (token.achieved + 1e-6 >= floor) continue;
-    const shown =
-      algorithm === "apca" ? token.achieved.toFixed(1) : token.achieved.toFixed(2);
-    const backdrop = token.worst ?? PAGE;
+    if (token.generated || token.kind !== "decorative") continue;
+    const backdrop = token.backdrop[0] ?? token.worst ?? PAGE;
+    const hex = colorHex(palette, backdrop);
+    if (hex === undefined || hex !== token.color.hex) continue;
     lints.push({
       severity: "warning",
       code: "decorative-indistinguishable",
       path: `${palette.name}.${token.id}`,
       theme,
       palette: palette.name,
-      message: `${palette.name}.${token.id} is not visibly distinct from ${backdrop} (${unit} ${shown}).`,
-      hint: "Decorative tokens skip the contrast floor, but the color still has to separate from its backdrop.",
-      data: { achieved: token.achieved, target: floor },
+      message: `${palette.name}.${token.id} resolves to the same color as ${backdrop} (${token.color.hex}).`,
+      hint: "decorative(0) is the backdrop. A hairline is a small positive step such as decorative(1.5).",
+      data: { achieved: token.achieved },
     });
   }
   return lints;
@@ -267,6 +260,11 @@ function worstRatio(token: SolvedTokenV4, palette: PaletteResultV4): number {
 
 function colorRgb(palette: PaletteResultV4, id: string): RGB | undefined {
   return palette.tokens.find((token) => token.id === id)?.color.rgb;
+}
+
+function colorHex(palette: PaletteResultV4, id: string): string | undefined {
+  if (id === PAGE) return palette.page.hex;
+  return palette.tokens.find((token) => token.id === id)?.color.hex;
 }
 
 function formatTarget(algorithm: ContrastAlgorithm, value: number): string {

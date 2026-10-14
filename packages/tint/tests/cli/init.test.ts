@@ -29,8 +29,8 @@ describe("tint init", () => {
     expect(source).toContain("emphasis(4.5)");
     expect(source).toContain("emphasis(6)");
     expect(source).toContain("disabled.emphasis(5)");
-    expect(source).toContain("decorative.border(0)");
-    expect(source).toContain("decorative.text(0)");
+    expect(source).toContain("decorative(1.5)");
+    expect(source).toContain("decorative(8)");
     expect(source).not.toContain("disabled(emphasis");
     expect(c.out()).toContain("Next steps");
 

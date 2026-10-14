@@ -6,7 +6,9 @@
     <title>tint playground</title>
   </head>
   <body class="min-h-screen bg-surface text-body">
-    <main class="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-6 py-16">
+    <main
+      class="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-6 py-16"
+    >
       <div class="controls">
         <fieldset class="segment">
           <legend>Palette</legend>
@@ -32,11 +34,29 @@
         </fieldset>
       </div>
 
-      <article class="sample-card overflow-hidden rounded-xl border border-card bg-surface-raised">
+      <article
+        class="sample-card overflow-hidden rounded-xl border border-card bg-surface-raised"
+      >
         <div class="space-y-5 p-6">
-          <div class="space-y-1.5">
-            <h1 class="text-base font-semibold leading-none tracking-tight text-strong">Project update</h1>
-            <p class="text-sm leading-relaxed text-muted">A short note about what changed, set in muted text.</p>
+          <div class="flex items-start gap-3">
+            <svg
+              class="mt-0.5 size-4 shrink-0 text-icon"
+              viewBox="0 0 16 16"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                d="M8 1.25 9.35 5.9l4.75.15-3.75 2.9 1.3 4.6L8 11.15 4.35 13.55l1.3-4.6L1.9 6.05l4.75-.15Z"
+              />
+            </svg>
+            <div class="space-y-1.5">
+              <h1 class="text-base font-semibold leading-none tracking-tight text-strong">
+                Project update
+              </h1>
+              <p class="text-sm leading-relaxed text-muted">
+                A short note about what changed, set in muted text.
+              </p>
+            </div>
           </div>
           <label class="block space-y-2" for="sample-input">
             <span class="text-sm font-medium leading-none text-body">Email</span>
@@ -50,9 +70,25 @@
         </div>
         <div class="h-px bg-divider" role="separator"></div>
         <div class="flex items-center justify-end gap-2 px-6 py-4">
-          <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg bg-action px-3.5 text-sm font-medium text-action-on hover:bg-action-hover focus-visible:outline-4 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-border-focus">Save</button>
-          <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg bg-soft px-3.5 text-sm font-medium text-soft-on hover:bg-soft-hover focus-visible:outline-4 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-border-focus">Cancel</button>
-          <button type="button" disabled class="inline-flex h-9 items-center justify-center rounded-lg bg-action-disabled px-3.5 text-sm font-medium text-action-on-disabled">Disabled</button>
+          <button
+            type="button"
+            class="inline-flex h-9 items-center justify-center rounded-lg bg-action px-3.5 text-sm font-medium text-action-on hover:bg-action-hover focus-visible:outline-4 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-9 items-center justify-center rounded-lg bg-soft px-3.5 text-sm font-medium text-soft-on hover:bg-soft-hover focus-visible:outline-4 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled
+            class="inline-flex h-9 items-center justify-center rounded-lg bg-action-disabled px-3.5 text-sm font-medium text-action-on-disabled"
+          >
+            Disabled
+          </button>
         </div>
       </article>
     </main>

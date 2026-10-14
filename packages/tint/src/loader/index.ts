@@ -224,7 +224,7 @@ async function loadWithEsbuild(
  * Validation still happens in the loader, against the real validator.
  * `emphasis`, `text`, and `border` are contrast steps. Outside 0..10 warns.
  * `surface` is −10..10, signed lightness steps from the page (0 is the page).
- * `decorative` covers text, border, and emphasis. There is no decorative.surface.
+ * `decorative` is −10..10, signed lightness steps away from its backdrop.
  */
 const TINT_STUB = `function __tintKind(kind) {
   return function (scale, options) {
@@ -238,6 +238,7 @@ export const surface = __tintKind("surface");
 export const text = __tintKind("text");
 export const border = __tintKind("border");
 export const emphasis = __tintKind("emphasis");
+export const decorative = __tintKind("decorative");
 function __tintDisabled(kind) {
   return function (scale, options) {
     const token = { kind: kind, scale: scale, disabled: true };
@@ -251,19 +252,6 @@ export const disabled = {
   text: __tintDisabled("text"),
   surface: __tintDisabled("surface"),
   border: __tintDisabled("border"),
-};
-function __tintDecorative(kind) {
-  return function (scale, options) {
-    const token = { kind: kind, scale: scale, decorative: true };
-    if (options && typeof options === "object") Object.assign(token, options);
-    token.decorative = true;
-    return token;
-  };
-}
-export const decorative = {
-  emphasis: __tintDecorative("emphasis"),
-  text: __tintDecorative("text"),
-  border: __tintDecorative("border"),
 };
 export default { defineConfig, surface, text, border, emphasis, disabled, decorative };
 `;

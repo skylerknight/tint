@@ -60,20 +60,21 @@ describe("numeric kind functions", () => {
     });
   });
 
-  it("decorative.text/border/emphasis marks the token and does not mute", () => {
-    expect(decorative.text(1)).toEqual({ kind: "text", scale: 1, decorative: true });
-    expect(decorative.border(0, { on: "surface" })).toEqual({
-      kind: "border",
-      scale: 0,
+  it("decorative(n) is its own kind", () => {
+    expect(decorative(1.5)).toEqual({ kind: "decorative", scale: 1.5 });
+    expect(decorative(1.5, { on: "surface" })).toEqual({
+      kind: "decorative",
+      scale: 1.5,
       on: "surface",
-      decorative: true,
     });
-    expect(decorative.emphasis(2, { nudge: false })).toEqual({
-      kind: "emphasis",
-      scale: 2,
+    expect(decorative(-2, { nudge: false })).toEqual({
+      kind: "decorative",
+      scale: -2,
       nudge: false,
-      decorative: true,
     });
-    expect(decorative).not.toHaveProperty("surface");
+    expect(typeof decorative).toBe("function");
+    expect(decorative).not.toHaveProperty("text");
+    expect(decorative).not.toHaveProperty("border");
+    expect(decorative).not.toHaveProperty("emphasis");
   });
 });

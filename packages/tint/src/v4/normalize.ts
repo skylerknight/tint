@@ -2,13 +2,18 @@
  * Token normalization for the numeric-scale prototype.
  *
  * A token is `{ kind, scale, ...options }`. `scale` is a finite number.
- * Surface stays inside −10..10. Emphasis, text, and border may leave 0..10;
- * that is a warning from the engine, not an error here.
+ * Surface and decorative stay inside −10..10. Emphasis, text, and border may
+ * leave 0..10; that is a warning from the engine, not an error here.
  * Level names, `state`, `contrast`, `step`, and `direction` are rejected
  * with a pointer at the replacement. This function does not throw.
  */
 
-import { SURFACE_SCALE_MAX, SURFACE_SCALE_MIN } from "./ladders.js";
+import {
+  DECORATIVE_SCALE_MAX,
+  DECORATIVE_SCALE_MIN,
+  SURFACE_SCALE_MAX,
+  SURFACE_SCALE_MIN,
+} from "./ladders.js";
 import {
   isKind,
   isPlainObject,
@@ -25,7 +30,6 @@ const TOKEN_KEYS = new Set([
   "kind",
   "scale",
   "disabled",
-  "decorative",
   "on",
   "chroma",
   "hue",
@@ -47,6 +51,8 @@ const REMOVED: Readonly<Record<string, string>> = {
   direction:
     "direction was removed. Higher emphasis, text, and border scales are more contrast. Higher surface scales are lighter.",
   $role: "Configs are explicit. There is no $role. The token's kind is the role.",
+  decorative:
+    "decorative is its own kind. Use decorative(n), not a flag on text, border, or emphasis.",
 };
 
 /**
@@ -61,8 +67,6 @@ export interface NormalizedToken {
   states: CanonicalState[];
   /** Muting treatment. The scale is the token's own scale. */
   disabled?: boolean;
-  /** Decorative intent. Contrast-floor and out-of-range warnings are suppressed. */
-  decorative?: boolean;
   on?: string;
   chroma?: number;
   hue?: Hue;
@@ -119,16 +123,9 @@ export function normalizeToken(
       ),
     );
   } else if (typeof token.scale === "number" && Number.isFinite(token.scale)) {
-    if (
-      kind === "surface" &&
-      (token.scale < SURFACE_SCALE_MIN || token.scale > SURFACE_SCALE_MAX)
-    ) {
-      issues.push(
-        normalizeIssue(
-          joinPath(path, "scale"),
-          `scale ${token.scale} is outside ${SURFACE_SCALE_MIN}..${SURFACE_SCALE_MAX}. surface(n) is signed lightness steps from the page: 0 is the page, positive is raised, negative is sunken.`,
-        ),
-      );
+    const bounded = boundedScale(kind, token.scale);
+    if (bounded !== undefined) {
+      issues.push(normalizeIssue(joinPath(path, "scale"), bounded));
     } else {
       scale = token.scale;
     }
@@ -142,6 +139,19 @@ export function normalizeToken(
   const normalized: NormalizedToken = { kind, scale, states: [] };
   assignOptions(normalized, extra);
   return { ok: true, token: normalized };
+}
+
+function boundedScale(kind: Kind, scale: number): string | undefined {
+  if (kind === "surface" && (scale < SURFACE_SCALE_MIN || scale > SURFACE_SCALE_MAX)) {
+    return `scale ${scale} is outside ${SURFACE_SCALE_MIN}..${SURFACE_SCALE_MAX}. surface(n) is signed lightness steps from the page: 0 is the page, positive is raised, negative is sunken.`;
+  }
+  if (
+    kind === "decorative" &&
+    (scale < DECORATIVE_SCALE_MIN || scale > DECORATIVE_SCALE_MAX)
+  ) {
+    return `scale ${scale} is outside ${DECORATIVE_SCALE_MIN}..${DECORATIVE_SCALE_MAX}. decorative(n) is signed lightness steps away from its backdrop: positive is more distinct, negative is the other direction.`;
+  }
+  return undefined;
 }
 
 function kindIssue(path: string, kind: unknown): NormalizeIssue {
@@ -162,7 +172,6 @@ function kindIssue(path: string, kind: unknown): NormalizeIssue {
 
 interface TokenExtras {
   disabled?: boolean;
-  decorative?: boolean;
   on?: string;
   chroma?: number;
   hue?: Hue;
@@ -181,21 +190,6 @@ function readOptions(
   if (present(token, "disabled")) {
     if (typeof token.disabled === "boolean") extra.disabled = token.disabled;
     else issues.push(normalizeIssue(joinPath(path, "disabled"), "Expected a boolean."));
-  }
-
-  if (present(token, "decorative")) {
-    if (typeof token.decorative !== "boolean") {
-      issues.push(normalizeIssue(joinPath(path, "decorative"), "Expected a boolean."));
-    } else if (token.decorative === true && token.kind === "surface") {
-      issues.push(
-        normalizeIssue(
-          joinPath(path, "decorative"),
-          "There is no decorative.surface. decorative covers text, border, and emphasis.",
-        ),
-      );
-    } else if (token.decorative === true) {
-      extra.decorative = true;
-    }
   }
 
   if (present(token, "on")) {
@@ -231,7 +225,6 @@ function readOptions(
 
 function assignOptions(token: NormalizedToken, extra: TokenExtras): void {
   if (extra.disabled === true) token.disabled = true;
-  if (extra.decorative === true) token.decorative = true;
   if (extra.on !== undefined) token.on = extra.on;
   if (extra.chroma !== undefined) token.chroma = extra.chroma;
   if (extra.hue !== undefined) token.hue = extra.hue;

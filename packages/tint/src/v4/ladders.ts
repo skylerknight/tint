@@ -12,6 +12,10 @@
  * that anchor. The painted page is `surface.DEFAULT`, an ordinary step on the
  * same scale. Text, border, and emphasis with no `on` solve against it.
  *
+ * `decorative` is not on that curve either, and it is not a surface. It is
+ * signed lightness steps away from its backdrop (`on`, or `surface.DEFAULT`).
+ * One step is {@link DECORATIVE_STEP} in both modes. Positive is more distinct.
+ *
  * `text(0)` is the lowest compliant text (APCA Lc 45, WCAG 3:1).
  * `text(5)` is body text (APCA Lc 75, WCAG 4.5:1). `text(10)` is the top of
  * the curve. A request at exactly 10 is clamped to the contrast the backdrop
@@ -30,6 +34,33 @@ export const SCALE_MAX = 10;
  */
 export const SURFACE_SCALE_MIN = -10;
 export const SURFACE_SCALE_MAX = 10;
+
+/**
+ * Inclusive range for `decorative`.
+ * Positive steps move away from the backdrop. Negative steps go the other way.
+ */
+export const DECORATIVE_SCALE_MIN = -10;
+export const DECORATIVE_SCALE_MAX = 10;
+
+/**
+ * One `decorative` step in OKLCH lightness, in both modes.
+ *
+ * Small on purpose, and the same size in light and dark, so a hairline stays
+ * a hairline when the theme flips. On the mode pages (lightness 97 and 18,
+ * neutral chroma 0):
+ *
+ * | n | light | dark |
+ * | --- | --- | --- |
+ * | 1 | #e8e8e8, 1.12:1 | #1b1b1b, 1.09:1 |
+ * | 2 | #dbdbdb, 1.27:1 | #242424, 1.21:1 |
+ * | 5 | #b4b4b4, 1.90:1 | #424242, 1.86:1 |
+ * | 10 | #777777, 4.11:1 | #7a7a7a, 4.36:1 |
+ *
+ * `decorative(1)` and `decorative(2)` are hairlines, under 1.3:1 in both modes.
+ * A dark hairline near #29292c (about 1.29:1 on the 18 page) is `decorative(2.5)`.
+ * `decorative(10)` is about 4:1, roughly icon strength. The kind does not fold.
+ */
+export const DECORATIVE_STEP = 0.04;
 
 /**
  * `text(5)` / the body-text stop.
@@ -146,10 +177,10 @@ export function emphasisTarget(
 
 /**
  * Contrast target for emphasis, text, or border.
- * Surface is a lightness step, not a contrast target.
+ * Surface and decorative are lightness steps, not contrast targets.
  */
 export function contrastAt(
-  kind: Exclude<Kind, "surface">,
+  kind: Exclude<Kind, "surface" | "decorative">,
   algorithm: ContrastAlgorithm,
   mode: Mode,
   scale: number,

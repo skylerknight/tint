@@ -71,8 +71,6 @@ export interface SolvedTokenV4 {
   readonly states: readonly CanonicalState[];
   /** True when the token was built with `disabled.<kind>(n)`. The scale is unchanged. */
   readonly disabled?: boolean;
-  /** True when the token was built with `decorative.<kind>(n)`. The color is not muted. */
-  readonly decorative?: boolean;
   /** Backdrop ids in graph order. {@link PAGE} is the theme page. */
   readonly backdrop: readonly string[];
   readonly color: GeneratedColorV4;
@@ -362,7 +360,6 @@ function finish(
     ordinal: displayOrdinal(token.value.scale),
     states: token.value.states,
     ...(token.value.disabled === true ? { disabled: true } : {}),
-    ...(token.value.decorative === true ? { decorative: true } : {}),
     backdrop: token.backdrop,
     color,
     mode,

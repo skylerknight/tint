@@ -34,11 +34,11 @@ describe("playground golden output", () => {
         "input.DEFAULT",
         "card.DEFAULT",
         "divider.DEFAULT",
+        "icon.DEFAULT",
       ]),
     );
     expect(ids).not.toContain("ramp.n0");
     expect(ids).not.toContain("surface.sunken");
-    expect(ids).not.toContain("icon.DEFAULT");
   });
 
   it("excludes the other theme's radio selector from the automatic block", () => {

@@ -20,6 +20,9 @@ import {
   TOKEN_CONTRAST_SHIFT,
 } from "../src/v4/constants.js";
 import {
+  DECORATIVE_SCALE_MAX,
+  DECORATIVE_SCALE_MIN,
+  DECORATIVE_STEP,
   MODE_PAGE_LIGHTNESS,
   SCALE_MAX,
   SCALE_MIN,
@@ -194,7 +197,7 @@ function hueSchema(): Schema {
 function chromaSchema(): Schema {
   return {
     description:
-      "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces capped) (§2.4).",
+      "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces and decorative colors capped) (§2.4).",
     type: "number",
     minimum: 0,
     maximum: 2,
@@ -218,16 +221,20 @@ function scaleSchema(): Schema {
       "surface is signed lightness steps from the page, " +
       `${SURFACE_SCALE_MIN} to ${SURFACE_SCALE_MAX} ` +
       "(0 is the page, positive is raised, negative is sunken; one step is 0.02 in light and 0.03 in dark). " +
+      "decorative is signed lightness steps away from its backdrop, " +
+      `${DECORATIVE_SCALE_MIN} to ${DECORATIVE_SCALE_MAX} ` +
+      `(positive is more distinct: darker on light, lighter on dark; one step is ${DECORATIVE_STEP} OKLCH lightness in both modes; 1–2 is a hairline under 1.3:1, about 10 is icon strength). ` +
+      "It is not a contrast step and is exempt from contrast checks. " +
       "Decimals are real steps.",
     type: "number",
   };
 }
 
-/** Surface stays inside −10..10. Contrast kinds are open; out of 0..10 warns. */
+/** Surface and decorative stay inside −10..10. Contrast kinds are open. */
 function scaleBoundsSchema(): Schema {
   return {
     if: {
-      properties: { kind: { const: "surface" } },
+      properties: { kind: { enum: ["surface", "decorative"] } },
       required: ["kind"],
     },
     then: {
@@ -237,21 +244,6 @@ function scaleBoundsSchema(): Schema {
           minimum: SURFACE_SCALE_MIN,
           maximum: SURFACE_SCALE_MAX,
         },
-      },
-    },
-  };
-}
-
-/** `decorative: true` is text, border, or emphasis. There is no decorative.surface. */
-function decorativeKindSchema(): Schema {
-  return {
-    if: {
-      properties: { decorative: { const: true } },
-      required: ["decorative"],
-    },
-    then: {
-      properties: {
-        kind: { enum: ["text", "border", "emphasis"] },
       },
     },
   };
@@ -303,19 +295,11 @@ function tokenSchema(): Schema {
           "The engine mutes it (chroma ×0.3, lightness at most 0.06 toward the backdrop, and at most a quarter of the gap). Solid color, no alpha.",
         type: "boolean",
       },
-      decorative: {
-        description:
-          "Set by decorative.text(n), decorative.border(n), or decorative.emphasis(n). " +
-          "The kind and scale are unchanged and the color is not muted. " +
-          "Contrast-floor and out-of-range warnings are suppressed. " +
-          "There is no decorative.surface.",
-        type: "boolean",
-      },
       ...optionProperties(),
     },
     required: ["kind", "scale"],
     additionalProperties: false,
-    allOf: [scaleBoundsSchema(), decorativeKindSchema()],
+    allOf: [scaleBoundsSchema()],
   };
 }
 
