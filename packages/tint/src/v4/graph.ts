@@ -8,13 +8,16 @@
  */
 
 import type { ConfigFix, ConfigIssue } from "./errors.js";
-import { DEFAULT_ORDINAL, joinPath, suggestName } from "./levels.js";
+import { joinPath, suggestName } from "./levels.js";
 import { DISABLED_STATE, type CanonicalState } from "./states.js";
-import type { Kind, LevelOrdinal } from "./types.js";
+import type { Kind } from "./types.js";
 import type { NormalizedToken } from "./normalize.js";
 
 /**
- * Theme page. Used when a surface omits `on`, and when no base surface exists.
+ * Theme-lightness anchor. Surfaces with no `on` step from this color, so
+ * `surface(0)` is the anchor and every other surface shares that scale.
+ * Text, border, and emphasis with no `on` use {@link findBaseSurface}
+ * (`surface.DEFAULT` when that token exists), not this anchor.
  * Token ids are `group.token`, so this sentinel does not collide with one.
  */
 export const PAGE = "page";
@@ -42,7 +45,7 @@ export interface ResolvedToken {
   readonly value: NormalizedToken;
   /**
    * Backdrop members in config order.
-   * {@link PAGE} is the theme page. Disabled tokens point at one member.
+   * {@link PAGE} is the theme-lightness anchor. Disabled tokens point at one member.
    */
   readonly backdrop: readonly string[];
   /**
@@ -165,7 +168,7 @@ function linkRestTokens(input: readonly AuthoredToken[]): {
       {
         group: node.group,
         kind: node.value.kind,
-        ordinal: node.value.ordinal,
+        scale: node.value.scale,
         states: node.value.states.slice(0, -1),
       },
       node,
@@ -179,7 +182,7 @@ function linkRestTokens(input: readonly AuthoredToken[]): {
 interface RestSpec {
   group: string;
   kind: Kind;
-  ordinal: LevelOrdinal;
+  scale: number;
   states: CanonicalState[];
 }
 
@@ -192,7 +195,7 @@ function findRest(nodes: readonly Node[], spec: RestSpec): Node | undefined {
     (node) =>
       node.group === spec.group &&
       node.value.kind === spec.kind &&
-      node.value.ordinal === spec.ordinal &&
+      node.value.scale === spec.scale &&
       sameStates(node.value.states, spec.states),
   );
   if (spec.states.length === 0) {
@@ -204,15 +207,15 @@ function findRest(nodes: readonly Node[], spec: RestSpec): Node | undefined {
 
 function generatedName(spec: RestSpec): string {
   const stem = spec.states.length === 0 ? "rest" : spec.states.join("-");
-  return `__${stem}_${spec.kind}_${spec.ordinal}`;
+  return `__${stem}_${spec.kind}_${spec.scale}`;
 }
 
 /**
- * Base surface (§6.2).
+ * Painted page for tokens that omit `on`.
  *
- * The first surface group's `DEFAULT` wins when that token is a surface at
- * ordinal 3 (level `base`). Otherwise the first surface at ordinal 3 wins.
- * Otherwise the page.
+ * The first surface group's `DEFAULT` wins when that token is a surface.
+ * That step can be any signed number. Otherwise the surface whose scale is
+ * closest to 0. Otherwise the lightness anchor itself.
  */
 function findBaseSurface(nodes: readonly Node[]): string {
   let firstSurfaceGroup: string | undefined;
@@ -226,21 +229,21 @@ function findBaseSurface(nodes: readonly Node[]): string {
       (node) =>
         !node.generated && node.group === firstSurfaceGroup && node.name === "DEFAULT",
     );
-    if (
-      fallback !== undefined &&
-      fallback.value.kind === "surface" &&
-      fallback.value.ordinal === DEFAULT_ORDINAL
-    ) {
+    if (fallback !== undefined && fallback.value.kind === "surface") {
       return fallback.id;
     }
   }
-  const ordinal3 = nodes.find(
-    (node) =>
-      !node.generated &&
-      node.value.kind === "surface" &&
-      node.value.ordinal === DEFAULT_ORDINAL,
-  );
-  return ordinal3?.id ?? PAGE;
+  let closest: Node | undefined;
+  for (const node of nodes) {
+    if (node.generated || node.value.kind !== "surface") continue;
+    if (
+      closest === undefined ||
+      Math.abs(node.value.scale) < Math.abs(closest.value.scale)
+    ) {
+      closest = node;
+    }
+  }
+  return closest?.id ?? PAGE;
 }
 
 function backdropOf(
@@ -331,14 +334,15 @@ function resolveTarget(
     return undefined;
   }
   if (found.id === node.id) issues.push(selfIssue(node));
-  return { kind: "token", id: found.id, expand: true };
+  // A specific token is only itself. `on: "action"` (no dot) is what expands
+  // to the other fills in the group.
+  return { kind: "token", id: found.id, expand: false };
 }
 
 /**
- * `'group'` / `'group.token'` (§6.2): the target plus authored states that
- * extend it, minus disabled states. The target stays even when it is disabled,
- * so `on: "action.disabled"` still has a backdrop. Omitted `on` never reaches
- * this function; that backdrop is the single base-surface token, or the page.
+ * `on: "group"` expands to every token in the group with the host's kind,
+ * except tokens named `disabled` / `*-disabled`. Those stay a separate
+ * backdrop (`on: "action.disabled"`). There is no implicit state link.
  */
 function expandBackdrop(targetId: string, nodes: readonly Node[]): string[] {
   const host = nodes.find((node) => node.id === targetId);
@@ -346,8 +350,15 @@ function expandBackdrop(targetId: string, nodes: readonly Node[]): string[] {
   const members: string[] = [];
   for (const node of nodes) {
     if (node.generated) continue;
-    if (node.id !== host.id && !isStateOf(node, host)) continue;
-    if (node.id !== host.id && isDisabled(node.value.states)) continue;
+    if (node.group !== host.group || node.value.kind !== host.value.kind) continue;
+    if (
+      node.id !== host.id &&
+      (node.value.disabled === true ||
+        isDisabled(node.value.states) ||
+        isDisabledName(node.name))
+    ) {
+      continue;
+    }
     members.push(node.id);
   }
   return members;
@@ -365,7 +376,7 @@ function disabledCounterpart(
       !node.generated &&
       node.group === host.group &&
       node.value.kind === host.value.kind &&
-      node.value.ordinal === host.value.ordinal &&
+      node.value.scale === host.value.scale &&
       sameStates(node.value.states, want),
   );
   return found === undefined ? undefined : [found.id];
@@ -374,7 +385,7 @@ function disabledCounterpart(
 function isStateOf(candidate: Node, host: Node): boolean {
   if (candidate.group !== host.group) return false;
   if (candidate.value.kind !== host.value.kind) return false;
-  if (candidate.value.ordinal !== host.value.ordinal) return false;
+  if (candidate.value.scale !== host.value.scale) return false;
   const prefix = host.value.states;
   const states = candidate.value.states;
   if (states.length <= prefix.length) return false;
@@ -545,7 +556,7 @@ function withStates(
 ): NormalizedToken {
   const token: NormalizedToken = {
     kind: source.kind,
-    ordinal: source.ordinal,
+    scale: source.scale,
     states: [...states],
   };
   copyOptions(token, source);
@@ -554,13 +565,10 @@ function withStates(
 
 function copyOptions(target: NormalizedToken, source: NormalizedToken): void {
   if (source.on !== undefined) target.on = source.on;
-  if (source.contrast !== undefined) target.contrast = source.contrast;
-  if (source.direction !== undefined) target.direction = source.direction;
   if (source.chroma !== undefined) target.chroma = source.chroma;
   if (source.hue !== undefined) target.hue = source.hue;
   if (source.lc !== undefined) target.lc = source.lc;
   if (source.ratio !== undefined) target.ratio = source.ratio;
-  if (source.step !== undefined) target.step = source.step;
   if (source.nudge !== undefined) target.nudge = source.nudge;
 }
 
@@ -587,6 +595,10 @@ function sameStates(a: readonly CanonicalState[], b: readonly CanonicalState[]):
 
 function isDisabled(states: readonly CanonicalState[]): boolean {
   return states.includes(DISABLED_STATE);
+}
+
+function isDisabledName(name: string): boolean {
+  return name === "disabled" || name.endsWith("-disabled");
 }
 
 function issue(fields: {

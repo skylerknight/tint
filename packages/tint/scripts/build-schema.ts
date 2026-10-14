@@ -19,6 +19,16 @@ import {
   MIN_ORDINAL,
   TOKEN_CONTRAST_SHIFT,
 } from "../src/v4/constants.js";
+import {
+  DECORATIVE_SCALE_MAX,
+  DECORATIVE_SCALE_MIN,
+  DECORATIVE_STEP,
+  MODE_PAGE_LIGHTNESS,
+  SCALE_MAX,
+  SCALE_MIN,
+  SURFACE_SCALE_MAX,
+  SURFACE_SCALE_MIN,
+} from "../src/v4/ladders.js";
 import { DEFAULT_LEVEL_NAMES, KINDS } from "../src/v4/levels.js";
 import { HUE_SHIFT_PATTERN } from "../src/v4/normalize.js";
 import {
@@ -89,7 +99,7 @@ interface Schema {
   title?: string;
   description?: string;
   type?: "object" | "string" | "number" | "integer" | "boolean" | "array";
-  const?: string;
+  const?: string | number | boolean;
   enum?: readonly (string | number)[];
   properties?: Record<string, Schema>;
   patternProperties?: Record<string, Schema>;
@@ -105,6 +115,7 @@ interface Schema {
   allOf?: readonly Schema[];
   if?: Schema;
   then?: Schema;
+  else?: Schema;
   not?: Schema;
 }
 
@@ -152,11 +163,11 @@ function expandAliases(states: readonly string[]): string[] {
 }
 
 function builtinLevels(): string {
-  return KINDS.map((kind) => {
-    const names = Object.entries(DEFAULT_LEVEL_NAMES[kind])
-      .map(([name, ordinal]) => `${name} (${ordinal})`)
-      .join(", ");
-    return `${kind}: ${names}`;
+  return KINDS.flatMap((kind) => {
+    const names = Object.entries(DEFAULT_LEVEL_NAMES[kind]);
+    if (names.length === 0) return [];
+    const listed = names.map(([name, ordinal]) => `${name} (${ordinal})`).join(", ");
+    return [`${kind}: ${listed}`];
   }).join("; ");
 }
 
@@ -186,7 +197,7 @@ function hueSchema(): Schema {
 function chromaSchema(): Schema {
   return {
     description:
-      "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces capped) (§2.4).",
+      "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces and decorative colors capped) (§2.4).",
     type: "number",
     minimum: 0,
     maximum: 2,
@@ -201,20 +212,51 @@ function stateDescription(): string {
   );
 }
 
+function scaleSchema(): Schema {
+  return {
+    description:
+      "Numeric scale. emphasis, text, and border are contrast steps. " +
+      `${SCALE_MIN} to ${SCALE_MAX} is the curve (higher is more contrast; decimals interpolate, APCA in Lc and WCAG by ratio; text(0) is the lowest compliant text, text(5) is body text, text(10) is the top). ` +
+      "A plain token outside that range is a warning, not an error. " +
+      "surface is signed lightness steps from the theme lightness, or from the surface named by on, " +
+      `${SURFACE_SCALE_MIN} to ${SURFACE_SCALE_MAX} ` +
+      "(0 is that anchor, positive is raised and stays at or above it, negative is sunken and stays at or below it; " +
+      "one step is 0.02 in light and 0.03 in dark; a step past white or black clamps there and warns surface-no-headroom). " +
+      "decorative is signed lightness steps away from its backdrop, " +
+      `${DECORATIVE_SCALE_MIN} to ${DECORATIVE_SCALE_MAX} ` +
+      `(positive is more distinct: darker on light, lighter on dark; one step is ${DECORATIVE_STEP} OKLCH lightness in both modes; 1–2 is a hairline under 1.3:1, about 10 is icon strength). ` +
+      "It is not a contrast step and is exempt from contrast checks. " +
+      "Decimals are real steps.",
+    type: "number",
+  };
+}
+
+/** Surface and decorative stay inside −10..10. Contrast kinds are open. */
+function scaleBoundsSchema(): Schema {
+  return {
+    if: {
+      properties: { kind: { enum: ["surface", "decorative"] } },
+      required: ["kind"],
+    },
+    then: {
+      properties: {
+        scale: {
+          type: "number",
+          minimum: SURFACE_SCALE_MIN,
+          maximum: SURFACE_SCALE_MAX,
+        },
+      },
+    },
+  };
+}
+
 function optionProperties(): Record<string, Schema> {
   return {
     on: {
-      description: 'Single backdrop: "group" or "group.token" (§2.4, §6.2).',
+      description:
+        'Single backdrop: "group" or "group.token" (§2.4, §6.2). A surface steps from that surface\'s resolved lightness.',
       type: "string",
       pattern: ON_PATTERN,
-    },
-    contrast: {
-      description: "Relative level nudge for this token only (§2.4, §5).",
-      enum: CONTRAST_NUDGES,
-    },
-    direction: {
-      description: "Force lighter or darker against the backdrop (§2.4).",
-      enum: DIRECTIONS,
     },
     chroma: chromaSchema(),
     hue: hueSchema(),
@@ -228,27 +270,9 @@ function optionProperties(): Record<string, Schema> {
         "Raw WCAG ratio. Expert escape hatch; only with algorithm wcag2 (§2.4).",
       type: "number",
     },
-    step: {
-      description: "Raw lightness steps (surface) or a step offset (other kinds) (§2.4).",
-      type: "number",
-    },
     nudge: {
       description: "`false` disables auto-nudge for this token (§2.4, §6.4).",
       type: "boolean",
-    },
-  };
-}
-
-function stateForKind(kind: Kind): Schema {
-  return {
-    if: {
-      properties: { kind: { const: kind } },
-      required: ["kind"],
-    },
-    then: {
-      properties: {
-        state: { enum: expandAliases(canonicalStatesFor(kind)) },
-      },
     },
   };
 }
@@ -257,25 +281,52 @@ function tokenSchema(): Schema {
   return {
     title: "Token",
     description:
-      "A token's kind, plus an optional level and options (§2.4). " +
-      "Names are kept as written.",
+      "A token's kind, a numeric scale, and options. " +
+      "Level names and states are not part of this prototype.",
     type: "object",
     properties: {
       kind: {
         description: "What the token is (§2.4, §3).",
         enum: KINDS,
       },
-      level: levelSchema(),
-      state: {
+      scale: scaleSchema(),
+      disabled: {
         description:
-          stateDescription() +
-          " Which strings apply depends on `kind` (`checked` is emphasis and border only).",
+          "Set by disabled.emphasis(n), disabled.text(n), disabled.surface(n), or disabled.border(n). " +
+          "n is how strong the color would have been. The scale does not change. " +
+          "The engine mutes it (chroma ×0.3, lightness at most 0.06 toward the backdrop, and at most a quarter of the gap). Solid color, no alpha.",
+        type: "boolean",
       },
       ...optionProperties(),
     },
-    required: ["kind"],
+    required: ["kind", "scale"],
     additionalProperties: false,
-    allOf: KINDS.map((kind) => stateForKind(kind)),
+    allOf: [scaleBoundsSchema(), decorativeOptionsSchema()],
+  };
+}
+
+/** `decorative(n)` is a scale plus an optional `on`. No other fields. */
+function decorativeOptionsSchema(): Schema {
+  const rejected: Schema = {
+    description:
+      "decorative(n) takes a scale and an optional on. This field is not an option.",
+    not: {},
+  };
+  return {
+    if: {
+      properties: { kind: { const: "decorative" } },
+      required: ["kind"],
+    },
+    then: {
+      properties: {
+        disabled: rejected,
+        chroma: rejected,
+        hue: rejected,
+        lc: rejected,
+        ratio: rejected,
+        nudge: rejected,
+      },
+    },
   };
 }
 
@@ -283,17 +334,10 @@ function tokenOptionsSchema(): Schema {
   return {
     title: "TokenOptions",
     description:
-      "Options merged onto a token by palette `tune` (§2.2). " +
-      "A replacement token is a Token and includes `kind`. " +
-      "The merged token's kind is not known here, so every input state spelling is allowed.",
+      "Options merged onto a token by palette `tune` or top-level `overrides`. " +
+      "A replacement token is a Token and includes `kind` and `scale`.",
     type: "object",
-    properties: {
-      state: {
-        description: stateDescription(),
-        enum: expandAliases(CANONICAL_STATES),
-      },
-      ...optionProperties(),
-    },
+    properties: optionProperties(),
     additionalProperties: false,
   };
 }
@@ -388,10 +432,19 @@ function themeSchema(): Schema {
   return {
     title: "ThemeOptions",
     description:
-      "Theme options (§2.3). `mode` may be omitted when `extends` names another theme.",
+      `Theme options. Set lightness (0..100), mode as shorthand (light ${MODE_PAGE_LIGHTNESS.light} / dark ${MODE_PAGE_LIGHTNESS.dark}), ` +
+      "or extends to inherit either.",
     type: "object",
     properties: {
       mode,
+      lightness: {
+        description:
+          "Page lightness, 0..100. Polarity is inferred (50 and above is light). " +
+          `mode: light is ${MODE_PAGE_LIGHTNESS.light}. mode: dark is ${MODE_PAGE_LIGHTNESS.dark}.`,
+        type: "number",
+        minimum: 0,
+        maximum: 100,
+      },
       selector: {
         description: "Default `:root`.",
         type: "string",
@@ -421,6 +474,7 @@ function themeSchema(): Schema {
     // Each branch repeats the property so Ajv's strictRequired check can see it.
     anyOf: [
       { required: ["mode"], properties: { mode } },
+      { required: ["lightness"], properties: { lightness: { type: "number" } } },
       { required: ["extends"], properties: { extends: extendsTheme } },
     ],
   };
@@ -459,20 +513,6 @@ function themeContrastSchema(): Schema {
 }
 
 export function buildSchema(): Schema {
-  const levelNames: Record<string, Schema> = {};
-  const stateSteps: Record<string, Schema> = {};
-  for (const kind of KINDS) {
-    levelNames[kind] = { $ref: "#/$defs/kindLevelNames" };
-    stateSteps[kind] = {
-      $ref:
-        kind === "surface"
-          ? "#/$defs/surfaceStateSteps"
-          : kind === "emphasis"
-            ? "#/$defs/emphasisStateSteps"
-            : "#/$defs/stateStepCounts",
-    };
-  }
-
   return {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     $id: SCHEMA_URL,
@@ -507,25 +547,12 @@ export function buildSchema(): Schema {
       },
       themes: {
         description:
-          'Theme map (§2.3). Default when omitted: `{ light: { mode: "light" } }`. ' +
-          "`mode` is required unless `extends` is set.",
+          `Theme map. Default when omitted: \`{ light: { mode: "light" } }\` (page lightness ${MODE_PAGE_LIGHTNESS.light}). ` +
+          "Set lightness, mode, or extends.",
         type: "object",
         patternProperties: {
           "^.+$": { $ref: "#/$defs/theme" },
         },
-        additionalProperties: false,
-      },
-      levels: {
-        description:
-          "Rename or add level aliases per kind (§2.5). Built-in names stay unless `$replace`.",
-        type: "object",
-        properties: levelNames,
-        additionalProperties: false,
-      },
-      states: {
-        description: "Per-kind state step overrides (§2, §4).",
-        type: "object",
-        properties: stateSteps,
         additionalProperties: false,
       },
       preset: {
@@ -542,6 +569,30 @@ export function buildSchema(): Schema {
             type: "object",
             patternProperties: {
               [NAME_PATTERN]: { $ref: "#/$defs/token" },
+            },
+            additionalProperties: false,
+          },
+        },
+        additionalProperties: false,
+      },
+      overrides: {
+        description:
+          'Per-palette token replacements. Keys are palette names, or several joined by commas ("warning,info"). ' +
+          "A token with kind replaces; options merge. Applied after palette tune.",
+        type: "object",
+        patternProperties: {
+          "^[a-zA-Z][a-zA-Z0-9_-]*(\\s*,\\s*[a-zA-Z][a-zA-Z0-9_-]*)*$": {
+            type: "object",
+            patternProperties: {
+              [NAME_PATTERN]: {
+                type: "object",
+                patternProperties: {
+                  [NAME_PATTERN]: {
+                    anyOf: [{ $ref: "#/$defs/token" }, { $ref: "#/$defs/tokenOptions" }],
+                  },
+                },
+                additionalProperties: false,
+              },
             },
             additionalProperties: false,
           },

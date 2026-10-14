@@ -89,27 +89,43 @@ CSS scoping is the same as v3:
 - **Both** → a manual class block plus an automatic media block that excludes sibling themes' classes (`:root:not(.light)`).
 
 ### 2.4 Tokens and kind functions
-```ts
-surface(level?, options?)   emphasis(level?, options?)   text(level?, options?)   border(level?, options?)
 
-type Level = 1 | 2 | 3 | 4 | 5 | string;        // number or level name (§3)
+```ts
+surface(scale, options?)
+text(scale, options?)
+border(scale, options?)
+emphasis(scale, options?)
+decorative(scale, options?)   // only option is `on`
+
+disabled.surface(scale, options?)
+disabled.text(scale, options?)
+disabled.border(scale, options?)
+disabled.emphasis(scale, options?)
+
 type TokenOptions = {
-  state?: State;                                // §4 — 'hover', 'selected-hover', …
-  on?: string;                                  // single backdrop: 'group' or 'group.token'; §6.2
-  contrast?: '+1' | '-1' | '+2' | '-2';         // relative level nudge
-  direction?: 'lighter' | 'darker';             // force the side vs the backdrop (replaces $invert)
-  chroma?: number;                              // multiplier on the palette color's chroma, 0..2 (default 1; surfaces capped)
-  hue?: number | `+${number}` | `-${number}`;   // absolute hue or shift (degrees)
-  nudge?: boolean;                              // false disables auto-nudge for this token (§6.4)
-  // expert escape hatches (lint: expert-value)
-  lc?: number;                                  // raw APCA target (only with algorithm 'apca')
-  ratio?: number;                               // raw WCAG ratio (only with algorithm 'wcag2')
-  step?: number;                                // raw lightness steps (surface) or step offset (others)
+  on?: string;                                  // one backdrop: "group" or "group.token"; §6.2
+  chroma?: number;                              // palette-chroma multiplier, 0..2 (default 1). Not on decorative.
+  hue?: number | `+${number}` | `-${number}`;   // absolute hue or shift. Not on decorative.
+  nudge?: boolean;                              // false disables auto-nudge (§6.4). Not on decorative.
+  lc?: number;                                  // raw APCA target. Not on decorative.
+  ratio?: number;                               // raw WCAG ratio. Not on decorative.
 };
 ```
-- `level` may be omitted when only options are passed: `emphasis({ state: 'hover' })`.
-- `nudge: false` disables the label auto-nudge (§6.4) for that token. It is described for emphasis tokens and is accepted on every kind.
-- **Returned data** (and the JSON form): `{ "kind": "emphasis", "level": 3, "state": "hover", "on": "surface" }`. Names are kept as written and resolved at build time.
+
+`text`, `border`, and `emphasis` are contrast scales. `decorative` is its own lightness kind. `surface` is a signed lightness scale. There are no level names on these functions. Hover and pressed are other tokens with other numbers.
+
+- **`surface(n)`** steps OKLCH lightness from an anchor. With no `on`, the anchor is the theme lightness. `mode: "light"` is lightness 97. `mode: "dark"` is lightness 18. An explicit `lightness` replaces that shorthand. 50 and above is light; below 50 is dark. `surface(0)` is that anchor. Positive is raised (lighter). Negative is sunken (darker). One step is 0.02 in light and 0.03 in dark. Decimals are real steps. The range −10..10 is closed: outside it is an error.
+- **Ordering.** Lightness is `clamp(anchor + n × step, 0, 1)` in both modes. Positive steps stay at or above the anchor. Negative steps stay at or below it. A raised step cannot cross a sunken step. A step that would pass white or black clamps to that edge and warns `surface-no-headroom`. Landing exactly on white or black does not warn. At lightness 97, `surface(1)` is L 0.99, `surface(1.5)` is white, and `surface(2)` clamps to white and warns. At lightness 18, steps −1 through 5 all fit. At lightness 100 a positive step clamps onto the page. At lightness 0 a negative step clamps onto the page, because black has no darker neighbor.
+- **`surface.DEFAULT`** is an ordinary step, and it is the painted page. Text, border, emphasis, and decorative with no `on` solve against it. Other surfaces stay on the theme anchor, so `surface.DEFAULT: surface(1)` moves the page and leaves `surface(0)` at lightness 97 or 18.
+- **`on` on a surface.** `surface(n, { on: "panel" })` steps from `panel.DEFAULT`'s resolved lightness. `surface(n, { on: "panel.raised" })` steps from that token. That is how a card nests on another card. A cycle (`a` on `b` on `a`) is an error.
+- **`emphasis(n)`** is one contrast curve. `emphasis(0)` clears WCAG 3:1. The APCA anchors are the Lc values that first clear that ratio on the mode page: Lc 53.7 in light, Lc 22 in dark. WCAG `emphasis(0)` is 3:1. `emphasis(10)` is Lc 90 in light, Lc 100 in dark, and WCAG 7:1. One step is +3.63 Lc in light, +7.8 Lc in dark, or ×(7/3)^0.1 on the ratio.
+- **`text(n)`.** `text(0)` is APCA Lc 45 and WCAG 3:1. `text(5)` is body text (Lc 75, WCAG 4.5:1). `text(10)` is the top. Scales below 5 are muted. They are not a body-text failure.
+- **`border(n)`.** APCA is `15 + 6n`. WCAG is `1.5 × (2^0.2)^n`. `border(5)` is the WCAG non-text 3:1 rung. Every border scale is a contrast target.
+- **Open contrast scales.** `emphasis`, `text`, and `border` outside 0..10 are kept and warn `scale-out-of-range`. They are not errors.
+- **`decorative(n)`** steps OKLCH lightness away from its backdrop by `n × 0.04` in both modes. The backdrop is `on`, or `surface.DEFAULT` when `on` is omitted. Positive is more distinct: darker on a light backdrop, lighter on a dark one. Negative goes the other way. The result clamps at black and white. There is no contrast check. The one sanity warning is `decorative-indistinguishable`, when the color is the same hex as its backdrop. The range −10..10 is closed. The only option is `on`.
+- **`disabled.emphasis(n)`**, **`disabled.text(n)`**, **`disabled.surface(n)`**, and **`disabled.border(n)`** solve that kind at `n`, then mute it: chroma ×0.3, and lightness moves toward the backdrop by at most 0.06 and by at most a quarter of the gap. The result is a solid color. Disabled tokens are not contrast-linted. There is no `disabled.decorative`.
+- **`nudge: false`** disables the label auto-nudge (§6.4) for that token.
+- **Returned data** (and the JSON form): `{ "kind": "surface", "scale": 1, "on": "panel" }`.
 - **Group and token names** must match `/^[a-zA-Z][a-zA-Z0-9_-]*$/`.
 - **`DEFAULT`** drops its segment in CSS names and becomes `$root` in DTCG.
 - **Groups contain only tokens.** There are no group-level settings.
@@ -122,29 +138,29 @@ levels: {
 }
 ```
 
-Aliases merge with the §3 defaults. `$replace: true` drops those defaults, including the universal `default` alias. Ordinals `1`–`5`, including the strings `"1"`–`"5"`, still resolve. Omitting `level` is still ordinal 3, even when `default` was removed or pointed at another ordinal.
+Aliases merge with the built-in ordinal names. `$replace: true` drops those names, including the universal `default` alias. Ordinals `1`–`5`, including the strings `"1"`–`"5"`, still resolve. Omitting `level` is still ordinal 3, even when `default` was removed or pointed at another ordinal. The token functions in §2.4 do not take those names.
 
 ---
 
-## 3. Levels (defaults)
+## 3. Scales
 
-Each kind has five ordinal levels. **The name describes the kind's own dimension.** `*` marks the default (used when `level` is omitted).
+The token functions in §2.4 take a number. These are the stops that define each curve. Decimals sit on the same line.
 
-| Ordinal | `surface` — elevation | `text` — legibility | `border` — definition | `emphasis` — prominence |
-| --- | --- | --- | --- | --- |
-| 1 | `sunken` | `faint` | `hairline` | `quiet` |
-| 2 | `flat` | `muted` | `soft` | `subtle` |
-| 3 | `base`* | `body`* | `default`* | `default`* |
-| 4 | `raised` | `strong` | `firm` | `bold` |
-| 5 | `floating` | `max` | `heavy` | `loud` |
+| Kind | Scale | What `n` means |
+| --- | --- | --- |
+| `surface` | −10..10, closed | Signed OKLCH L from the theme lightness, or from `on`. 0 is that anchor. Positive stays at or above it and clamps at white. Negative stays at or below it and clamps at black. Step 0.02 light, 0.03 dark. |
+| `text` | 0..10, open | Contrast. 0 is Lc 45 / WCAG 3:1. 5 is body (Lc 75 / 4.5:1). 10 is the top. Below 5 warns only as muted text, not as a missed body target. |
+| `border` | 0..10, open | Contrast. APCA `15 + 6n`. WCAG `1.5 × (2^0.2)^n`. 5 is the non-text 3:1 rung. |
+| `emphasis` | 0..10, open | Contrast. 0 is WCAG 3:1 (APCA Lc 53.7 light, Lc 22 dark). 10 is Lc 90/100 and WCAG 7:1. |
+| `decorative` | −10..10, closed | OKLCH L away from the backdrop, 0.04 per step, both modes. No contrast check. |
 
-- `default` is accepted on every kind as the alias for that kind's default ordinal.
-- Surface levels are **elevation**: higher = closer to the light, i.e. lighter in both modes. `base` is the page; `sunken`/`flat` sit below it (wells, sidebars) and `raised`/`floating` above it (cards, popovers). Direction is configurable by preset (§11, open question).
-- `emphasis` levels 1–2 are **tinted surfaces** that carry a label (ghost/soft controls). Levels 3–5 are **solids** that contrast with the surface.
+`surface.DEFAULT` is the painted page. It is whatever step you assign, including `surface(0)`. A contrast token or `decorative(n)` with no `on` uses that page. A surface with no `on` does not: it keeps the theme-lightness anchor.
 
 ---
 
 ## 4. States
+
+The token functions in §2.4 do not take state names. Hover and pressed are other tokens with other numbers. `disabled.<kind>(n)` mutes a solved color. The table below is the earlier interaction model.
 
 States are transient or toggled **interactions**, written as participles. They modify a rest token and are never levels.
 
@@ -202,38 +218,39 @@ states: {
 
 ---
 
-## 5. Level → contrast targets
+## 5. Contrast targets
 
-Measured against the token's backdrop (§6.2) in the worst case. `level: 'more'` / `'max'` shifts the ordinal by +1 / +2 before lookup (capped at 5; `max` already = max).
+Measured against the token's backdrop (§6.2). `surface` and `decorative` are not in these tables. They are lightness steps (§3).
 
-### 5.1 APCA (Bronze-derived, |Lc|)
-| Ordinal | text | border | emphasis | surface |
+### 5.1 APCA (|Lc|)
+
+`text(n) = 45 + 6n`. `border(n) = 15 + 6n`. `emphasis(n)` is a straight line from the mode floor to the mode top: Lc 53.7 → 90 in light (3.63 per step), Lc 22 → 100 in dark (7.8 per step).
+
+| Scale | text | border | emphasis, light | emphasis, dark |
 | --- | --- | --- | --- | --- |
-| 1 | 45 | 15 | tint step ×1 (no Lc target) | step −2 |
-| 2 | 60 | 30 | tint step ×2 (no Lc target) | step −1 |
-| 3 | 75 | 45 | 60 | page (offset) |
-| 4 | 90 | 60 | 75 | step +1 |
-| 5 | max | 75 | 90 | step +2 |
+| 0 | 45 | 15 | 53.7 | 22 |
+| 5 | 75 | 45 | 71.85 | 61 |
+| 10 | 105 | 75 | 90 | 100 |
 
 APCA references: Lc 15 non-text minimum · 30 spot/incidental · 45 large text/UI · 60 content text · 75 body text · 90 preferred body.
 
 ### 5.2 WCAG 2 (contrast ratio)
-| Ordinal | text | border | emphasis | surface |
-| --- | --- | --- | --- | --- |
-| 1 | 3:1 | 1.5:1 | tint step ×1 | step −2 |
-| 2 | 3.5:1 | 2:1 | tint step ×2 | step −1 |
-| 3 | **4.5:1** (AA body) | 3:1 | 3:1 | page |
-| 4 | 7:1 (AAA) | 4.5:1 | 4.5:1 | step +1 |
-| 5 | max | 7:1 | 7:1 | step +2 |
 
-Emphasis 3 at 3:1 meets WCAG 1.4.11 against the surface. Its label still has to reach its
-own text target (4.5:1 for `body`) against the fill, and auto-nudge (§6.4) enforces that.
+`text(n) = 4.5 × (4.5/3)^((n−5)/5)` (3:1 at 0, 4.5:1 at 5, 6.75:1 at 10). `border(n) = 1.5 × (2^0.2)^n` (1.5:1 at 0, 3:1 at 5, 6:1 at 10). `emphasis(n) = 3 × (7/3)^(n/10)` (3:1 at 0, 7:1 at 10).
+
+| Scale | text | border | emphasis |
+| --- | --- | --- | --- |
+| 0 | 3:1 | 1.5:1 | 3:1 |
+| 5 | **4.5:1** (AA body) | 3:1 | ~4.58:1 |
+| 10 | 6.75:1 | 6:1 | 7:1 |
+
+`emphasis(0)` meets WCAG 1.4.11 against its surface. Its label still has to reach its own text target against the fill, and auto-nudge (§6.4) enforces that.
 
 Notes:
-- `text(1)` is linted with an info note: *"faint: large or non-essential text only"*.
-- `border` ≥ 3 meets WCAG 1.4.11 (non-text 3:1). `border(1–2)` are decorative and never fail.
-- Surfaces and `emphasis(1–2)` aren't contrast-targeted. Their *labels* are.
-- The `contrast: '+1'` option on a token is the same shift for one token. `lc`/`ratio` bypass the table.
+- Scales outside 0..10 stay on the same curve and warn `scale-out-of-range`.
+- `text` below 5 is muted. It is not a body-text failure.
+- `border(5)` is the non-text 3:1 rung. A lower border is still a contrast target. It is not exempt.
+- `lc` / `ratio` replace the curve for that token.
 
 ---
 
@@ -247,16 +264,16 @@ Notes:
 ### 6.2 `on` (backdrop)
 | Form | Backdrop set |
 | --- | --- |
-| omitted, kind ≠ surface | the **base surface**: the template's surface-kind token at level `base`. Preference order: `<first surface group>.DEFAULT`, then the first surface token at ordinal 3, then the page. |
-| omitted, kind = surface | the **page** (theme baseline + offset), stepped by elevation |
-| `'group'` | `group.DEFAULT` **plus all its state tokens** (except `disabled`) |
-| `'group.token'` | that token **plus its state tokens** (except `disabled`) |
+| omitted, kind ≠ surface | the painted page: the first surface group's `DEFAULT` when that token is a surface, otherwise the theme-lightness anchor |
+| omitted, kind = surface | the theme-lightness anchor (97 in light, 18 in dark), stepped by `n` |
+| `'group'` | `group.DEFAULT`. A surface steps from that token's resolved lightness |
+| `'group.token'` | that token. A surface steps from that token's resolved lightness |
 
 A **disabled** token's backdrop is the disabled state of its `on` target when one exists (e.g. a disabled label sits on a disabled fill).
 
 The solver picks the polarity that maximizes the **minimum** contrast across the set, then solves the lightness to reach the target against the worst member. If the target is unreachable on that side it tries the opposite side (unless `direction` is set), keeps the best result, and emits `contrast-unreachable`.
 
-Surfaces with `on` step from that surface instead of the page: `surface('raised', { on: 'panel' })`.
+A surface with `on` steps from that surface's resolved lightness, not from the theme anchor: `surface(1, { on: 'panel' })`. Cycles are reported as `Backdrop cycle: a.DEFAULT → b.DEFAULT → a.DEFAULT.`
 
 ### 6.3 Ordering and cycles
 Tokens are solved in topological order of `on` edges, plus rest → state edges, with ties broken by config order. The engine reports cycles (`a.b → c.d → a.b`), self-references, and unknown targets (with did-you-mean). Output order always equals config order.
@@ -283,8 +300,11 @@ After solving, every `text` whose backdrop includes an `emphasis` token is check
 | `expert-value` | info | `lc`/`ratio`/`step` used |
 | `color-out-of-gamut` | warn | a palette color is outside sRGB and was mapped |
 | `name-conflict` | error | a token name collides with a Tailwind keyword for its utility prefix (`text-lg`, `border-x`, …) |
+| `surface-no-headroom` | warn | a surface step is past white or black and was clamped to that edge |
+| `scale-out-of-range` | warn | an emphasis, text, or border scale is outside 0..10 |
+| `decorative-indistinguishable` | warn | a decorative color is the same hex as its backdrop |
 
-Disabled tokens and `border(1–2)` are never contrast-linted.
+Disabled tokens are never contrast-linted. `decorative(n)` is not contrast-checked. A low border scale is still a contrast target.
 
 ---
 
@@ -463,7 +483,7 @@ A preset supplies `levels` renames, optional state aliases, and optionally a tok
 | `$on: "action.soft"` | `{ on: 'action.soft' }` or the soft group `{ on: 'soft' }` |
 | `$reference: true` | removed (worst-case backdrop set replaces it) |
 | `$invert: true` | `{ direction: 'lighter' \| 'darker' }` (absolute side, mode-agnostic) |
-| `$decorative: true` | implied by `border(1–2)`, `state: 'disabled'`, `emphasis(1–2)`, surfaces |
+| `$decorative: true` | removed. Use `decorative(n)`, a lightness step away from its backdrop |
 | `$role` | the kind |
 | `$scale`, `scale` | `states` step config / `surface({ step })` |
 | `$chroma: x` | `{ chroma: x }` (token) or `tune` (palette color) |

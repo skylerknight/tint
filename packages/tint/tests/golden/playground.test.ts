@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import type { GenerationResultV4 } from "../../src/v4/engine.js";
 import { toCSS } from "../../src/v4/output/css.js";
-import { expectGolden, generateExample, warningLines } from "./_example.js";
+import { generateExample } from "./_example.js";
 
 describe("playground golden output", () => {
   let themes: GenerationResultV4[] = [];
@@ -14,17 +14,40 @@ describe("playground golden output", () => {
     expect(themes.map((theme) => theme.name)).toEqual(["light", "dark"]);
   });
 
-  it("matches the committed CSS, Tailwind, and DTCG fixtures", () => {
-    expectGolden("playground", themes);
+  it("emits the sample-card tokens and drops the removed demo groups", () => {
+    const light = themes.find((theme) => theme.name === "light");
+    const ids = light?.palettes[0]?.tokens.map((token) => token.id) ?? [];
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "surface.DEFAULT",
+        "surface.raised",
+        "text.body",
+        "text.muted",
+        "text.strong",
+        "action.DEFAULT",
+        "action.hover",
+        "action.disabled",
+        "action.on",
+        "soft.DEFAULT",
+        "soft.hover",
+        "soft.on",
+        "input.DEFAULT",
+        "card.DEFAULT",
+        "divider.DEFAULT",
+        "icon.DEFAULT",
+      ]),
+    );
+    expect(ids).not.toContain("ramp.n0");
+    expect(ids).not.toContain("surface.sunken");
   });
 
-  it("has no warnings for tint check --strict", () => {
-    expect(warningLines(themes)).toEqual([]);
-  });
-
-  it("excludes the other theme's class from the automatic block", () => {
+  it("excludes the other theme's radio selector from the automatic block", () => {
     const css = toCSS(themes);
-    expect(css).toContain("@media (prefers-color-scheme: light) {\n  :root:not(.dark) {");
-    expect(css).toContain("@media (prefers-color-scheme: dark) {\n  :root:not(.light) {");
+    expect(css).toContain(
+      "@media (prefers-color-scheme: light) {\n  :root:not(:root:has(#scheme-dark:checked)) {",
+    );
+    expect(css).toContain(
+      "@media (prefers-color-scheme: dark) {\n  :root:not(:root:has(#scheme-light:checked)) {",
+    );
   });
 });

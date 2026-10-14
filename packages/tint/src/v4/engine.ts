@@ -15,11 +15,14 @@ import { parseColor, rgbToHex } from "../color/parse.js";
 import type { Metric, Polarity } from "../contrast/types.js";
 import {
   apcaMetric,
+  preferredPolarity,
   solveAgainstSet,
   wcag2Metric,
   type SetSolveOptions,
 } from "../contrast/solve.js";
 import { maxChromaForLs } from "../engine/generate.js";
+import { kindLints, modeLightnessLint, pageLightnessLint } from "./a11y.js";
+import { SCALE_MAX } from "./ladders.js";
 import {
   colorOutOfGamutLint,
   duplicateTokenLints,
@@ -31,7 +34,7 @@ import { ConfigError } from "./errors.js";
 import { PAGE, type ResolvedToken } from "./graph.js";
 import {
   lowerToken,
-  pageLightness,
+  muteDisabled,
   realizeLightness,
   surfaceStepSize,
   tintStepSize,
@@ -46,7 +49,6 @@ import type {
   Kind,
   LevelOrdinal,
   Mode,
-  StateSteps,
 } from "./types.js";
 import { assertConfig } from "./validate.js";
 
@@ -62,8 +64,13 @@ export interface SolvedTokenV4 {
   readonly name: string;
   readonly generated: boolean;
   readonly kind: Kind;
+  /** Authored scale. Decimals stay as written. */
+  readonly scale: number;
+  /** Rounded scale, clamped to 1–5, for output metadata that still says level. */
   readonly ordinal: LevelOrdinal;
   readonly states: readonly CanonicalState[];
+  /** True when the token was built with `disabled.<kind>(n)`. The scale is unchanged. */
+  readonly disabled?: boolean;
   /** Backdrop ids in graph order. {@link PAGE} is the theme page. */
   readonly backdrop: readonly string[];
   readonly color: GeneratedColorV4;
@@ -125,22 +132,14 @@ export function generateV4(input: unknown): GenerationResultV4[] {
     const expertSeen = new Set<string>();
     for (const expansion of resolved.config.expansions) {
       if (expansion.theme !== theme.name) continue;
-      const solved = solvePalette(
-        expansion,
-        theme,
-        algorithm,
-        metric,
-        config.states,
-        diagnostics,
-      );
+      const solved = solvePalette(expansion, theme, algorithm, metric, diagnostics);
       const finished = applyNudgeAndExact({
         expansion,
         palette: solved,
         theme: theme.name,
         algorithm,
         metric,
-        tintStep: tintStepSize(theme.mode, config.states),
-        ...(config.states !== undefined ? { states: config.states } : {}),
+        tintStep: tintStepSize(theme.mode, undefined),
         diagnostics,
       });
       palettes.push(finished);
@@ -159,11 +158,30 @@ export function generateV4(input: unknown): GenerationResultV4[] {
             id: token.id,
             ...(token.value.lc !== undefined ? { lc: token.value.lc } : {}),
             ...(token.value.ratio !== undefined ? { ratio: token.value.ratio } : {}),
-            ...(token.value.step !== undefined ? { step: token.value.step } : {}),
           })),
           expertSeen,
         ),
         ...hueIdentityLints(theme.name, finished),
+      );
+      diagnostics.push(...kindLints(theme.name, algorithm, finished));
+    }
+    const paletteName = palettes[0]?.name ?? "*";
+    const page = pageLightnessLint({
+      theme: theme.name,
+      lightness: theme.lightness,
+      algorithm,
+      palette: paletteName,
+    });
+    if (page !== undefined) diagnostics.push(page);
+    if (theme.authoredMode !== undefined) {
+      diagnostics.push(
+        modeLightnessLint({
+          theme: theme.name,
+          lightness: theme.lightness,
+          mode: theme.mode,
+          authoredMode: theme.authoredMode,
+          palette: paletteName,
+        }),
       );
     }
     built.push({ theme, palettes, diagnostics });
@@ -206,14 +224,13 @@ function solvePalette(
   theme: ResolvedTheme,
   algorithm: ContrastAlgorithm,
   metric: Metric,
-  states: StateSteps | undefined,
   diagnostics: EngineDiagnosticV4[],
 ): PaletteResultV4 {
   const seed = publish(rgbToOKLCH(parseColor(expansion.color)));
-  const step = surfaceStepSize(theme.mode, states);
-  const tint = tintStepSize(theme.mode, states);
+  const step = surfaceStepSize(theme.mode, undefined);
+  const tint = tintStepSize(theme.mode, undefined);
   const page = publish({
-    l: pageLightness(theme.mode, step),
+    l: clamp01(theme.lightness / 100),
     c: Math.min(seed.oklch.c, maxChromaForLs(0)),
     h: seed.oklch.h,
   });
@@ -225,10 +242,10 @@ function solvePalette(
   const ctx = {
     algorithm,
     contrastLevel: expansion.contrastLevel,
+    mode: theme.mode,
     seed: seed.oklch,
     surfaceStep: step,
     tintStep: tint,
-    ...(states !== undefined ? { states } : {}),
   };
 
   for (const id of expansion.order) {
@@ -242,6 +259,17 @@ function solvePalette(
       diagnostics.push(
         unreachable(theme.name, expansion.palette, algorithm, row, intent.direction),
       );
+    }
+    if (
+      token.value.kind === "surface" &&
+      intent.stepSize > 0 &&
+      intent.direction === undefined
+    ) {
+      const host = colorAt(colors, hostId(token));
+      const raw = host.oklch.l + intent.elevation * intent.stepSize;
+      if (raw > 1 + 1e-9 || raw < -1e-9) {
+        diagnostics.push(surfaceNoHeadroom(theme.name, expansion.palette, row.id, raw));
+      }
     }
   }
 
@@ -273,7 +301,8 @@ function realize(
   if (intent.mode === "lightness") {
     const host = colorAt(colors, hostId(token));
     const lightness = realizeLightness(intent, host.oklch.l, host.oklch.l, host.rgb);
-    const color = publish({ l: lightness, c: intent.seed.c, h: intent.seed.h });
+    let color = publish({ l: lightness, c: intent.seed.c, h: intent.seed.h });
+    color = maybeMute(token, color, background);
     const across = minContrast(metric, color.rgb, rgbs);
     const worst = backs[across.index];
     return finish(token, intent.mode, color, across.min, {
@@ -284,18 +313,40 @@ function realize(
 
   const target = intent.mode === "max" ? Number.POSITIVE_INFINITY : intent.target;
   const options: SetSolveOptions = { metric };
+  // Stay on one side of the backdrop for the whole scale. A higher number
+  // moves further that way; it does not flip.
+  const primary = rgbs[0];
   if (intent.direction !== undefined) options.polarity = intent.direction;
+  else if (primary !== undefined) options.polarity = preferredPolarity(primary);
   const solved = solveAgainstSet(intent.seed, rgbs, target, options);
-  const color = publish(solved.color);
+  let color = publish(solved.color);
+  color = maybeMute(token, color, background);
   const across = minContrast(metric, color.rgb, rgbs);
   const worst = backs[across.index];
-  const reached = intent.mode === "max" ? true : across.min + 1e-6 >= intent.target;
+  // Scale 10 is the top of the curve. If the backdrop cannot reach the
+  // requested contrast, the request becomes whatever contrast is achievable,
+  // so exactly 10 does not warn.
+  const atCeiling = token.value.scale === SCALE_MAX;
+  const reachedTarget = across.min + 1e-6 >= intent.target;
+  const clamped = atCeiling && !reachedTarget;
+  const reached = intent.mode === "max" ? true : reachedTarget || clamped;
+  const reportedTarget = intent.mode === "max" || clamped ? across.min : intent.target;
   return finish(token, intent.mode, color, across.min, {
-    target: intent.mode === "max" ? across.min : intent.target,
+    target: reportedTarget,
     polarity: solved.polarity,
     reached,
     ...(worst !== undefined ? { worst } : {}),
   });
+}
+
+function maybeMute(
+  token: ResolvedToken,
+  color: GeneratedColorV4,
+  background: readonly GeneratedColorV4[],
+): GeneratedColorV4 {
+  if (token.value.disabled !== true) return color;
+  const backdropL = background[0]?.oklch.l ?? color.oklch.l;
+  return publish(muteDisabled(color.oklch, backdropL));
 }
 
 function finish(
@@ -316,8 +367,10 @@ function finish(
     name: token.name,
     generated: token.generated,
     kind: token.value.kind,
-    ordinal: token.value.ordinal,
+    scale: token.value.scale,
+    ordinal: displayOrdinal(token.value.scale),
     states: token.value.states,
+    ...(token.value.disabled === true ? { disabled: true } : {}),
     backdrop: token.backdrop,
     color,
     mode,
@@ -346,6 +399,28 @@ function hostId(token: ResolvedToken): string {
     return token.value.kind === "surface" ? PAGE : (token.backdrop[0] ?? PAGE);
   }
   return on.includes(".") ? on : `${on}.DEFAULT`;
+}
+
+function surfaceNoHeadroom(
+  theme: string,
+  palette: string,
+  id: string,
+  raw: number,
+): EngineDiagnosticV4 {
+  const pastWhite = raw > 1;
+  const edge = pastWhite ? "white" : "black";
+  return {
+    severity: "warning",
+    code: "surface-no-headroom",
+    path: `${palette}.${id}`,
+    theme,
+    palette,
+    message: `${palette}.${id} steps to OKLCH lightness ${raw.toFixed(3)}, past ${edge}, and is clamped to ${edge}.`,
+    hint: pastWhite
+      ? "Positive surface steps stay at or above their anchor and stop at white. A smaller step, or a lower anchor, keeps them distinct."
+      : "Negative surface steps stay at or below their anchor and stop at black. A smaller step, or a higher anchor, keeps them distinct.",
+    data: { target: raw, achieved: pastWhite ? 1 : 0 },
+  };
 }
 
 function unreachable(
@@ -405,6 +480,20 @@ function colorAt(
     throw new Error(`Internal error: "${id}" was not solved before its dependent.`);
   }
   return color;
+}
+
+function displayOrdinal(scale: number): LevelOrdinal {
+  const rounded = Math.round(scale);
+  if (rounded <= 1) return 1;
+  if (rounded >= 5) return 5;
+  if (rounded === 2 || rounded === 3 || rounded === 4) return rounded;
+  return 3;
+}
+
+function clamp01(value: number): number {
+  if (value <= 0) return 0;
+  if (value >= 1) return 1;
+  return value;
 }
 
 function publish(color: OKLCH): GeneratedColorV4 {

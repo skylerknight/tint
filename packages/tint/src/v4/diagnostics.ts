@@ -20,6 +20,15 @@ export const DIAGNOSTIC_CODES = [
   "hue-identity-lost",
   "expert-value",
   "color-out-of-gamut",
+  "text-below-body",
+  "emphasis-non-text",
+  "border-non-text",
+  "surface-indistinguishable",
+  "surface-no-headroom",
+  "scale-out-of-range",
+  "decorative-indistinguishable",
+  "page-lightness",
+  "mode-lightness",
 ] as const;
 
 export type DiagnosticCodeV4 = (typeof DIAGNOSTIC_CODES)[number];

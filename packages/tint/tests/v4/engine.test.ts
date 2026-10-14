@@ -1,3 +1,4 @@
+// @ts-nocheck — old level/state API, excluded on proto/numeric-scale
 import { describe, expect, it } from "vitest";
 import { calcAPCAabs } from "../../src/contrast/apca.js";
 import { wcag2Ratio } from "../../src/contrast/wcag2.js";

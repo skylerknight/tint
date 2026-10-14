@@ -7,7 +7,7 @@
 
 // Config
 export { defineConfig } from "./v4/define.js";
-export { surface, text, border, emphasis } from "./v4/kinds.js";
+export { surface, text, border, emphasis, disabled, decorative } from "./v4/kinds.js";
 export { validateConfig, assertConfig } from "./v4/validate.js";
 export { ConfigError, formatConfigIssues } from "./v4/errors.js";
 export { resolveConfig } from "./v4/resolve.js";

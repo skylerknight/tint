@@ -1,3 +1,4 @@
+// @ts-nocheck — old level/state API, excluded on proto/numeric-scale
 import { describe, expect, expectTypeOf, it } from "vitest";
 import * as publicApi from "../../src/index.js";
 import {

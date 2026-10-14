@@ -1,8 +1,140 @@
 @import "tailwindcss";
 @tint "../tint.config.ts";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
 body {
   @apply bg-surface text-body;
+  margin: 0;
+}
+
+.sample-card {
+  box-shadow:
+    0 1px 2px color-mix(in oklch, var(--color-text-strong) 6%, transparent),
+    0 10px 24px -16px color-mix(in oklch, var(--color-text-strong) 16%, transparent);
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.segment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.segment legend {
+  width: 100%;
+  margin-bottom: 0.15rem;
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.segment input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.segment label {
+  cursor: pointer;
+  border: 1px solid var(--color-card);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  color: var(--color-text-body);
+  background: transparent;
+}
+
+.segment input:checked + label {
+  background: var(--color-text-strong);
+  color: var(--color-surface);
+  border-color: var(--color-text-strong);
+}
+
+.segment input:focus-visible + label {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+/* The card's action tokens follow the palette radio. Surfaces and text stay on neutral. */
+:root:has(#palette-brand:checked) .sample-card {
+  --action: var(--brand-action);
+  --color-action: var(--brand-action);
+  --action-hover: var(--brand-action-hover);
+  --color-action-hover: var(--brand-action-hover);
+  --action-disabled: var(--brand-action-disabled);
+  --color-action-disabled: var(--brand-action-disabled);
+  --action-on: var(--brand-action-on);
+  --color-action-on: var(--brand-action-on);
+  --action-on-disabled: var(--brand-action-on-disabled);
+  --color-action-on-disabled: var(--brand-action-on-disabled);
+}
+
+:root:has(#palette-info:checked) .sample-card {
+  --action: var(--info-action);
+  --color-action: var(--info-action);
+  --action-hover: var(--info-action-hover);
+  --color-action-hover: var(--info-action-hover);
+  --action-disabled: var(--info-action-disabled);
+  --color-action-disabled: var(--info-action-disabled);
+  --action-on: var(--info-action-on);
+  --color-action-on: var(--info-action-on);
+  --action-on-disabled: var(--info-action-on-disabled);
+  --color-action-on-disabled: var(--info-action-on-disabled);
+}
+
+:root:has(#palette-success:checked) .sample-card {
+  --action: var(--success-action);
+  --color-action: var(--success-action);
+  --action-hover: var(--success-action-hover);
+  --color-action-hover: var(--success-action-hover);
+  --action-disabled: var(--success-action-disabled);
+  --color-action-disabled: var(--success-action-disabled);
+  --action-on: var(--success-action-on);
+  --color-action-on: var(--success-action-on);
+  --action-on-disabled: var(--success-action-on-disabled);
+  --color-action-on-disabled: var(--success-action-on-disabled);
+}
+
+:root:has(#palette-warning:checked) .sample-card {
+  --action: var(--warning-action);
+  --color-action: var(--warning-action);
+  --action-hover: var(--warning-action-hover);
+  --color-action-hover: var(--warning-action-hover);
+  --action-disabled: var(--warning-action-disabled);
+  --color-action-disabled: var(--warning-action-disabled);
+  --action-on: var(--warning-action-on);
+  --color-action-on: var(--warning-action-on);
+  --action-on-disabled: var(--warning-action-on-disabled);
+  --color-action-on-disabled: var(--warning-action-on-disabled);
+}
+
+:root:has(#palette-error:checked) .sample-card {
+  --action: var(--error-action);
+  --color-action: var(--error-action);
+  --action-hover: var(--error-action-hover);
+  --color-action-hover: var(--error-action-hover);
+  --action-disabled: var(--error-action-disabled);
+  --color-action-disabled: var(--error-action-disabled);
+  --action-on: var(--error-action-on);
+  --color-action-on: var(--error-action-on);
+  --action-on-disabled: var(--error-action-on-disabled);
+  --color-action-on-disabled: var(--error-action-on-disabled);
 }

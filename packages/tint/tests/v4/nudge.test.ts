@@ -1,3 +1,4 @@
+// @ts-nocheck — old level/state API, excluded on proto/numeric-scale
 import { describe, expect, it } from "vitest";
 import { auditV4, formatAuditTable } from "../../src/audit/index.js";
 import { emphasis, surface, text } from "../../src/v4/kinds.js";

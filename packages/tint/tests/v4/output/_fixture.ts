@@ -49,6 +49,7 @@ interface TokenSpec {
   name: string;
   kind: Kind;
   ordinal: LevelOrdinal;
+  scale?: number;
   color: GeneratedColorV4;
   states?: readonly CanonicalState[];
   backdrop?: readonly string[];
@@ -65,6 +66,7 @@ export function token(spec: TokenSpec): SolvedTokenV4 {
     name: spec.name,
     generated: spec.generated ?? false,
     kind: spec.kind,
+    scale: spec.scale ?? spec.ordinal,
     ordinal: spec.ordinal,
     states: spec.states ?? [],
     backdrop: spec.backdrop ?? ["page"],

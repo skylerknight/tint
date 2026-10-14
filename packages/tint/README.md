@@ -135,9 +135,9 @@ neutral palette starts like this. Colors are OKLCH, which is the default notatio
 
 ```css check
   /* neutral palette */
-  --neutral-surface-sunken: oklch(92.00% 0.0138 285.94);
-  --neutral-surface: oklch(96.00% 0.0138 285.94);
-  --neutral-surface-raised: oklch(98.00% 0.0098 285.94);
+  --neutral-surface-sunken: oklch(95.00% 0.0138 285.94);
+  --neutral-surface: oklch(97.00% 0.0138 285.94);
+  --neutral-surface-raised: oklch(99.00% 0.0049 285.94);
   --neutral-surface-floating: oklch(100.00% 0.0000 285.94);
   --neutral-action: oklch(57.81% 0.0138 285.94);
   --neutral-action-hover: oklch(53.31% 0.0138 285.94);
@@ -427,9 +427,11 @@ content text, 75 body text, 90 preferred body. WCAG 2 emphasis 3 at 3:1 meets
 1.4.11 against the surface. The label on that fill still has to reach its own
 text target (4.5:1 for `body` under WCAG 2).
 
-Surfaces and emphasis levels 1–2 are not contrast-targeted. Their labels are.
-`border` levels 1–2 are decorative and never fail a contrast lint. `text` level
-1 (`faint`) is for large or non-essential text.
+Surfaces are signed lightness steps from the theme lightness (97 in light, 18 in
+dark). They are not contrast-targeted. `surface.DEFAULT` is the painted page.
+`decorative(n)` steps 0.04 OKLCH lightness away from its backdrop and is not
+contrast-checked. `border` is a 0–10 contrast scale. `text` below 5 is muted,
+not a body-text failure. `emphasis(0)` is WCAG 3:1.
 
 `lc` (APCA) and `ratio` (WCAG 2) skip the table. They are expert values and emit
 an `expert-value` info diagnostic. `step` is the surface escape hatch for the
@@ -482,7 +484,7 @@ Engine diagnostics live on `result.diagnostics`. Each one has `severity`,
 | `expert-value` | info | `lc`, `ratio`, or `step` was set |
 | `color-out-of-gamut` | warning | A palette color was outside sRGB and was mapped |
 
-Disabled tokens and border levels 1–2 are never contrast-linted. `tint check`
+Disabled tokens are never contrast-linted. `decorative(n)` is not contrast-checked. `tint check`
 prints warnings and exits 0. `--strict` exits 1 when any warning was printed.
 Info diagnostics are not warnings.
 

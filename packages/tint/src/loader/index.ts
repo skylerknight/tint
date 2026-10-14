@@ -222,16 +222,14 @@ async function loadWithEsbuild(
  * Stand-in for `@skylerknight/tint` when the package cannot be resolved.
  * Kind functions match the v4 return shape so the loaded object validates.
  * Validation still happens in the loader, against the real validator.
+ * `emphasis`, `text`, and `border` are contrast steps. Outside 0..10 warns.
+ * `surface` is −10..10, signed lightness steps from the page (0 is the page).
+ * `decorative` is −10..10, signed lightness steps away from its backdrop.
  */
 const TINT_STUB = `function __tintKind(kind) {
-  return function (levelOrOptions, options) {
-    const token = { kind: kind };
-    if (typeof levelOrOptions === "string" || typeof levelOrOptions === "number") {
-      token.level = levelOrOptions;
-      if (options && typeof options === "object") Object.assign(token, options);
-      return token;
-    }
-    if (levelOrOptions && typeof levelOrOptions === "object") Object.assign(token, levelOrOptions);
+  return function (scale, options) {
+    const token = { kind: kind, scale: scale };
+    if (options && typeof options === "object") Object.assign(token, options);
     return token;
   };
 }
@@ -240,7 +238,22 @@ export const surface = __tintKind("surface");
 export const text = __tintKind("text");
 export const border = __tintKind("border");
 export const emphasis = __tintKind("emphasis");
-export default { defineConfig, surface, text, border, emphasis };
+export const decorative = __tintKind("decorative");
+function __tintDisabled(kind) {
+  return function (scale, options) {
+    const token = { kind: kind, scale: scale, disabled: true };
+    if (options && typeof options === "object") Object.assign(token, options);
+    token.disabled = true;
+    return token;
+  };
+}
+export const disabled = {
+  emphasis: __tintDisabled("emphasis"),
+  text: __tintDisabled("text"),
+  surface: __tintDisabled("surface"),
+  border: __tintDisabled("border"),
+};
+export default { defineConfig, surface, text, border, emphasis, disabled, decorative };
 `;
 
 /**

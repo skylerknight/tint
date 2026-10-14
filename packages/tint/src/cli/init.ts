@@ -100,7 +100,7 @@ export function renderConfig(options: { brand: string; dark: boolean }): string 
     light: { mode: "light", selector: ".light", media: true },
   }`;
 
-  return `import { border, defineConfig, emphasis, surface, text } from "@skylerknight/tint";
+  return `import { border, defineConfig, decorative, disabled, emphasis, surface, text } from "@skylerknight/tint";
 
 // v4 starter (docs/v4-spec.md §8, without the light-hc theme).
 // Every palette color gets the same tokens. \`tint-danger\` re-skins a subtree.
@@ -111,57 +111,69 @@ export default defineConfig({
     neutral: "#71717a",
     brand: { color: "${brand}", exact: true },
     danger: "#dc2626",
-    warning: { color: "#d97706", tune: { action: emphasis("bold") } },
+    warning: "#d97706",
   },
 
   themes: ${themes},
 
+  overrides: {
+    "warning": { action: { DEFAULT: emphasis(9) } },
+  },
+
   tokens: {
     surface: {
-      sunken: surface("sunken"),
-      DEFAULT: surface(),
-      raised: surface("raised"),
-      floating: surface("floating"),
+      DEFAULT: surface(0),
+      sunken: surface(-1),
+      raised: surface(1),
+      overlay: surface(2),
     },
 
     action: {
-      DEFAULT: emphasis(),
-      hover: emphasis({ state: "hover" }),
-      pressed: emphasis({ state: "pressed" }),
-      disabled: emphasis({ state: "disabled" }),
-      on: text({ on: "action" }),
-      "on-disabled": text({ state: "disabled", on: "action" }),
+      DEFAULT: emphasis(5),
+      hover: emphasis(4.5),
+      pressed: emphasis(6),
+      disabled: disabled.emphasis(5),
+      on: text(5, { on: "action" }),
+      "on-disabled": disabled.text(5, { on: "action.disabled" }),
     },
 
+    // Light shorthand is L 0.97. surface(1) is L 0.99. surface(1.5) is white.
+    // A larger step clamps to white and warns surface-no-headroom.
+    // Positive steps stay at or above the anchor. They do not fold darker.
     soft: {
-      DEFAULT: emphasis("subtle"),
-      hover: emphasis("subtle", { state: "hover" }),
-      pressed: emphasis("subtle", { state: "pressed" }),
-      on: text({ on: "soft" }),
+      DEFAULT: surface(1),
+      hover: surface(1.5),
+      pressed: surface(2),
+      disabled: disabled.surface(1),
+      on: text(5, { on: "soft" }),
+      "on-disabled": disabled.text(5, { on: "soft.disabled" }),
     },
 
     border: {
-      hairline: border("hairline"),
-      DEFAULT: border(),
-      firm: border("firm"),
-      focus: border("firm", { on: "action" }),
+      hairline: border(1),
+      DEFAULT: border(3),
+      firm: border(5),
+      focus: border(8, { on: "action" }),
     },
 
+    // decorative(n) steps lightness away from its backdrop.
+    // 1–2 is a hairline. About 8–10 is placeholder or icon strength.
+    divider: { DEFAULT: decorative(1.5) },
+    placeholder: { DEFAULT: decorative(8) },
+
     text: {
-      DEFAULT: text(),
-      strong: text("strong"),
-      muted: text("muted"),
-      faint: text("faint"),
-      disabled: text({ state: "disabled" }),
-      link: text({ chroma: 1.2 }),
+      DEFAULT: text(5),
+      strong: text(8),
+      muted: text(3),
+      faint: text(1),
+      link: text(5, { chroma: 1.2 }),
     },
 
     row: {
-      DEFAULT: surface(),
-      hover: surface({ state: "hover" }),
-      selected: surface({ state: "selected" }),
-      "selected-hover": surface({ state: "selected-hover" }),
-      on: text({ on: "row" }),
+      DEFAULT: surface(0),
+      hover: surface(-1),
+      selected: surface(1, { chroma: 1.5 }),
+      on: text(5, { on: "row" }),
     },
   },
 });

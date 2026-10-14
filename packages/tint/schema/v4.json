@@ -35,49 +35,11 @@
       "additionalProperties": false
     },
     "themes": {
-      "description": "Theme map (§2.3). Default when omitted: `{ light: { mode: \"light\" } }`. `mode` is required unless `extends` is set.",
+      "description": "Theme map. Default when omitted: `{ light: { mode: \"light\" } }` (page lightness 97). Set lightness, mode, or extends.",
       "type": "object",
       "patternProperties": {
         "^.+$": {
           "$ref": "#/$defs/theme"
-        }
-      },
-      "additionalProperties": false
-    },
-    "levels": {
-      "description": "Rename or add level aliases per kind (§2.5). Built-in names stay unless `$replace`.",
-      "type": "object",
-      "properties": {
-        "surface": {
-          "$ref": "#/$defs/kindLevelNames"
-        },
-        "text": {
-          "$ref": "#/$defs/kindLevelNames"
-        },
-        "border": {
-          "$ref": "#/$defs/kindLevelNames"
-        },
-        "emphasis": {
-          "$ref": "#/$defs/kindLevelNames"
-        }
-      },
-      "additionalProperties": false
-    },
-    "states": {
-      "description": "Per-kind state step overrides (§2, §4).",
-      "type": "object",
-      "properties": {
-        "surface": {
-          "$ref": "#/$defs/surfaceStateSteps"
-        },
-        "text": {
-          "$ref": "#/$defs/stateStepCounts"
-        },
-        "border": {
-          "$ref": "#/$defs/stateStepCounts"
-        },
-        "emphasis": {
-          "$ref": "#/$defs/emphasisStateSteps"
         }
       },
       "additionalProperties": false
@@ -95,6 +57,35 @@
           "patternProperties": {
             "^[a-zA-Z][a-zA-Z0-9_-]*$": {
               "$ref": "#/$defs/token"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "overrides": {
+      "description": "Per-palette token replacements. Keys are palette names, or several joined by commas (\"warning,info\"). A token with kind replaces; options merge. Applied after palette tune.",
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9_-]*(\\s*,\\s*[a-zA-Z][a-zA-Z0-9_-]*)*$": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z][a-zA-Z0-9_-]*$": {
+              "type": "object",
+              "patternProperties": {
+                "^[a-zA-Z][a-zA-Z0-9_-]*$": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/token"
+                    },
+                    {
+                      "$ref": "#/$defs/tokenOptions"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false
@@ -230,52 +221,28 @@
     },
     "token": {
       "title": "Token",
-      "description": "A token's kind, plus an optional level and options (§2.4). Names are kept as written.",
+      "description": "A token's kind, a numeric scale, and options. Level names and states are not part of this prototype.",
       "type": "object",
       "properties": {
         "kind": {
           "description": "What the token is (§2.4, §3).",
-          "enum": ["surface", "text", "border", "emphasis"]
+          "enum": ["surface", "text", "border", "emphasis", "decorative"]
         },
-        "level": {
-          "description": "Ordinal 1–5, the strings \"1\"–\"5\", or a level name (§2.4, §2.5, §3). Custom aliases from `levels` are accepted, including names kept after `$replace`, so this is not a closed per-kind enum. Built-in names: surface: sunken (1), flat (2), base (3), raised (4), floating (5), default (3); text: faint (1), muted (2), body (3), strong (4), max (5), default (3); border: hairline (1), soft (2), default (3), firm (4), heavy (5); emphasis: quiet (1), subtle (2), default (3), bold (4), loud (5).",
-          "anyOf": [
-            {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 5
-            },
-            {
-              "type": "string",
-              "enum": ["1", "2", "3", "4", "5"]
-            },
-            {
-              "type": "string",
-              "minLength": 1,
-              "not": {
-                "pattern": "^[0-9]+$"
-              }
-            }
-          ]
+        "scale": {
+          "description": "Numeric scale. emphasis, text, and border are contrast steps. 0 to 10 is the curve (higher is more contrast; decimals interpolate, APCA in Lc and WCAG by ratio; text(0) is the lowest compliant text, text(5) is body text, text(10) is the top). A plain token outside that range is a warning, not an error. surface is signed lightness steps from the theme lightness, or from the surface named by on, -10 to 10 (0 is that anchor, positive is raised and stays at or above it, negative is sunken and stays at or below it; one step is 0.02 in light and 0.03 in dark; a step past white or black clamps there and warns surface-no-headroom). decorative is signed lightness steps away from its backdrop, -10 to 10 (positive is more distinct: darker on light, lighter on dark; one step is 0.04 OKLCH lightness in both modes; 1–2 is a hairline under 1.3:1, about 10 is icon strength). It is not a contrast step and is exempt from contrast checks. Decimals are real steps.",
+          "type": "number"
         },
-        "state": {
-          "description": "Interaction layered on the rest token (§4). Enumerated from CANONICAL_STATES. `active` is an alias of `pressed` and is accepted in the same position (`selected-active`, not `active-selected`). Which strings apply depends on `kind` (`checked` is emphasis and border only)."
+        "disabled": {
+          "description": "Set by disabled.emphasis(n), disabled.text(n), disabled.surface(n), or disabled.border(n). n is how strong the color would have been. The scale does not change. The engine mutes it (chroma ×0.3, lightness at most 0.06 toward the backdrop, and at most a quarter of the gap). Solid color, no alpha.",
+          "type": "boolean"
         },
         "on": {
-          "description": "Single backdrop: \"group\" or \"group.token\" (§2.4, §6.2).",
+          "description": "Single backdrop: \"group\" or \"group.token\" (§2.4, §6.2). A surface steps from that surface's resolved lightness.",
           "type": "string",
           "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*(?:\\.[a-zA-Z][a-zA-Z0-9_-]*)?$"
         },
-        "contrast": {
-          "description": "Relative level nudge for this token only (§2.4, §5).",
-          "enum": ["+1", "-1", "+2", "-2"]
-        },
-        "direction": {
-          "description": "Force lighter or darker against the backdrop (§2.4).",
-          "enum": ["lighter", "darker"]
-        },
         "chroma": {
-          "description": "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces capped) (§2.4).",
+          "description": "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces and decorative colors capped) (§2.4).",
           "type": "number",
           "minimum": 0,
           "maximum": 2
@@ -300,43 +267,29 @@
           "description": "Raw WCAG ratio. Expert escape hatch; only with algorithm wcag2 (§2.4).",
           "type": "number"
         },
-        "step": {
-          "description": "Raw lightness steps (surface) or a step offset (other kinds) (§2.4).",
-          "type": "number"
-        },
         "nudge": {
           "description": "`false` disables auto-nudge for this token (§2.4, §6.4).",
           "type": "boolean"
         }
       },
-      "required": ["kind"],
+      "required": ["kind", "scale"],
       "additionalProperties": false,
       "allOf": [
         {
           "if": {
             "properties": {
               "kind": {
-                "const": "surface"
+                "enum": ["surface", "decorative"]
               }
             },
             "required": ["kind"]
           },
           "then": {
             "properties": {
-              "state": {
-                "enum": [
-                  "hover",
-                  "pressed",
-                  "focus",
-                  "selected",
-                  "disabled",
-                  "selected-hover",
-                  "selected-pressed",
-                  "selected-focus",
-                  "selected-disabled",
-                  "active",
-                  "selected-active"
-                ]
+              "scale": {
+                "type": "number",
+                "minimum": -10,
+                "maximum": 10
               }
             }
           }
@@ -345,97 +298,36 @@
           "if": {
             "properties": {
               "kind": {
-                "const": "text"
+                "const": "decorative"
               }
             },
             "required": ["kind"]
           },
           "then": {
             "properties": {
-              "state": {
-                "enum": [
-                  "hover",
-                  "pressed",
-                  "focus",
-                  "selected",
-                  "disabled",
-                  "selected-hover",
-                  "selected-pressed",
-                  "selected-focus",
-                  "selected-disabled",
-                  "active",
-                  "selected-active"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "kind": {
-                "const": "border"
-              }
-            },
-            "required": ["kind"]
-          },
-          "then": {
-            "properties": {
-              "state": {
-                "enum": [
-                  "hover",
-                  "pressed",
-                  "focus",
-                  "selected",
-                  "checked",
-                  "disabled",
-                  "selected-hover",
-                  "selected-pressed",
-                  "selected-focus",
-                  "selected-disabled",
-                  "checked-hover",
-                  "checked-pressed",
-                  "checked-focus",
-                  "checked-disabled",
-                  "active",
-                  "selected-active",
-                  "checked-active"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "kind": {
-                "const": "emphasis"
-              }
-            },
-            "required": ["kind"]
-          },
-          "then": {
-            "properties": {
-              "state": {
-                "enum": [
-                  "hover",
-                  "pressed",
-                  "focus",
-                  "selected",
-                  "checked",
-                  "disabled",
-                  "selected-hover",
-                  "selected-pressed",
-                  "selected-focus",
-                  "selected-disabled",
-                  "checked-hover",
-                  "checked-pressed",
-                  "checked-focus",
-                  "checked-disabled",
-                  "active",
-                  "selected-active",
-                  "checked-active"
-                ]
+              "disabled": {
+                "description": "decorative(n) takes a scale and an optional on. This field is not an option.",
+                "not": {}
+              },
+              "chroma": {
+                "description": "decorative(n) takes a scale and an optional on. This field is not an option.",
+                "not": {}
+              },
+              "hue": {
+                "description": "decorative(n) takes a scale and an optional on. This field is not an option.",
+                "not": {}
+              },
+              "lc": {
+                "description": "decorative(n) takes a scale and an optional on. This field is not an option.",
+                "not": {}
+              },
+              "ratio": {
+                "description": "decorative(n) takes a scale and an optional on. This field is not an option.",
+                "not": {}
+              },
+              "nudge": {
+                "description": "decorative(n) takes a scale and an optional on. This field is not an option.",
+                "not": {}
               }
             }
           }
@@ -444,46 +336,16 @@
     },
     "tokenOptions": {
       "title": "TokenOptions",
-      "description": "Options merged onto a token by palette `tune` (§2.2). A replacement token is a Token and includes `kind`. The merged token's kind is not known here, so every input state spelling is allowed.",
+      "description": "Options merged onto a token by palette `tune` or top-level `overrides`. A replacement token is a Token and includes `kind` and `scale`.",
       "type": "object",
       "properties": {
-        "state": {
-          "description": "Interaction layered on the rest token (§4). Enumerated from CANONICAL_STATES. `active` is an alias of `pressed` and is accepted in the same position (`selected-active`, not `active-selected`).",
-          "enum": [
-            "hover",
-            "pressed",
-            "focus",
-            "selected",
-            "checked",
-            "disabled",
-            "selected-hover",
-            "selected-pressed",
-            "selected-focus",
-            "selected-disabled",
-            "checked-hover",
-            "checked-pressed",
-            "checked-focus",
-            "checked-disabled",
-            "active",
-            "selected-active",
-            "checked-active"
-          ]
-        },
         "on": {
-          "description": "Single backdrop: \"group\" or \"group.token\" (§2.4, §6.2).",
+          "description": "Single backdrop: \"group\" or \"group.token\" (§2.4, §6.2). A surface steps from that surface's resolved lightness.",
           "type": "string",
           "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*(?:\\.[a-zA-Z][a-zA-Z0-9_-]*)?$"
         },
-        "contrast": {
-          "description": "Relative level nudge for this token only (§2.4, §5).",
-          "enum": ["+1", "-1", "+2", "-2"]
-        },
-        "direction": {
-          "description": "Force lighter or darker against the backdrop (§2.4).",
-          "enum": ["lighter", "darker"]
-        },
         "chroma": {
-          "description": "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces capped) (§2.4).",
+          "description": "Multiplier on the palette color's chroma, 0..2 inclusive (default 1; surfaces and decorative colors capped) (§2.4).",
           "type": "number",
           "minimum": 0,
           "maximum": 2
@@ -506,10 +368,6 @@
         },
         "ratio": {
           "description": "Raw WCAG ratio. Expert escape hatch; only with algorithm wcag2 (§2.4).",
-          "type": "number"
-        },
-        "step": {
-          "description": "Raw lightness steps (surface) or a step offset (other kinds) (§2.4).",
           "type": "number"
         },
         "nudge": {
@@ -671,11 +529,17 @@
     },
     "theme": {
       "title": "ThemeOptions",
-      "description": "Theme options (§2.3). `mode` may be omitted when `extends` names another theme.",
+      "description": "Theme options. Set lightness (0..100), mode as shorthand (light 97 / dark 18), or extends to inherit either.",
       "type": "object",
       "properties": {
         "mode": {
           "enum": ["light", "dark"]
+        },
+        "lightness": {
+          "description": "Page lightness, 0..100. Polarity is inferred (50 and above is light). mode: light is 97. mode: dark is 18.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
         },
         "selector": {
           "description": "Default `:root`.",
@@ -726,6 +590,14 @@
           "properties": {
             "mode": {
               "enum": ["light", "dark"]
+            }
+          }
+        },
+        {
+          "required": ["lightness"],
+          "properties": {
+            "lightness": {
+              "type": "number"
             }
           }
         },

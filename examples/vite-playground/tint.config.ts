@@ -1,11 +1,23 @@
-import { defineConfig, border, emphasis, surface, text } from "@skylerknight/tint";
+import {
+  border,
+  decorative,
+  defineConfig,
+  disabled,
+  emphasis,
+  surface,
+  text,
+} from "@skylerknight/tint";
 
 /**
- * v3 playground, migrated by hand with docs/v4-spec.md §10.
+ * Sample card for the unified prototype.
  *
- * `colors.base` is the default palette (`neutral`). Dark seeds are theme
- * palette deltas. `ls` steps become elevation levels, `lc` shortcuts become
- * levels, and the separate `on` group moves inside each fill.
+ * The page is surface.DEFAULT. The card sits on surface.raised.
+ * Card and divider are decorative(1.5). The input border is decorative(3).
+ * Placeholder is decorative(8). The icon is decorative(10).
+ * Action is the primary button. Soft is the secondary button, sunk one
+ * and two steps so it stays under white on the lightness 97 page.
+ * Light and dark follow the mode shorthands (lightness 97 and 18).
+ * The selectors match the playground's light/dark radios.
  */
 export default defineConfig({
   contrast: { algorithm: "apca", level: "standard" },
@@ -20,10 +32,14 @@ export default defineConfig({
   },
 
   themes: {
-    light: { mode: "light", selector: ".light", media: true },
+    light: {
+      mode: "light",
+      selector: ":root:has(#scheme-light:checked)",
+      media: true,
+    },
     dark: {
       mode: "dark",
-      selector: ".dark",
+      selector: ":root:has(#scheme-dark:checked)",
       media: true,
       palette: {
         neutral: "#1c1c1f",
@@ -36,50 +52,52 @@ export default defineConfig({
     },
   },
 
+  overrides: {
+    "warning,error": {
+      action: { DEFAULT: emphasis(8.5) },
+    },
+  },
+
   tokens: {
     surface: {
-      // ls 0..n → elevation. `selection` is the selected state of the page.
-      well: surface("sunken"),
-      DEFAULT: surface(),
-      raised: surface("raised"),
-      lowlight: surface("flat"),
-      highlight: surface("floating"),
-      selection: surface({ state: "selected" }),
+      DEFAULT: surface(0),
+      raised: surface(1),
     },
 
     text: {
-      // lc 90 / heading → strong. lc 75 / body. lc 50 / muted. lc 40 / placeholder → faint.
-      strong: text("strong"),
-      body: text(),
-      muted: text("muted"),
-      faint: text("faint"),
+      muted: text(3),
+      body: text(5),
+      strong: text(7),
     },
 
     border: {
-      // lc 25 → soft. subtle (ls, decorative) → hairline. lc 40 → default.
-      // The v3 ring (lc 65) is a firm border used as the focus ring.
-      subtle: border("hairline"),
-      DEFAULT: border("soft"),
-      strong: border(),
-      focus: border("firm"),
+      focus: border(8),
     },
 
     action: {
-      // lc 60 → emphasis default. hover / active → states. `on.action` moves here.
-      DEFAULT: emphasis(),
-      hover: emphasis({ state: "hover" }),
-      pressed: emphasis({ state: "pressed" }),
-      disabled: emphasis({ state: "disabled" }),
-      on: text({ on: "action" }),
-      "on-disabled": text({ state: "disabled", on: "action" }),
+      DEFAULT: emphasis(5),
+      hover: emphasis(4.5),
+      disabled: disabled.emphasis(5),
+      on: text(5, { on: "action" }),
+      "on-disabled": disabled.text(5, { on: "action.disabled" }),
     },
 
     soft: {
-      // action.soft / soft-hover / soft-active → emphasis subtle and its states.
-      DEFAULT: emphasis("subtle"),
-      hover: emphasis("subtle", { state: "hover" }),
-      pressed: emphasis("subtle", { state: "pressed" }),
-      on: text({ on: "soft" }),
+      DEFAULT: surface(-1),
+      hover: surface(-2),
+      on: text(5, { on: "soft" }),
     },
+
+    input: {
+      DEFAULT: decorative(3),
+      placeholder: decorative(8),
+      focus: border(8),
+    },
+
+    card: { DEFAULT: decorative(1.5) },
+
+    divider: { DEFAULT: decorative(1.5) },
+
+    icon: { DEFAULT: decorative(10) },
   },
 });
