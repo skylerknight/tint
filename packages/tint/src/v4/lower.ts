@@ -7,9 +7,9 @@
  * real steps. This is not a contrast solve, so small steps are not clipped
  * by APCA.
  *
- * A positive step that would pass white does not pile up on white. It folds
- * darker than the page, clear of the first sunken step, and keeps the
- * palette chroma. See {@link surfaceLightness}.
+ * A positive step that fits under white stays lighter than the page. A step
+ * that passes white folds darker, clear of the first sunken step, and keeps
+ * the palette chroma. See {@link surfaceLightness}.
  *
  * `emphasis`, `text`, and `border` are contrast targets from `ladders.ts`.
  * `lc` / `ratio` replace that target. Disabled tokens are solved, then muted.
@@ -22,7 +22,7 @@ import { maxChromaForLs } from "../engine/generate.js";
 import type { Polarity } from "../contrast/types.js";
 import { preferredPolarity } from "../contrast/solve.js";
 import { GLOBAL_CONTRAST_SHIFT } from "./constants.js";
-import { contrastAt } from "./ladders.js";
+import { MODE_PAGE_LIGHTNESS, contrastAt } from "./ladders.js";
 import type { CanonicalState } from "./states.js";
 import type {
   ContrastAlgorithm,
@@ -77,7 +77,7 @@ export const DISABLED_GAP_FRACTION = 0.25;
  * Dark page lightness (mode shorthand 18). The page sits off black.
  * Spec Q1 / Q7 leave the baseline open; see {@link pageLightness}.
  */
-export const DARK_PAGE_L = 0.18;
+export const DARK_PAGE_L = MODE_PAGE_LIGHTNESS.dark / 100;
 
 const DEFAULT_STATE_COUNT = {
   hover: 1,
@@ -136,22 +136,27 @@ interface Draft {
 }
 
 /**
- * Light page sits one step below white (`mode: "light"` is lightness 98 when
- * the step is 0.02). The dark page is {@link DARK_PAGE_L}, or two steps above
- * black when the configured step is larger.
+ * Light page is the mode shorthand (lightness 97, L 0.97). That is 1.5 light
+ * steps below white when the step is 0.02, so `surface(1)` still fits and
+ * `surface(1.5)` lands on white. The dark page is {@link DARK_PAGE_L}, or two
+ * steps above black when the configured step is larger.
  */
 export function pageLightness(mode: Mode, step: number): number {
-  if (mode === "light") return clamp01(1 - step);
+  if (mode === "light") return clamp01(MODE_PAGE_LIGHTNESS.light / 100);
   return clamp01(Math.max(DARK_PAGE_L, 2 * step));
 }
 
 /**
  * Lightness for a surface step.
  *
- * Unclipped steps are `anchor + elevation * step`. A positive step past white
- * folds darker than the anchor: one sunken step, plus half a step, plus the
- * overflow. The color stays off the page and off `surface(-1)`, and it keeps
- * the palette chroma that white would have crushed.
+ * Unclipped steps are `anchor + elevation * step` and stay lighter than the
+ * page. On the lightness 97 page that includes `surface(1)` (L 0.99) and
+ * `surface(1.5)` (white). A step past white folds darker than the anchor:
+ * one sunken step, plus half a step, plus the overflow. `surface(2)` is
+ * 0.01 past white, so it folds. Parking it on white would leave
+ * `disabled.surface(2)` inside the 0.01 band between that white and
+ * `surface(1)`. The folded color stays off the page and off `surface(-1)`,
+ * and it keeps the palette chroma that white would have crushed.
  */
 export function surfaceLightness(
   anchorL: number,

@@ -55,12 +55,12 @@ export const SCALE_RANGE = { min: 0, max: 10, step: 0.5 } as const;
 export const SURFACE_RANGE = { min: -10, max: 10, step: 0.5 } as const;
 export const LIGHTNESS_RANGE = { min: 0, max: 100, step: 1 } as const;
 
-const STORAGE_KEY = "tint-playground-editor-v3";
+const STORAGE_KEY = "tint-playground-editor-v4";
 
 export const DEFAULT_STATE: EditorState = {
   sharePalette: false,
   light: {
-    lightness: 98,
+    lightness: 97,
     palette: {
       neutral: "#ffffff",
       brand: "#7c3aed",

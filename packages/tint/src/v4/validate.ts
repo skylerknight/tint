@@ -908,7 +908,7 @@ function checkTheme(
         path: joinPath(path, "lightness"),
         message: `Theme "${name}" is missing lightness.`,
         expected: "lightness 0..100, or mode light/dark",
-        hint: 'Set lightness, mode ("light" is 98, "dark" is 18), or extends a theme that has one.',
+        hint: 'Set lightness, mode ("light" is 97, "dark" is 18), or extends a theme that has one.',
       }),
     );
   } else if (
@@ -931,7 +931,7 @@ function checkTheme(
           path: joinPath(path, "lightness"),
           message: "Expected page lightness from 0 to 100.",
           expected: "a number from 0 to 100",
-          hint: 'mode: "light" is 98. mode: "dark" is 18.',
+          hint: 'mode: "light" is 97. mode: "dark" is 18.',
         }),
       );
     }

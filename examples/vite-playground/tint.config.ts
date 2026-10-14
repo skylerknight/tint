@@ -15,10 +15,11 @@ import {
  * Surface is signed lightness steps from the page: 0 is the page, positive
  * is raised, negative is sunken. One step is 0.02 in light and 0.03 in dark.
  *
- * Light and dark use the mode shorthands: lightness 98 and 18.
- * One light step is 0.02, so surface(1) is white. A higher positive step
- * folds darker than the page (one sunken step, plus half a step, plus the
- * overflow) and keeps palette chroma instead of clipping to white.
+ * Light and dark use the mode shorthands: lightness 97 and 18.
+ * One light step is 0.02. surface(1) is L 0.99, still lighter than the page.
+ * surface(1.5) is white. surface(2) is 0.01 past white, so it folds darker
+ * and keeps palette chroma. Clamping that step onto white would park
+ * disabled.surface(2) inside the 0.01 band between white and surface(1).
  * Dark has room, so the same positive steps stay lighter than the page.
  * Soft fills are surfaces; the label is text(5) on that surface.
  */

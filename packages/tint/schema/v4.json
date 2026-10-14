@@ -35,7 +35,7 @@
       "additionalProperties": false
     },
     "themes": {
-      "description": "Theme map. Default when omitted: `{ light: { mode: \"light\" } }` (page lightness 98). Set lightness, mode, or extends.",
+      "description": "Theme map. Default when omitted: `{ light: { mode: \"light\" } }` (page lightness 97). Set lightness, mode, or extends.",
       "type": "object",
       "patternProperties": {
         "^.+$": {
@@ -512,14 +512,14 @@
     },
     "theme": {
       "title": "ThemeOptions",
-      "description": "Theme options. Set lightness (0..100), mode as shorthand (light 98 / dark 18), or extends to inherit either.",
+      "description": "Theme options. Set lightness (0..100), mode as shorthand (light 97 / dark 18), or extends to inherit either.",
       "type": "object",
       "properties": {
         "mode": {
           "enum": ["light", "dark"]
         },
         "lightness": {
-          "description": "Page lightness, 0..100. Polarity is inferred (50 and above is light). mode: light is 98. mode: dark is 18.",
+          "description": "Page lightness, 0..100. Polarity is inferred (50 and above is light). mode: light is 97. mode: dark is 18.",
           "type": "number",
           "minimum": 0,
           "maximum": 100

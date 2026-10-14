@@ -91,7 +91,7 @@ export function modeLightnessLint(input: {
     theme: input.theme,
     palette: input.palette,
     message: `Theme "${input.theme}" sets mode "${input.authoredMode}" and lightness ${input.lightness}. Lightness wins, so this theme is "${input.mode}".`,
-    hint: "Drop mode, or set lightness on the same side (light ≥ 50, dark < 50). mode alone is shorthand for lightness 98 or 18.",
+    hint: "Drop mode, or set lightness on the same side (light ≥ 50, dark < 50). mode alone is shorthand for lightness 97 or 18.",
     data: { target: input.lightness },
   };
 }

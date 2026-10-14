@@ -401,6 +401,7 @@ export function mountEditor(root: HTMLElement): EditorState {
     syncForm(state);
     localStorage.removeItem("tint-playground-editor-v1");
     localStorage.removeItem("tint-playground-editor-v2");
+    localStorage.removeItem("tint-playground-editor-v3");
     publish(state);
   });
 

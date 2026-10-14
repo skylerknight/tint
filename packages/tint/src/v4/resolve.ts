@@ -38,7 +38,7 @@ export interface ResolvedTheme {
   readonly name: string;
   /** Effective mode. Drives step size and `prefers-color-scheme`. */
   readonly mode: Mode;
-  /** Page lightness, 0..100. `mode` alone maps to 98 (light) or 18 (dark). */
+  /** Page lightness, 0..100. `mode` alone maps to 97 (light) or 18 (dark). */
   readonly lightness: number;
   readonly selector: string;
   /** Present when the theme or an ancestor set `media`. */
@@ -431,7 +431,7 @@ function readThemes(
           path: joinPath(joinPath("themes", name), "lightness"),
           message: `Theme "${name}" is missing lightness.`,
           expected: "lightness 0..100, or mode light/dark",
-          hint: 'Set lightness, mode ("light" is 98, "dark" is 18), or extends a theme that has one.',
+          hint: 'Set lightness, mode ("light" is 97, "dark" is 18), or extends a theme that has one.',
         }),
       );
       continue;
@@ -514,7 +514,7 @@ function readTheme(
           path: joinPath(path, "lightness"),
           message: "Expected page lightness from 0 to 100.",
           expected: "a number from 0 to 100",
-          hint: 'mode: "light" is 98. mode: "dark" is 18.',
+          hint: 'mode: "light" is 97. mode: "dark" is 18.',
         }),
       );
     }

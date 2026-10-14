@@ -52,11 +52,11 @@ describe("contrast ladders", () => {
     expect(textTarget("wcag2", 10)).toBeCloseTo(6.75, 8);
     expect(borderTarget("wcag2", BORDER_NON_TEXT_SCALE)).toBeCloseTo(3, 8);
     expect(borderTarget("apca", 0)).toBe(15);
-    expect(emphasisTarget("apca", "light", 0)).toBe(55);
+    expect(emphasisTarget("apca", "light", 0)).toBe(53.7);
     expect(emphasisTarget("apca", "dark", 0)).toBe(22);
     expect(emphasisTarget("apca", "light", 10)).toBe(90);
     expect(emphasisTarget("apca", "dark", 10)).toBe(100);
-    expect(emphasisTarget("apca", "light", 5)).toBe(72.5);
+    expect(emphasisTarget("apca", "light", 5)).toBe(71.85);
     expect(emphasisTarget("apca", "dark", 5)).toBe(61);
     expect(emphasisTarget("wcag2", "light", 0)).toBeCloseTo(3, 8);
     expect(emphasisTarget("wcag2", "dark", 0)).toBeCloseTo(3, 8);
@@ -388,7 +388,7 @@ describe("lightness polarity", () => {
     expect(resolved.ok, JSON.stringify(resolved.issues)).toBe(true);
     const light = resolved.config.themes.find((theme) => theme.name === "light");
     const dark = resolved.config.themes.find((theme) => theme.name === "dark");
-    expect(light).toMatchObject({ mode: "light", lightness: 98 });
+    expect(light).toMatchObject({ mode: "light", lightness: 97 });
     expect(dark).toMatchObject({ mode: "dark", lightness: 18 });
   });
 
@@ -654,13 +654,24 @@ describe("surface lightness steps", () => {
     expect(at(-0.5)).toBeGreaterThan(at(-1));
   });
 
-  it("folds a positive step past white darker than the page and keeps chroma", () => {
+  it("keeps surface(1) lighter than the lightness 97 page and folds surface(2)", () => {
     const light = themes.find((theme) => theme.name === "light");
+    const neutral = light?.palettes.find((entry) => entry.name === "neutral");
     const brand = light?.palettes.find((entry) => entry.name === "brand");
-    const pageL = brand?.page.oklch.l ?? 1;
+    const at = (palette: typeof neutral, scale: number) =>
+      palette?.tokens.find((entry) => entry.id === `surface.${stepName(scale)}`)?.color
+        .oklch.l ?? 0;
+    const pageL = neutral?.page.oklch.l ?? 0;
+    expect(pageL).toBeCloseTo(0.97, 4);
+    expect(at(neutral, -1)).toBeCloseTo(0.95, 4);
+    expect(at(neutral, 0)).toBeCloseTo(0.97, 4);
+    expect(at(neutral, 1)).toBeCloseTo(0.99, 4);
+    expect(at(neutral, 1)).toBeGreaterThan(pageL);
+    expect(at(neutral, 1)).toBeLessThanOrEqual(1);
+    expect(at(neutral, 2)).toBeCloseTo(0.93, 4);
+    expect(at(neutral, 2)).toBeLessThan(pageL);
+    expect(at(neutral, 3)).toBeCloseTo(0.91, 4);
     const folded = brand?.tokens.find((entry) => entry.id === "surface.n2");
-    expect(pageL).toBeCloseTo(0.98, 4);
-    expect(folded?.color.oklch.l).toBeLessThan(pageL);
     expect(folded?.color.oklch.c).toBeGreaterThan(0.01);
     expect(folded?.color.hex).not.toBe("#ffffff");
   });
