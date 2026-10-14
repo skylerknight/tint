@@ -94,9 +94,9 @@ export const border = kindFunction("border");
  * One pure curve: no tint branch and no polarity flip as the number grows.
  * `emphasis(0)` clears the non-text floor. The lint measures WCAG 3:1, so the
  * APCA anchors are the Lc values that first clear that ratio on the mode page:
- * Lc 53.5 in light, Lc 22 in dark. WCAG `emphasis(0)` is 3:1.
+ * Lc 55 in light, Lc 22 in dark. WCAG `emphasis(0)` is 3:1.
  * `emphasis(10)` is Lc 90 in light, Lc 100 in dark, and WCAG 7:1.
- * One step is +3.65 Lc in light, +7.8 Lc in dark, or ×(7/3)^0.1 on the ratio.
+ * One step is +3.5 Lc in light, +7.8 Lc in dark, or ×(7/3)^0.1 on the ratio.
  * Decimals interpolate (linear in Lc, geometric in the ratio).
  * Hover and pressed are other tokens (`emphasis(4.5)`, `emphasis(6)`).
  */

@@ -8,6 +8,12 @@ body {
   margin: 0;
 }
 
+.sample-card {
+  box-shadow:
+    0 1px 2px color-mix(in oklch, var(--color-text-strong) 6%, transparent),
+    0 10px 24px -16px color-mix(in oklch, var(--color-text-strong) 16%, transparent);
+}
+
 .shell {
   display: grid;
   grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);

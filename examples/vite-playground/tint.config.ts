@@ -15,12 +15,12 @@ import {
  * Surface is signed lightness steps from the page: 0 is the page, positive
  * is raised, negative is sunken. One step is 0.02 in light and 0.03 in dark.
  *
- * The light page is lightness 92, not the mode shorthand 96. At 96, surface(2)
- * is already white, so surface(3) and surface(4) would clip to the same color.
- * 92 leaves overlay surface(3), soft hover surface(3.5), and soft pressed
- * surface(4) 0.01 apart (pressed lands on white).
+ * Light and dark use the mode shorthands: lightness 98 and 18.
+ * One light step is 0.02, so surface(1) is white. A higher positive step
+ * folds darker than the page (one sunken step, plus half a step, plus the
+ * overflow) and keeps palette chroma instead of clipping to white.
+ * Dark has room, so the same positive steps stay lighter than the page.
  * Soft fills are surfaces; the label is text(5) on that surface.
- * text(7) is strong: text(8) asks for Lc 93, which this page cannot reach.
  */
 export default defineConfig({
   contrast: { algorithm: "apca", level: "standard" },
@@ -35,7 +35,7 @@ export default defineConfig({
   },
 
   themes: {
-    light: { mode: "light", lightness: 92, selector: ".light", media: true },
+    light: { mode: "light", selector: ".light", media: true },
     dark: {
       mode: "dark",
       selector: ".dark",
@@ -98,10 +98,12 @@ export default defineConfig({
     },
 
     input: {
-      DEFAULT: border(4),
+      DEFAULT: decorative.border(1),
       placeholder: decorative.text(0),
       focus: border(8),
     },
+
+    card: { DEFAULT: decorative.border(0) },
 
     divider: { DEFAULT: decorative.border(0) },
 

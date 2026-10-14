@@ -71,11 +71,13 @@ export const NON_TEXT_RATIO = 3;
  * APCA emphasis is a straight line in Lc, mode-aware at both ends.
  * `emphasis(0)` is the Lc at which a fill on that mode's page first clears
  * the non-text lint (WCAG 3:1). Lc 45 does not: on the light page it is about
- * 2.6:1. The measured floors are Lc 53.5 in light and Lc 22 in dark.
+ * 2.6:1. The measured floors on the mode pages (lightness 98 and 18) are
+ * Lc 55 in light and Lc 22 in dark. Light sits a little above the 3:1 edge
+ * so chroma-heavy seeds still clear it after gamut mapping.
  * `emphasis(10)` stays the previous maximum: Lc 90 in light, Lc 100 in dark.
- * One step is (max − floor) / 10: 3.65 Lc in light, 7.8 Lc in dark.
+ * One step is (max − floor) / 10: 3.5 Lc in light, 7.8 Lc in dark.
  */
-export const EMPHASIS_APCA_AT_0 = { light: 53.5, dark: 22 } as const;
+export const EMPHASIS_APCA_AT_0 = { light: 55, dark: 22 } as const;
 export const EMPHASIS_APCA_AT_10 = { light: 90, dark: 100 } as const;
 export const EMPHASIS_APCA_UNIT = {
   light: (EMPHASIS_APCA_AT_10.light - EMPHASIS_APCA_AT_0.light) / SCALE_MAX,
@@ -107,7 +109,7 @@ export const BORDER_NON_TEXT_SCALE = 5;
 export const SURFACE_DISTINCT_DELTA = 0.01;
 
 /** Page lightness (0..100) that `mode` is shorthand for. */
-export const MODE_PAGE_LIGHTNESS = { light: 96, dark: 15 } as const;
+export const MODE_PAGE_LIGHTNESS = { light: 98, dark: 18 } as const;
 
 /**
  * Lightness at or above this is a light page (text goes darker).

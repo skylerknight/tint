@@ -7,6 +7,10 @@
  * real steps. This is not a contrast solve, so small steps are not clipped
  * by APCA.
  *
+ * A positive step that would pass white does not pile up on white. It folds
+ * darker than the page, clear of the first sunken step, and keeps the
+ * palette chroma. See {@link surfaceLightness}.
+ *
  * `emphasis`, `text`, and `border` are contrast targets from `ladders.ts`.
  * `lc` / `ratio` replace that target. Disabled tokens are solved, then muted.
  *
@@ -70,10 +74,10 @@ export const DISABLED_APPROACH = 0.06;
 export const DISABLED_GAP_FRACTION = 0.25;
 
 /**
- * Dark page lightness. Matches the v3 dark foundation offset so the page sits
- * off black. Spec Q1 / Q7 leave the baseline open; see {@link pageLightness}.
+ * Dark page lightness (mode shorthand 18). The page sits off black.
+ * Spec Q1 / Q7 leave the baseline open; see {@link pageLightness}.
  */
-export const DARK_PAGE_L = 0.15;
+export const DARK_PAGE_L = 0.18;
 
 const DEFAULT_STATE_COUNT = {
   hover: 1,
@@ -132,13 +136,34 @@ interface Draft {
 }
 
 /**
- * Light page sits two steps below white, so `floating` (step +2) reaches
- * white instead of clamping on top of `raised`. The dark page is the v3
- * dark offset, or two steps above black when the configured step is larger.
+ * Light page sits one step below white (`mode: "light"` is lightness 98 when
+ * the step is 0.02). The dark page is {@link DARK_PAGE_L}, or two steps above
+ * black when the configured step is larger.
  */
 export function pageLightness(mode: Mode, step: number): number {
-  if (mode === "light") return clamp01(1 - 2 * step);
+  if (mode === "light") return clamp01(1 - step);
   return clamp01(Math.max(DARK_PAGE_L, 2 * step));
+}
+
+/**
+ * Lightness for a surface step.
+ *
+ * Unclipped steps are `anchor + elevation * step`. A positive step past white
+ * folds darker than the anchor: one sunken step, plus half a step, plus the
+ * overflow. The color stays off the page and off `surface(-1)`, and it keeps
+ * the palette chroma that white would have crushed.
+ */
+export function surfaceLightness(
+  anchorL: number,
+  elevation: number,
+  step: number,
+): number {
+  if (!(step > 0)) return clamp01(anchorL);
+  const raw = anchorL + elevation * step;
+  if (raw >= 0 && raw <= 1) return raw;
+  if (raw < 0 || elevation <= 0) return clamp01(raw);
+  const extra = elevation - (1 - anchorL) / step;
+  return clamp01(anchorL - step * (extra + 1.5));
 }
 
 export function surfaceStepSize(mode: Mode, states: StateSteps | undefined): number {
@@ -241,7 +266,7 @@ export function realizeLightness(
     const sign = intent.direction === "lighter" ? 1 : -1;
     return clamp01(backdropL + sign * magnitude);
   }
-  let lightness = clamp01(anchorL + intent.elevation * intent.stepSize);
+  let lightness = surfaceLightness(anchorL, intent.elevation, intent.stepSize);
   if (intent.away !== 0) {
     lightness = clamp01(
       lightness +

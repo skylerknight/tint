@@ -20,6 +20,7 @@ import {
   TOKEN_CONTRAST_SHIFT,
 } from "../src/v4/constants.js";
 import {
+  MODE_PAGE_LIGHTNESS,
   SCALE_MAX,
   SCALE_MIN,
   SURFACE_SCALE_MAX,
@@ -420,7 +421,7 @@ function themeSchema(): Schema {
   return {
     title: "ThemeOptions",
     description:
-      "Theme options. Set lightness (0..100), mode as shorthand (light 96 / dark 15), " +
+      `Theme options. Set lightness (0..100), mode as shorthand (light ${MODE_PAGE_LIGHTNESS.light} / dark ${MODE_PAGE_LIGHTNESS.dark}), ` +
       "or extends to inherit either.",
     type: "object",
     properties: {
@@ -428,7 +429,7 @@ function themeSchema(): Schema {
       lightness: {
         description:
           "Page lightness, 0..100. Polarity is inferred (50 and above is light). " +
-          "mode: light is 96. mode: dark is 15.",
+          `mode: light is ${MODE_PAGE_LIGHTNESS.light}. mode: dark is ${MODE_PAGE_LIGHTNESS.dark}.`,
         type: "number",
         minimum: 0,
         maximum: 100,
@@ -535,7 +536,7 @@ export function buildSchema(): Schema {
       },
       themes: {
         description:
-          'Theme map. Default when omitted: `{ light: { mode: "light" } }` (page lightness 96). ' +
+          `Theme map. Default when omitted: \`{ light: { mode: "light" } }\` (page lightness ${MODE_PAGE_LIGHTNESS.light}). ` +
           "Set lightness, mode, or extends.",
         type: "object",
         patternProperties: {

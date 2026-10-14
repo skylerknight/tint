@@ -29,7 +29,7 @@ import {
   emphasisTarget,
   textTarget,
 } from "../../src/v4/ladders.js";
-import { SURFACE_STEP } from "../../src/v4/lower.js";
+import { SURFACE_STEP, surfaceLightness } from "../../src/v4/lower.js";
 import { resolveConfig } from "../../src/v4/resolve.js";
 import { defineConfig } from "../../src/v4/define.js";
 import { validateConfig } from "../../src/v4/validate.js";
@@ -52,11 +52,11 @@ describe("contrast ladders", () => {
     expect(textTarget("wcag2", 10)).toBeCloseTo(6.75, 8);
     expect(borderTarget("wcag2", BORDER_NON_TEXT_SCALE)).toBeCloseTo(3, 8);
     expect(borderTarget("apca", 0)).toBe(15);
-    expect(emphasisTarget("apca", "light", 0)).toBe(53.5);
+    expect(emphasisTarget("apca", "light", 0)).toBe(55);
     expect(emphasisTarget("apca", "dark", 0)).toBe(22);
     expect(emphasisTarget("apca", "light", 10)).toBe(90);
     expect(emphasisTarget("apca", "dark", 10)).toBe(100);
-    expect(emphasisTarget("apca", "light", 5)).toBe(71.75);
+    expect(emphasisTarget("apca", "light", 5)).toBe(72.5);
     expect(emphasisTarget("apca", "dark", 5)).toBe(61);
     expect(emphasisTarget("wcag2", "light", 0)).toBeCloseTo(3, 8);
     expect(emphasisTarget("wcag2", "dark", 0)).toBeCloseTo(3, 8);
@@ -388,8 +388,8 @@ describe("lightness polarity", () => {
     expect(resolved.ok, JSON.stringify(resolved.issues)).toBe(true);
     const light = resolved.config.themes.find((theme) => theme.name === "light");
     const dark = resolved.config.themes.find((theme) => theme.name === "dark");
-    expect(light).toMatchObject({ mode: "light", lightness: 96 });
-    expect(dark).toMatchObject({ mode: "dark", lightness: 15 });
+    expect(light).toMatchObject({ mode: "light", lightness: 98 });
+    expect(dark).toMatchObject({ mode: "dark", lightness: 18 });
   });
 
   it("infers polarity from lightness and warns in the middle", () => {
@@ -559,7 +559,7 @@ describe("surface lightness steps", () => {
       themes: {
         light: { mode: "light" },
         dark: { mode: "dark" },
-        // Same headroom the playground uses so soft 2/3/4 stay apart.
+        // Enough headroom that soft 2/3/4 stay on the raised side of the page.
         lifted: { lightness: 92 },
       },
       tokens: {
@@ -587,10 +587,18 @@ describe("surface lightness steps", () => {
             (entry) => entry.id === `surface.${stepName(scale)}`,
           );
           expect(token?.mode, `${theme.name} ${scale}`).toBe("lightness");
+          const linear = pageL + scale * step;
+          const expected =
+            linear > 1 ? surfaceLightness(pageL, scale, step) : clamp01(linear);
           expect(
             token?.color.oklch.l,
             `${theme.name} ${palette.name} ${scale}`,
-          ).toBeCloseTo(clamp01(pageL + scale * step), 4);
+          ).toBeCloseTo(expected, 4);
+          if (linear > 1) {
+            expect(token?.color.oklch.l, `${theme.name} ${scale} folds`).toBeLessThan(
+              pageL,
+            );
+          }
         }
       }
     }
@@ -644,6 +652,17 @@ describe("surface lightness steps", () => {
     expect(at(0.5)).toBeLessThan(at(1));
     expect(at(-0.5)).toBeLessThan(at(0));
     expect(at(-0.5)).toBeGreaterThan(at(-1));
+  });
+
+  it("folds a positive step past white darker than the page and keeps chroma", () => {
+    const light = themes.find((theme) => theme.name === "light");
+    const brand = light?.palettes.find((entry) => entry.name === "brand");
+    const pageL = brand?.page.oklch.l ?? 1;
+    const folded = brand?.tokens.find((entry) => entry.id === "surface.n2");
+    expect(pageL).toBeCloseTo(0.98, 4);
+    expect(folded?.color.oklch.l).toBeLessThan(pageL);
+    expect(folded?.color.oklch.c).toBeGreaterThan(0.01);
+    expect(folded?.color.hex).not.toBe("#ffffff");
   });
 
   it("keeps soft surface(2), surface(3), and surface(4) distinct when the page has room", () => {

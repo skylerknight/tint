@@ -46,7 +46,7 @@ export interface EditorState {
   dark: { lightness: number; palette: PaletteColors };
   action: { rest: number; hover: number; pressed: number };
   soft: { rest: number; hover: number; pressed: number };
-  surface: { sunken: number; raised: number; overlay: number };
+  surface: { page: number; sunken: number; raised: number; overlay: number };
   text: { faint: number; muted: number; body: number; strong: number };
   border: { subtle: number; default: number; strong: number; focus: number };
 }
@@ -55,12 +55,12 @@ export const SCALE_RANGE = { min: 0, max: 10, step: 0.5 } as const;
 export const SURFACE_RANGE = { min: -10, max: 10, step: 0.5 } as const;
 export const LIGHTNESS_RANGE = { min: 0, max: 100, step: 1 } as const;
 
-const STORAGE_KEY = "tint-playground-editor-v2";
+const STORAGE_KEY = "tint-playground-editor-v3";
 
 export const DEFAULT_STATE: EditorState = {
   sharePalette: false,
   light: {
-    lightness: 92,
+    lightness: 98,
     palette: {
       neutral: "#ffffff",
       brand: "#7c3aed",
@@ -71,7 +71,7 @@ export const DEFAULT_STATE: EditorState = {
     },
   },
   dark: {
-    lightness: 15,
+    lightness: 18,
     palette: {
       neutral: "#1c1c1f",
       brand: "#a78bfa",
@@ -83,7 +83,7 @@ export const DEFAULT_STATE: EditorState = {
   },
   action: { rest: 5, hover: 4.5, pressed: 6 },
   soft: { rest: 2, hover: 3.5, pressed: 4 },
-  surface: { sunken: -1, raised: 1, overlay: 3 },
+  surface: { page: 0, sunken: -1, raised: 1, overlay: 3 },
   text: { faint: 1, muted: 3, body: 5, strong: 7 },
   border: { subtle: 1, default: 3, strong: 7, focus: 8 },
 };
@@ -163,7 +163,8 @@ function normalizeState(value: unknown): EditorState | null {
   if (!isPalette(light.palette) || !isPalette(dark.palette)) return null;
   if (!isScaleGroup(raw.action, ["rest", "hover", "pressed"], 0, 10)) return null;
   if (!isScaleGroup(raw.soft, ["rest", "hover", "pressed"], -10, 10)) return null;
-  if (!isScaleGroup(raw.surface, ["sunken", "raised", "overlay"], -10, 10)) return null;
+  if (!isScaleGroup(raw.surface, ["page", "sunken", "raised", "overlay"], -10, 10))
+    return null;
   if (!isScaleGroup(raw.text, ["faint", "muted", "body", "strong"], 0, 10)) return null;
   if (!isScaleGroup(raw.border, ["subtle", "default", "strong", "focus"], 0, 10))
     return null;
@@ -183,6 +184,7 @@ function normalizeState(value: unknown): EditorState | null {
   state.soft.rest = snapScale(state.soft.rest, -10, 10);
   state.soft.hover = snapScale(state.soft.hover, -10, 10);
   state.soft.pressed = snapScale(state.soft.pressed, -10, 10);
+  state.surface.page = snapScale(state.surface.page, -10, 10);
   state.surface.sunken = snapScale(state.surface.sunken, -10, 10);
   state.surface.raised = snapScale(state.surface.raised, -10, 10);
   state.surface.overlay = snapScale(state.surface.overlay, -10, 10);
@@ -268,7 +270,7 @@ ${paletteBlock(state.light.palette, "    ")}
   tokens: {
     surface: {
       sunken: surface(${num(state.surface.sunken)}),
-      DEFAULT: surface(0),
+      DEFAULT: surface(${num(state.surface.page)}),
       raised: surface(${num(state.surface.raised)}),
       overlay: surface(${num(state.surface.overlay)}),
     },
@@ -306,10 +308,12 @@ ${paletteBlock(state.light.palette, "    ")}
     },
 
     input: {
-      DEFAULT: border(4),
+      DEFAULT: decorative.border(1),
       placeholder: decorative.text(0),
       focus: border(${num(state.border.focus)}),
     },
+
+    card: { DEFAULT: decorative.border(0) },
 
     divider: { DEFAULT: decorative.border(0) },
 
@@ -368,7 +372,7 @@ function buildConfig(state: EditorState) {
     tokens: {
       surface: {
         sunken: surface(state.surface.sunken),
-        DEFAULT: surface(0),
+        DEFAULT: surface(state.surface.page),
         raised: surface(state.surface.raised),
         overlay: surface(state.surface.overlay),
       },
@@ -401,10 +405,11 @@ function buildConfig(state: EditorState) {
         "on-disabled": disabled.text(state.text.body, { on: "soft.disabled" }),
       },
       input: {
-        DEFAULT: border(4),
+        DEFAULT: decorative.border(1),
         placeholder: decorative.text(0),
         focus: border(state.border.focus),
       },
+      card: { DEFAULT: decorative.border(0) },
       divider: { DEFAULT: decorative.border(0) },
       icon: { DEFAULT: decorative.text(2) },
       ramp: {

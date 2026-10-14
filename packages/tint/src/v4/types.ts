@@ -162,7 +162,7 @@ interface ThemeFields {
   /**
    * Page lightness, 0..100. Replaces `mode` as the page lever.
    * Polarity is inferred: 50 and above is light, below 50 is dark.
-   * `mode` remains shorthand for the current page values (light 96, dark 15).
+   * `mode` remains shorthand for the current page values (light 98, dark 18).
    */
   lightness?: number;
 }

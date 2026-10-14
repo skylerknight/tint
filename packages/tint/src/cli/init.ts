@@ -137,7 +137,8 @@ export default defineConfig({
       "on-disabled": disabled.text(5, { on: "action.disabled" }),
     },
 
-    // Raised steps stay inside the light page (L 0.96, step 0.02) through surface(2).
+    // Light shorthand is L 0.98. surface(1) is the raised step that still fits.
+    // A higher positive step folds darker instead of clipping to white.
     soft: {
       DEFAULT: surface(1),
       hover: surface(1.5),

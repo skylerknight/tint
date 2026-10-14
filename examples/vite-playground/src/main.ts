@@ -90,25 +90,27 @@ function sampleUi(): string {
       </div>
     </div>
     <div id="sample" class="max-w-md">
-      <article class="space-y-4 rounded-xl border border-default bg-surface-raised p-5">
-        <div class="flex items-start justify-between gap-3">
-          <div class="space-y-1">
-            <h3 class="text-strong text-lg font-semibold">Project update</h3>
-            <p class="text-muted text-sm">A short note about what changed, set in muted text.</p>
+      <article class="sample-card overflow-hidden rounded-xl border border-card bg-surface-raised">
+        <div class="space-y-5 p-6">
+          <div class="flex items-start justify-between gap-4">
+            <div class="space-y-1.5">
+              <h3 class="text-strong text-base font-semibold leading-none tracking-tight">Project update</h3>
+              <p class="text-muted text-sm leading-relaxed">A short note about what changed, set in muted text.</p>
+            </div>
+            <svg class="mt-0.5 h-5 w-5 shrink-0 text-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 14.2 8l4.8.6-3.5 3.3.9 4.8L12 14.6 7.6 16.7l.9-4.8L5 8.6 9.8 8 12 3.5z" />
+            </svg>
           </div>
-          <svg class="h-6 w-6 shrink-0 text-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 14.2 8l4.8.6-3.5 3.3.9 4.8L12 14.6 7.6 16.7l.9-4.8L5 8.6 9.8 8 12 3.5z" />
-          </svg>
+          <label class="block space-y-2" for="sample-input">
+            <span class="text-sm font-medium leading-none text-body">Email</span>
+            <input id="sample-input" type="email" placeholder="you@example.com" class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-body outline-none placeholder:text-input-placeholder focus:outline-4 focus:outline-solid focus:outline-offset-2 focus:outline-input-focus" />
+          </label>
         </div>
         <div class="h-px bg-divider" role="separator"></div>
-        <label class="block space-y-1" for="sample-input">
-          <span class="text-sm font-medium text-body">Email</span>
-          <input id="sample-input" type="email" placeholder="you@example.com" class="w-full rounded-md border border-input bg-surface px-3 py-2 text-body outline-none placeholder:text-input-placeholder focus:outline-4 focus:outline-solid focus:outline-offset-2 focus:outline-input-focus" />
-        </label>
-        <div class="flex flex-wrap gap-2">
-          ${button("Save", "bg-action text-action-on hover:bg-action-hover")}
-          ${button("Soft", "bg-soft text-soft-on hover:bg-soft-hover")}
-          <button type="button" disabled class="rounded-md bg-action-disabled px-3 py-1.5 text-sm font-medium text-action-on-disabled">Disabled</button>
+        <div class="flex items-center justify-end gap-2 px-6 py-4">
+          <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg bg-action px-3.5 text-sm font-medium text-action-on hover:bg-action-hover focus-visible:outline-4 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-border-focus">Save</button>
+          <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg bg-soft px-3.5 text-sm font-medium text-soft-on hover:bg-soft-hover focus-visible:outline-4 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-border-focus">Cancel</button>
+          <button type="button" disabled class="inline-flex h-9 items-center justify-center rounded-lg bg-action-disabled px-3.5 text-sm font-medium text-action-on-disabled">Disabled</button>
         </div>
       </article>
     </div>

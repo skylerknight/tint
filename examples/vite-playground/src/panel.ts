@@ -29,6 +29,7 @@ const SOFT_FIELDS = [
 ] as const;
 
 const SURFACE_FIELDS = [
+  ["page", "Page"],
   ["sunken", "Sunken"],
   ["raised", "Raised"],
   ["overlay", "Overlay"],
@@ -154,7 +155,7 @@ function panelMarkup(state: EditorState): string {
     </section>
     ${scaleSection("Action", "Emphasis, 0–10. Warning and error rest stay at 8.5.", "action", ACTION_FIELDS, state.action, SCALE_RANGE.min, SCALE_RANGE.max)}
     ${scaleSection("Soft", "Surface steps, −10–10.", "soft", SOFT_FIELDS, state.soft, SURFACE_RANGE.min, SURFACE_RANGE.max)}
-    ${scaleSection("Surface", "Sunken, raised, and overlay. The page stays surface(0).", "surface", SURFACE_FIELDS, state.surface, SURFACE_RANGE.min, SURFACE_RANGE.max)}
+    ${scaleSection("Surface", "Signed steps. Page is surface.DEFAULT. The lightness slider still moves the theme page under it.", "surface", SURFACE_FIELDS, state.surface, SURFACE_RANGE.min, SURFACE_RANGE.max)}
     ${scaleSection("Text", "Contrast steps, 0–10. Button labels use the body step.", "text", TEXT_FIELDS, state.text, SCALE_RANGE.min, SCALE_RANGE.max)}
     ${scaleSection("Border", "Contrast steps, 0–10.", "border", BORDER_FIELDS, state.border, SCALE_RANGE.min, SCALE_RANGE.max)}
   </form>`;
@@ -399,6 +400,7 @@ export function mountEditor(root: HTMLElement): EditorState {
     state.border = next.border;
     syncForm(state);
     localStorage.removeItem("tint-playground-editor-v1");
+    localStorage.removeItem("tint-playground-editor-v2");
     publish(state);
   });
 
