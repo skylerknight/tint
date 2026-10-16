@@ -1,25 +1,12 @@
-import { countTokens, loadAndGenerate, printDiagnostics } from "./shared.js";
-import { paint, plural, type IO } from "./ui.js";
+import { CLIError, ENGINE_NOT_READY } from "./shared.js";
+import type { IO } from "./ui.js";
 
 export interface CheckFlags {
   config?: string | undefined;
   strict?: boolean | undefined;
 }
 
-export async function check(io: IO, flags: CheckFlags): Promise<number> {
-  const { results } = await loadAndGenerate(io, flags.config);
-  const warnings = printDiagnostics(io, results);
-  const counts = `${plural(results.length, "theme")}, ${plural(countTokens(results), "token")}`;
-
-  if (warnings === 0) {
-    io.out(`${paint.green(io.color)("✓")} ${counts}, no warnings`);
-    return 0;
-  }
-
-  io.out(`${paint.yellow(io.color)("⚠")} ${counts}, ${plural(warnings, "warning")}`);
-  if (flags.strict) {
-    io.err(`Failing because --strict was given and there are warnings.`);
-    return 1;
-  }
-  return 0;
+/** Flag parsing still works. Generation waits on the v5 engine. */
+export async function check(_io: IO, _flags: CheckFlags): Promise<number> {
+  throw new CLIError(ENGINE_NOT_READY);
 }

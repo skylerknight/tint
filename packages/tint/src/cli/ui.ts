@@ -1,5 +1,11 @@
 import { createInterface } from "node:readline/promises";
-import type { EngineDiagnosticV4 } from "../v4/diagnostics.js";
+
+/** Fields the CLI prints for one diagnostic line. */
+export interface DiagnosticLine {
+  path: string;
+  message: string;
+  hint?: string;
+}
 
 /** Injectable I/O so `run()` can be exercised in tests without touching the process. */
 export interface RunOptions {
@@ -79,10 +85,7 @@ export function formatWarning(message: string, color: boolean): string {
 }
 
 /** `warn <path>: <message>` with the hint indented on the following line. */
-export function formatDiagnostic(
-  diagnostic: Pick<EngineDiagnosticV4, "path" | "message" | "hint">,
-  color: boolean,
-): string {
+export function formatDiagnostic(diagnostic: DiagnosticLine, color: boolean): string {
   const line = formatWarning(`${diagnostic.path}: ${diagnostic.message}`, color);
   return diagnostic.hint ? `${line}\n     ${paint.dim(color)(diagnostic.hint)}` : line;
 }

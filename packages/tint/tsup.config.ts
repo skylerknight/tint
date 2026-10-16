@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  // The public entry imports `src/v4`, so the v4 API is in the bundle.
+  // Public entry is the v5 scaffold. The v4 API lives in legacy/ and is not bundled.
   entry: {
     index: "src/index.ts",
     "cli/index": "src/cli/index.ts",

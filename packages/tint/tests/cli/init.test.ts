@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { normalizeHex } from "../../src/cli/init.js";
-import { loadConfig } from "../../src/loader/index.js";
 import { capture, type Capture } from "./_helpers.js";
 
 let c: Capture;
@@ -14,7 +13,7 @@ afterEach(() => {
 });
 
 describe("tint init", () => {
-  it("--yes --brand --dark writes a config that loads and builds", async () => {
+  it("--yes --brand --dark writes a two-theme starter", async () => {
     expect(await c.run(["init", "--yes", "--brand", "#7c3aed", "--dark"])).toBe(0);
     const path = join(c.dir, "tint.config.ts");
     const source = readFileSync(path, "utf8");
@@ -25,18 +24,8 @@ describe("tint init", () => {
     expect(source).toContain("media: true");
     expect(source).not.toContain('"light-hc"');
     expect(source).toContain('surface("sunken")');
+    expect(source).toContain('palette: { brand: "#a78bfa" }');
     expect(c.out()).toContain("Next steps");
-
-    const loaded = await loadConfig({ root: c.dir, configPath: path });
-    expect(Object.keys(loaded.config.themes ?? {})).toEqual(["light", "dark"]);
-    const dark = loaded.config.themes?.dark;
-    expect(dark?.palette?.brand).toBe("#a78bfa");
-
-    c.stdout.length = 0;
-    expect(await c.run(["build", "-f", "css,tailwind", "--tailwind-tint"])).toBe(0);
-    expect(existsSync(join(c.dir, "tint", "dark", "tokens.css"))).toBe(true);
-    expect(existsSync(join(c.dir, "tint", "tailwind.css"))).toBe(true);
-    expect(await c.run(["check"])).toBe(0);
   });
 
   it("--yes without --dark writes a single-theme config", async () => {
@@ -44,8 +33,6 @@ describe("tint init", () => {
     const source = readFileSync(join(c.dir, "tint.config.ts"), "utf8");
     expect(source).toContain("export default defineConfig({");
     expect(source).not.toContain('selector: ".dark"');
-    const loaded = await loadConfig({ root: c.dir, configPath: "tint.config.ts" });
-    expect(Object.keys(loaded.config.themes ?? {})).toEqual(["light"]);
   });
 
   it("refuses a bad --brand", async () => {

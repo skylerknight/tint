@@ -6,9 +6,6 @@ import type {
   GeneratedVariant,
 } from "../engine/types.js";
 import type { Diagnostic } from "../engine/diagnostics.js";
-import type { EngineDiagnosticV4 } from "../v4/diagnostics.js";
-import type { GenerationResultV4, SolvedTokenV4 } from "../v4/engine.js";
-import type { Kind, LevelOrdinal } from "../v4/types.js";
 
 export interface AuditRow {
   palette: string;
@@ -27,28 +24,6 @@ export interface AuditReport {
   rows: AuditRow[];
   summary: { tokens: number; pass: number; warn: number; fail: number; na: number };
   diagnostics: Diagnostic[];
-}
-
-/** One v4 token. `kind` is the token kind; `level` is the ordinal; `state` is `-` at rest. */
-export interface AuditRowV4 {
-  palette: string;
-  group: string;
-  variant: string;
-  hex: string;
-  kind: Kind;
-  level: LevelOrdinal;
-  state: string;
-  target: number | null;
-  achieved: number;
-  on: string | null;
-  status: AuditRow["status"];
-}
-
-export interface AuditReportV4 {
-  version: 4;
-  rows: AuditRowV4[];
-  summary: AuditReport["summary"];
-  diagnostics: EngineDiagnosticV4[];
 }
 
 /** Tolerance below the requested Lc that still counts as reached. */
@@ -162,63 +137,6 @@ export function audit(result: GenerationResult): AuditReport {
   return { rows, summary, diagnostics: [...result.diagnostics] };
 }
 
-function v4Status(token: SolvedTokenV4, flagged: boolean): AuditRow["status"] {
-  if (token.states.includes("disabled")) return "n/a";
-  if (token.kind === "surface" || token.mode === "lightness") return "n/a";
-  if (token.kind === "emphasis" && token.ordinal <= 2) return "n/a";
-  if (token.kind === "border" && token.ordinal <= 2) return "n/a";
-  if (token.reached === false) return "fail";
-  if (flagged) return "warn";
-  return "pass";
-}
-
-function auditTokenV4(
-  palette: string,
-  token: SolvedTokenV4,
-  diagnostics: readonly EngineDiagnosticV4[],
-): AuditRowV4 {
-  const path = `${palette}.${token.id}`;
-  const flagged = diagnostics.some(
-    (diagnostic) => diagnostic.severity === "warning" && diagnostic.path === path,
-  );
-  return {
-    palette,
-    group: token.group,
-    variant: token.name,
-    hex: token.color.hex,
-    kind: token.kind,
-    level: token.ordinal,
-    state: token.states.length === 0 ? "-" : token.states.join("-"),
-    target: token.target ?? null,
-    achieved: token.achieved,
-    on: token.backdrop.length === 0 ? null : token.backdrop.join(", "),
-    status: v4Status(token, flagged),
-  };
-}
-
-/**
- * Contrast report for one v4 theme.
- *
- * Disabled tokens, surfaces, emphasis 1–2, and border 1–2 are `n/a` (they are
- * not contrast-linted). A contrast token that missed its target is `fail`.
- * One that reached it while a warning names it is `warn`.
- */
-export function auditV4(result: GenerationResultV4): AuditReportV4 {
-  const rows: AuditRowV4[] = [];
-  for (const palette of result.palettes) {
-    for (const token of palette.tokens)
-      rows.push(auditTokenV4(palette.name, token, result.diagnostics));
-  }
-  const summary = { tokens: rows.length, pass: 0, warn: 0, fail: 0, na: 0 };
-  for (const row of rows) {
-    if (row.status === "pass") summary.pass++;
-    else if (row.status === "warn") summary.warn++;
-    else if (row.status === "fail") summary.fail++;
-    else summary.na++;
-  }
-  return { version: 4, rows, summary, diagnostics: [...result.diagnostics] };
-}
-
 const ANSI = {
   green: "\u001b[32m",
   yellow: "\u001b[33m",
@@ -242,16 +160,13 @@ function colorize(status: AuditRow["status"], text: string): string {
 interface Column {
   header: string;
   align: "left" | "right";
-  cell: (row: AuditRow | AuditRowV4) => string;
+  cell: (row: AuditRow) => string;
 }
 
-const SHARED_COLUMNS: readonly Column[] = [
+const COLUMNS: readonly Column[] = [
   { header: "Token", align: "left", cell: (r) => `${r.palette}.${r.group}.${r.variant}` },
   { header: "Hex", align: "left", cell: (r) => r.hex },
   { header: "Kind", align: "left", cell: (r) => r.kind },
-];
-
-const TAIL_COLUMNS: readonly Column[] = [
   {
     header: "Target",
     align: "right",
@@ -262,41 +177,19 @@ const TAIL_COLUMNS: readonly Column[] = [
   { header: "Status", align: "left", cell: (r) => r.status },
 ];
 
-const V4_COLUMNS: readonly Column[] = [
-  ...SHARED_COLUMNS,
-  {
-    header: "Level",
-    align: "right",
-    cell: (r) => ("level" in r ? String(r.level) : "-"),
-  },
-  {
-    header: "State",
-    align: "left",
-    cell: (r) => ("state" in r ? r.state : "-"),
-  },
-  ...TAIL_COLUMNS,
-];
-
-const V3_COLUMNS: readonly Column[] = [...SHARED_COLUMNS, ...TAIL_COLUMNS];
-
 function pad(text: string, width: number, align: Column["align"]): string {
   return align === "right" ? text.padStart(width) : text.padEnd(width);
-}
-
-function isAuditV4(report: AuditReport | AuditReportV4): report is AuditReportV4 {
-  return "version" in report && report.version === 4;
 }
 
 /**
  * Aligned plain-text table of an audit report followed by a summary line.
  * With `color: true` the status cell is wrapped in ANSI green / yellow / red.
- * v4 reports add Level and State columns. v3 reports keep the original columns.
  */
 export function formatAuditTable(
-  report: AuditReport | AuditReportV4,
+  report: AuditReport,
   options?: { color?: boolean },
 ): string {
-  const columns = isAuditV4(report) ? V4_COLUMNS : V3_COLUMNS;
+  const columns = COLUMNS;
   const color = options?.color ?? false;
   const cells = report.rows.map((row) => columns.map((column) => column.cell(row)));
   const widths = columns.map((column, i) =>

@@ -17,5 +17,6 @@
     "noEmit": true,
     "resolveJsonModule": true
   },
-  "include": ["src", "tests", "scripts"]
+  "include": ["src", "tests"],
+  "exclude": ["legacy", "dist", "node_modules"]
 }
