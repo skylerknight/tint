@@ -1,7 +1,7 @@
 {
   "name": "@skylerknight/tint",
   "version": "4.0.0-alpha.0",
-  "description": "APCA-driven design token generator: accessible, interchangeable color palettes from a single config",
+  "description": "Role-based, contrast-compliant color tokens. The v5 engine is in progress.",
   "type": "module",
   "license": "MIT",
   "author": "Skyler Knight",
@@ -28,12 +28,10 @@
       "import": "./dist/postcss/index.js",
       "require": "./dist/postcss/index.cjs"
     },
-    "./package.json": "./package.json",
-    "./schema/v4.json": "./schema/v4.json"
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
-    "schema",
     "README.md",
     "LICENSE"
   ],
@@ -43,10 +41,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit && prettier --check src tests scripts schema",
-    "schema": "vite-node --script scripts/build-schema.ts",
-    "schema:check": "vitest run tests/v4/schema.test.ts",
-    "docs:examples": "vitest run tests/docs/readme-examples.test.ts"
+    "lint": "tsc --noEmit && prettier --check src tests"
   },
   "keywords": [
     "color",

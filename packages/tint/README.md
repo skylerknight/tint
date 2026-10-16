@@ -1,5 +1,11 @@
 # @skylerknight/tint
 
+> **v5 is in progress.** The sections below describe the v4 API. That API now
+> lives in [`legacy/v4`](./legacy/v4) and is excluded from the build, tests, and
+> package entry. The plan is [v5 milestone 1](../../docs/v5-milestone-1.md).
+> `generate()` on this branch is a placeholder (`{ version: 5 }`).
+> `examples/vite-playground` was removed; CI does not build it.
+
 tint turns a few palette colors and one token template into a full color palette
 for every theme. Each token says what it is (its kind) and how prominent it should
 be (its level). tint solves the color against the surface it sits on, then repeats

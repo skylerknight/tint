@@ -2,18 +2,16 @@ name: CI
 
 on:
   push:
-    branches: [main, v4]
+    branches: [main, v4, v5]
   pull_request:
-    branches: [main, v4]
+    branches: [main, v4, v5]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Node 18 is EOL, and the vite-playground build cannot run there:
-        # @tailwindcss/oxide >=4.2 (engines.node >=20) skips its native
-        # binding, so `vite build` throws "Cannot find native binding".
+        # Node 18 is EOL. CI runs the current LTS lines.
         node: [20, 22]
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +23,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
-      - run: pnpm --filter @skylerknight/tint schema:check
       - run: pnpm test
       - run: pnpm build

@@ -42,6 +42,9 @@ export function readVersion(): string {
 
 export const USAGE = `tint — accessible color tokens
 
+v5 is in progress. \`build\`, \`check\`, and \`inspect\` cannot generate tokens yet.
+See docs/v5-milestone-1.md. \`init\` still writes a starter tint.config.ts.
+
 Usage:
   tint build   [-c|--config <path>] [-o|--out <dir>] [-f|--formats css,tailwind,dtcg,flat]
                [--tailwind-tint] [--quiet]

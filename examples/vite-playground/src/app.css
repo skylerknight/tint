@@ -1,8 +1,0 @@
-@import "tailwindcss";
-@tint "../tint.config.ts";
-
-@custom-variant dark (&:where(.dark, .dark *));
-
-body {
-  @apply bg-surface text-body;
-}

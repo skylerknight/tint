@@ -1,112 +1,70 @@
 # tint
 
-tint builds accessible, interchangeable color palettes from a few palette colors
-and one token template. Each token names a kind (`surface`, `text`, `border`,
-`emphasis`) and a level. tint solves the color against the surface it sits on,
-for every palette color and every theme, and emits CSS variables, Tailwind v4
-`@theme` blocks, DTCG JSON, or a flat map.
+tint generates contrast-compliant color tokens by role. **v5 is in progress.**
+The engine and the public config API are being rewritten. The plan is
+[docs/v5-milestone-1.md](docs/v5-milestone-1.md).
 
-4.0.0-alpha.0 is the v4 config. A `tint-danger` class re-skins any subtree that
-uses the unprefixed tokens (`bg-action`, `text-action-on`, `bg-surface-raised`).
+The v4 engine and API now live in `packages/tint/legacy/v4`. That tree is not
+typechecked, bundled, linted, or tested. The CLI shell, the CSS and Tailwind
+emitters, and the color and contrast modules still build.
 
-## In 30 seconds
+## Status
 
-```ts
-import { defineConfig, emphasis, generate, surface, text, toCSS } from "@skylerknight/tint";
+Milestone 1 is the engine only. There is no new public config yet.
+`generate()` is a placeholder that returns `{ version: 5 }`. Presets,
+publishing, and the HTML card come in later tasks. See the milestone for the
+order.
 
-const config = defineConfig({
-  palette: {
-    neutral: "#71717a",
-    brand: { color: "#7c3aed", exact: true },
-    danger: "#dc2626",
-  },
-  themes: {
-    light: { mode: "light", selector: ".light", media: true },
-    dark: {
-      mode: "dark",
-      selector: ".dark",
-      media: true,
-      palette: { brand: "#a78bfa" },
-    },
-  },
-  tokens: {
-    surface: { DEFAULT: surface(), raised: surface("raised") },
-    action: {
-      DEFAULT: emphasis(),
-      hover: emphasis({ state: "hover" }),
-      pressed: emphasis({ state: "pressed" }),
-      on: text({ on: "action" }),
-    },
-    text: { DEFAULT: text(), strong: text("strong"), muted: text("muted") },
-    border: { DEFAULT: { kind: "border" }, firm: { kind: "border", level: "firm" } },
-  },
-});
+Research notes for that work:
 
-export default config;
-
-const light = generate(config)[0];
-if (light) toCSS(light);
-```
-
-The full template (surface elevation, button states, borders, text, a list row,
-and a `.light-hc` theme) is the quick start in the package README. It lives at
-`examples/v4-spec`.
+- [Retrospective](docs/research/retrospective.md)
+- [Prior-art landscape](docs/research/landscape.md)
+- [Pair solver](docs/research/pair-solver.md)
 
 ## Install
 
-```bash
-pnpm add -D @skylerknight/tint@next esbuild
-```
+v5 is not published. From this repo:
 
-`esbuild` is an optional peer, needed to load `tint.config.ts`. CI runs on Node
-20 and Node 22.
+```bash
+pnpm install
+```
 
 ## Documentation
 
-- [Package README](packages/tint/README.md): install, the v4 quick start, kinds
-  and states, `on`, palette and themes, contrast, `exact` and lints, CSS /
-  Tailwind / DTCG / flat output, `output.format` and `output.prefix`, the CLI,
-  Vite and PostCSS, and the programmatic API.
-- [Migration from v3](docs/migration-v4.md): the §10 mapping, the playground
-  rewrite, the `.light-hc` selector, and the renamed exports (`json` split into
-  `dtcg` and `flat`).
-- [v4 spec](docs/v4-spec.md): the normative API draft.
+- [v5 milestone 1](docs/v5-milestone-1.md): the engine plan.
+- [Package README](packages/tint/README.md): the v4 API write-up. Those exports
+  are not on the v5 build path.
+- [v4 spec](docs/v4-spec.md) and [migration from v3](docs/migration-v4.md)
+  describe the previous API, now under `packages/tint/legacy`.
 - [CHANGELOG](CHANGELOG.md).
-- [SPEC.md](SPEC.md), [concepts](docs/concepts.md), [recipes](docs/recipes.md),
-  and [architecture](docs/architecture.md) describe the v3 config and the color
-  engine the v4 solver still uses.
-
-JSON configs set
-`"$schema": "https://unpkg.com/@skylerknight/tint/schema/v4.json"`.
 
 ## Monorepo layout
 
 ```
-packages/tint/            @skylerknight/tint (library, CLI, Vite and PostCSS plugins)
-  src/v4/                 v4 config, solver, and css / tailwind / dtcg / flat output
-  src/color/              parse, convert, gamut, OKLCH helpers
-  src/contrast/           APCA, WCAG 2, and the solver
-  src/loader/             config loading (esbuild for TypeScript)
-  src/cli/                tint build | check | inspect | init
-  src/vite/  src/postcss/ plugins
-  schema/v4.json          JSON Schema for a v4 config
-  tests/                  vitest, mirrors src/
-examples/v4-spec/         the v4 spec example (TypeScript and JSON)
-examples/vite-playground/ Vite + Tailwind v4 demo
-docs/                     v4 spec, v3 → v4 migration, v3 concept notes
+packages/tint/                 @skylerknight/tint
+  src/engine/                  v5 stub (index.ts); v3 solver kept for the emitters
+  src/output/                  CSS and Tailwind emitters
+  src/color/  src/contrast/    color math
+  src/cli/                     tint build | check | inspect | init
+  src/vite/  src/postcss/      plugin shells
+  legacy/                      v4 engine, API, loader, schema, and their tests
+docs/v5-milestone-1.md
+docs/research/                 retrospective, landscape, pair solver
+examples/v4-spec/              frozen v4 example, not used by CI
 ```
 
 ## Development
 
 ```bash
 pnpm install
-pnpm build                          # tsup, every package
-pnpm test                           # vitest run, every package
-pnpm --filter vite-playground dev   # the example app
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
 ```
 
-Inside `packages/tint`: `pnpm test` (watch), `pnpm typecheck`, `pnpm lint`
-(tsc + prettier check), `pnpm docs:examples` (typecheck and run the README samples).
+`build`, `check`, and `inspect` parse flags and then report that the v5 engine
+is not implemented yet. `init` still writes a starter `tint.config.ts`.
 
 ## License
 
